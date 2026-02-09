@@ -1,0 +1,64 @@
+#!/bin/sh
+# (C) 2024-2026 ghzserg https://github.com/ghzserg/zmod
+#
+# Starts busbox httpd
+#
+
+source /opt/config/mod/.shell/0.sh
+
+PID_FILE=/run/httpd.pid
+
+CLIENT="fluidd"
+
+[ -f /opt/config/mod_data/web.conf ] || echo "# Не редактируйте этот файл
+# Используйте макрос
+#
+# WEB
+#
+
+CLIENT=${CLIENT}" > /opt/config/mod_data/web.conf
+
+source /opt/config/mod_data/web.conf
+
+WEBROOT=/root/$CLIENT
+
+sed "s/    \"defaultLocale\": \"ru\",/    \"defaultLocale\": \"${ZLANG}\",/" /opt/config/mod/.shell/root/config.json >/root/mainsail/config.json
+
+cp /opt/config/mod/.shell/.theme/sidebar-logo.svg /root/fluidd/logo_fluidd.svg
+
+start() {
+    # start busybox httpd
+    #if [ "$CLIENT" == "mainsail" ]; then
+        start-stop-daemon -S -b -m -p $PID_FILE --exec ${MOD_CONF}/mod/.shell/root/zmod_httpd -- $WEBROOT
+    #else
+    #    start-stop-daemon -S -b -m -p $PID_FILE --exec httpd -- -p 80 -f -h $WEBROOT -c ${MOD_CONF}/mod/.shell/root/httpd.conf
+    #fi
+}
+
+stop() {
+    killall zmod_httpd
+    killall httpd
+    start-stop-daemon -K -p $PID_FILE
+}
+restart() {
+    stop
+    sleep 1
+    start
+}
+
+case "$1" in
+  start)
+        start
+        ;;
+  stop)
+        stop
+        ;;
+  restart|reload)
+        restart
+        ;;
+  *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+esac
+
+exit $?

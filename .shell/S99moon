@@ -1,0 +1,44 @@
+#!/bin/sh
+# (C) 2024-2026 ghzserg https://github.com/ghzserg/zmod
+
+source /opt/config/mod/.shell/0.sh
+
+unset LD_PRELOAD
+
+start() {
+  /etc/init.d/prepare.sh &
+}
+
+stop() {
+    printf "Stopping moon: "
+    chroot ${MOD} /opt/config/mod/.shell/root/stop.sh
+    echo "OK"
+}
+
+up() {
+    printf "Starting moon: "
+    chroot ${MOD} /opt/config/mod/.shell/root/start.sh &
+    sleep 15
+    echo "OK"
+}
+
+case "$1" in
+    up)
+        up
+        ;;
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    restart|reload)
+        stop
+        start
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart|up}"
+        exit 1
+esac
+
+exit $?

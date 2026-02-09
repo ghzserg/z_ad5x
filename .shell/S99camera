@@ -1,0 +1,163 @@
+#!/bin/sh
+# (C) 2024-2026 ghzserg https://github.com/ghzserg/zmod
+#
+# Start Camera
+#
+
+#set -x
+
+source /opt/config/mod/.shell/0.sh
+
+if ! [ -f /opt/config/mod_data/camera.conf ]; then
+    /opt/config/mod/.shell/zcamera.sh off 640 480 20 ${VIDEO} 0 auto MJPEG NOTRESTART
+fi
+
+VIDEO=video0
+FS=0
+STREAMER=auto
+if [ ${AD5X} -eq 1 ]; then
+    WIDTH=1280
+    HEIGHT=720
+else
+    WIDTH=640
+    HEIGHT=480
+fi
+FORMAT=MJPEG
+FPS=20
+source /opt/config/mod_data/camera.conf
+PID_FILE=/run/camera.pid
+
+start_mjpg_streamer() {
+    echo "mjpg_streamer" >>${MOD_CONF}/mod_data/log/cam/camera.log
+    if [ "$FS" -ne "0" ]; then
+        FFS="-fs $(( ${WIDTH} * ${HEIGHT} * 2 ))"
+    else
+        FFS=""
+    fi
+
+    ${V4l2} -d /dev/$VIDEO --set-fmt-video=width=${WIDTH},height=${HEIGHT},pixelformat=MJPG >>${MOD_CONF}/mod_data/log/cam/mjpg_streamer.log 2>&1
+    if [ -f /ZMOD ]; then
+        /opt/config/mod/.shell/root/zcam/zcam ${MOD_CONF}/mod_data/log/cam/mjpg_streamer.log /usr/bin/mjpg_streamer -o "/usr/lib/mjpg-streamer/output_http.so -w /usr/share/mjpg-streamer/www -p 8080" -i  "/usr/lib/mjpg-streamer/input_uvc.so -b 1 -d /dev/${VIDEO} -r ${WIDTH}x${HEIGHT} -f $FPS $FFS"
+    else
+        if [ ${AD5X} -eq 0 ]; then
+            nohup /opt/config/mod/.shell/eabi/mjpg_streamer -o "/opt/config/mod/.shell/eabi/lib/output_http.so -w /opt/mjpg-streamer/www -p 8080" -i  "/opt/config/mod/.shell/eabi/lib/input_uvc.so -b 1 -d /dev/${VIDEO} -r ${WIDTH}x${HEIGHT} -f $FPS $FFS" >>${MOD_CONF}/mod_data/log/cam/mjpg_streamer.log 2>&1 &
+        else
+            chroot $MOD /opt/config/mod/.shell/root/zcam/zcam ${MOD_CONF}/mod_data/log/cam/mjpg_streamer.log /usr/bin/mjpg_streamer -o "/usr/lib/mjpg-streamer/output_http.so -w /usr/share/mjpg-streamer/www -p 8080" -i  "/usr/lib/mjpg-streamer/input_uvc.so -b 1 -d /dev/${VIDEO} -r ${WIDTH}x${HEIGHT} -f $FPS $FFS"
+        fi
+    fi
+}
+
+start_ustreamer() {
+    echo "ustreamer" >>${MOD_CONF}/mod_data/log/cam/camera.log
+    echo ${FORMAT} >>${MOD_CONF}/mod_data/log/cam/ustreamer.log 2>&1
+    ${V4l2} -d /dev/$VIDEO --list-formats >>${MOD_CONF}/mod_data/log/cam/ustreamer.log 2>&1
+    [ "$STREAMER" == "auto" ] && FORMAT=$(${V4l2} -d /dev/$VIDEO --list-formats| grep '\[' | tail -1| cut -d "'" -f2)
+    echo ${FORMAT} >>${MOD_CONF}/mod_data/log/cam/ustreamer.log 2>&1
+    if [ -f /ZMOD ]; then
+        /opt/config/mod/.shell/root/zcam/zcam ${MOD_CONF}/mod_data/log/cam/ustreamer.log /opt/config/mod/.shell/root/zcam/ustreamer --process-name-prefix camera_ustreamer -l -b 1 -d /dev/${VIDEO} -r ${WIDTH}x${HEIGHT} -f $FPS --format=$FORMAT -s 0.0.0.0 -m MJPEG --device-timeout=2 -w 1 -I MMAP -c HW
+    else
+        chroot ${MOD} /opt/config/mod/.shell/root/zcam/zcam ${MOD_CONF}/mod_data/log/cam/ustreamer.log /opt/config/mod/.shell/root/zcam/ustreamer --process-name-prefix camera_ustreamer -l -b 1 -d /dev/${VIDEO} -r ${WIDTH}x${HEIGHT} -f $FPS --format=$FORMAT -s 0.0.0.0 -m MJPEG --device-timeout=2 -w 1 -I MMAP -c HW
+    fi
+}
+
+up() {
+    mkdir -p ${MOD_CONF}/mod_data/log/cam/
+    [ -f ${MOD_CONF}/mod_data/log/cam/mjpg_streamer.log ] || echo "" > ${MOD_CONF}/mod_data/log/cam/mjpg_streamer.log
+    [ -f ${MOD_CONF}/mod_data/log/cam/ustreamer.log ] || echo "" > ${MOD_CONF}/mod_data/log/cam/ustreamer.log
+    [ -f ${MOD_CONF}/mod_data/log/cam/camera.log ] || echo "" > ${MOD_CONF}/mod_data/log/cam/camera.log
+    [ -f ${MOD_CONF}/mod_data/log/cam/zcam.log ] || echo "" > ${MOD_CONF}/mod_data/log/cam/zcam.log
+
+    mv ${MOD_CONF}/mod_data/log/cam/mjpg_streamer.4.log ${MOD_CONF}/mod_data/log/cam/mjpg_streamer.5.log
+    mv ${MOD_CONF}/mod_data/log/cam/mjpg_streamer.3.log ${MOD_CONF}/mod_data/log/cam/mjpg_streamer.4.log
+    mv ${MOD_CONF}/mod_data/log/cam/mjpg_streamer.2.log ${MOD_CONF}/mod_data/log/cam/mjpg_streamer.3.log
+    mv ${MOD_CONF}/mod_data/log/cam/mjpg_streamer.1.log ${MOD_CONF}/mod_data/log/cam/mjpg_streamer.2.log
+    mv ${MOD_CONF}/mod_data/log/cam/mjpg_streamer.log   ${MOD_CONF}/mod_data/log/cam/mjpg_streamer.1.log
+
+    mv ${MOD_CONF}/mod_data/log/cam/ustreamer.4.log ${MOD_CONF}/mod_data/log/cam/ustreamer.5.log
+    mv ${MOD_CONF}/mod_data/log/cam/ustreamer.3.log ${MOD_CONF}/mod_data/log/cam/ustreamer.4.log
+    mv ${MOD_CONF}/mod_data/log/cam/ustreamer.2.log ${MOD_CONF}/mod_data/log/cam/ustreamer.3.log
+    mv ${MOD_CONF}/mod_data/log/cam/ustreamer.1.log ${MOD_CONF}/mod_data/log/cam/ustreamer.2.log
+    mv ${MOD_CONF}/mod_data/log/cam/ustreamer.log   ${MOD_CONF}/mod_data/log/cam/ustreamer.1.log
+
+    mv ${MOD_CONF}/mod_data/log/cam/camera.4.log ${MOD_CONF}/mod_data/log/cam/camera.5.log
+    mv ${MOD_CONF}/mod_data/log/cam/camera.3.log ${MOD_CONF}/mod_data/log/cam/camera.4.log
+    mv ${MOD_CONF}/mod_data/log/cam/camera.2.log ${MOD_CONF}/mod_data/log/cam/camera.3.log
+    mv ${MOD_CONF}/mod_data/log/cam/camera.1.log ${MOD_CONF}/mod_data/log/cam/camera.2.log
+    mv ${MOD_CONF}/mod_data/log/cam/camera.log   ${MOD_CONF}/mod_data/log/cam/camera.1.log
+
+    mv ${MOD_CONF}/mod_data/log/cam/zcam.4.log ${MOD_CONF}/mod_data/log/cam/zcam.5.log
+    mv ${MOD_CONF}/mod_data/log/cam/zcam.3.log ${MOD_CONF}/mod_data/log/cam/zcam.4.log
+    mv ${MOD_CONF}/mod_data/log/cam/zcam.2.log ${MOD_CONF}/mod_data/log/cam/zcam.3.log
+    mv ${MOD_CONF}/mod_data/log/cam/zcam.1.log ${MOD_CONF}/mod_data/log/cam/zcam.2.log
+    mv ${MOD_CONF}/mod_data/log/cam/zcam.log   ${MOD_CONF}/mod_data/log/cam/zcam.1.log
+
+    >/opt/config/mod_data/log/cam/cam.log
+    >/opt/config/mod_data/log/cam/zcam.log
+    >/opt/config/mod_data/log/cam/mjpg_streamer.log
+    >/opt/config/mod_data/log/cam/ustreamer.log
+
+    if [ $START != "on" ]; then
+        [ ${ZLANG} != 'ru' ] && echo "Camera off" >>/opt/config/mod_data/log/cam/cam.log || echo "Камера отключена" >>${MOD_CONF}/mod_data/log/cam/cam.log
+        return 0
+    fi
+
+    if [ -c /dev/$VIDEO ]; then
+        ${V4l2} -d /dev/$VIDEO --list-formats >>${MOD_CONF}/mod_data/log/cam/camera.log 2>&1
+        ${V4l2} -d /dev/$VIDEO --list-formats-ext >>${MOD_CONF}/mod_data/log/cam/camera.log 2>&1
+        if [ "$STREAMER" == "mjpg_streamer" ]; then
+            start_mjpg_streamer
+        else if [ "$STREAMER" == "ustreamer" ]; then
+            start_ustreamer
+        else
+            if ${V4l2} -d /dev/$VIDEO  --list-formats | grep MJPG; then
+                start_mjpg_streamer
+            else
+                start_ustreamer
+            fi
+        fi; fi
+        [ ${ZLANG} != 'ru' ] && echo "Camera started" >>${MOD_CONF}/mod_data/log/cam/cam.log || echo "Запуск камеры завершен" >>${MOD_CONF}/mod_data/log/cam/cam.log
+    else
+        [ ${ZLANG} != 'ru' ] && echo "Camera not found $VIDEO" >>${MOD_CONF}/mod_data/log/cam/cam.log || echo "Камера не существует $VIDEO" >>${MOD_CONF}/mod_data/log/cam/cam.log
+        cd /dev/
+        ls -1 video? | while read a; do
+            if ${V4l2} -d /dev/$a --list-formats-ext 2>/dev/null |grep MJPG >/dev/null 2>/dev/null; then
+                [ ${ZLANG} != 'ru' ] && echo "Test Run: CAMERA_ON VIDEO=$a" >>/opt/config/mod_data/log/cam/cam.log || echo "Попробуйте ввести: CAMERA_ON VIDEO=$a" >>${MOD_CONF}/mod_data/log/cam/cam.log
+            fi
+        done
+    fi
+    ${V4l2} --all >>${MOD_CONF}/mod_data/log/cam/camera.log 2>&1
+    ls -1 /dev/video? | while read a; do
+        echo "$a" >>${MOD_CONF}/mod_data/log/cam/camera.log
+        ${V4l2} -d $a --list-formats >>${MOD_CONF}/mod_data/log/cam/camera.log 2>&1
+        ${V4l2} -d $a --list-formats-ext >>${MOD_CONF}/mod_data/log/cam/camera.log 2>&1
+    done;
+}
+
+stop() {
+    killall zcam mjpg_streamer ustreamer
+}
+
+restart() {
+    stop
+    sleep 2
+    up
+}
+
+case "$1" in
+  start)
+    ;;
+  up|init)
+    up $1
+    ;;
+  stop)
+    stop
+    ;;
+  restart|reload)
+    restart
+    ;;
+  *)
+        echo "Usage: $0 {init|up|stop|restart}"
+        exit 1
+esac
+
+exit $?

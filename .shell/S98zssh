@@ -1,0 +1,111 @@
+#!/bin/sh
+# (C) 2024-2026 ghzserg https://github.com/ghzserg/zmod
+#
+# Start TelegramBot
+#
+
+source /opt/config/mod/.shell/0.sh
+
+if ! [ -f /opt/config/mod_data/ssh.key ] || ! [ -f /opt/config/mod_data/ssh.pub.txt ]; then
+    dropbearkey -t ${KEY_TYPE} -f /opt/config/mod_data/ssh.key
+    dropbearkey -y -t ${KEY_TYPE} -f /opt/config/mod_data/ssh.key |grep root >/opt/config/mod_data/ssh.pub.txt
+fi
+
+if ! [ -f /opt/config/mod_data/ssh.conf ]; then
+    /opt/config/mod/.shell/zssh.sh STOP 127.0.0.1 22 user 8080 7125 NONE NOTRESTART
+fi
+
+if ! [ -f /opt/config/mod_data/ssh.local.key ] || ! [ -f /opt/config/mod_data/ssh.local.txt ]; then
+    dropbearkey -t rsa -f /opt/config/mod_data/ssh.local.key
+    dropbearkey -y -t rsa -f /opt/config/mod_data/ssh.local.key |grep root >/opt/config/mod_data/ssh.local.txt
+fi
+
+if ! [ -f /root/.ssh/authorized_keys ]; then
+    mkdir -p /root/.ssh/
+    chmod 700 /root/.ssh/
+fi
+
+KEY=$(cat /opt/config/mod_data/ssh.local.txt)
+if ! grep -q "$KEY" /root/.ssh/authorized_keys; then
+    echo "$KEY" >>/root/.ssh/authorized_keys
+    chmod 600 /root/.ssh/authorized_keys
+fi
+
+#/opt/config/mod/.shell/zversion.sh
+
+REMOTE_RUN="NONE"
+source /opt/config/mod_data/ssh.conf
+
+PID_FILE=/run/zssh.pid
+LOG_FILE=/opt/config/mod_data/log/ssh.log
+export HOME='/root'
+
+start() {
+    if [ $START = "on" ]; then
+        if ! test_running; then
+            nstr=$(cat $LOG_FILE 2>/dev/null| wc -l)
+            date >> ${LOG_FILE}
+            dbclient -N -T -f -y  -i /opt/config/mod_data/ssh.key -p${SSH_PORT} -R ${VIDEO_PORT}:127.0.0.1:8080 -R ${MOON_PORT}:127.0.0.1:7125 ${SSH_USER}@${SSH_SERVER} -o ExitOnForwardFailure=yes >> ${LOG_FILE} 2>&1
+            CMD="w"
+            [ ${AD5X} -eq 0 ] && CMD="axfw"
+            ps ${CMD}|grep '\-N \-T \-f \-y'| head -1| awk '{print $1}' >${PID_FILE}
+            tail -n +$nstr ${LOG_FILE}
+            [ "${REMOTE_RUN}" != "NONE" ] && \
+                test_running && echo "${REMOTE_RUN}" >> ${LOG_FILE} && \
+                dbclient -i /opt/config/mod_data/ssh.key -p${SSH_PORT} ${SSH_USER}@${SSH_SERVER} -T -f -y ${REMOTE_RUN} >> ${LOG_FILE} 2>&1
+        fi
+    else
+        echo "SSH отключен"
+    fi
+}
+
+stop() {
+    killall dbclient 2>/dev/null >/dev/null
+    rm -f $PID_FILE
+}
+
+restart() {
+    stop
+    sleep 2
+    start
+}
+
+test_running() {
+    cnt=$(ps |grep -v grep |grep dbclient| wc -l)
+    if [ -f $PID_FILE ] && kill -0 $(cat $PID_FILE) 2>/dev/null && [ "$cnt" -ne 0 ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+reload() {
+    if [ $START = "on" ]; then
+        if ! test_running; then
+            restart; 
+        fi
+    fi
+}
+
+case "$1" in
+  zstart)
+        start
+        ;;
+  start)
+        echo "Start ignore/ Use zstart"
+        ;;
+  stop)
+        stop
+        ;;
+  restart)
+        restart
+        ;;
+  reload)
+        reload
+        ;;
+  *)
+        echo "Usage: $0 {zstart|start|stop|restart|reload}"
+        exit 1
+esac
+
+exit $?
