@@ -3166,7 +3166,6 @@ eed7a6854d440680cedfa70863163b7e  ./usr/bin/rds-ctl
 f0f99daa0c6f93da84d6a32c04864188  ./usr/bin/sqlite3
 c7b146c9258bfdb12117253a9d9d6ecf  ./usr/bin/strings
 966a54e6bb0dc15a4aa09eae142d6f7e  ./usr/bin/strip
-e58b3066f9c03629f18a38839fbb0bde  ./usr/bin/sudo
 deed280fc6ea15ac86be12d12109d08f  ./usr/bin/touchpad-edge-detector
 10980e0dfb8096b3894a661a57506681  ./usr/bin/ts_calibrate
 9082fd2b6028fa0b1503f699f636ef19  ./usr/bin/ts_conf
