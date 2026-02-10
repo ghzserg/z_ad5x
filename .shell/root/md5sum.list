@@ -3163,7 +3163,6 @@ d2fcda1edabea9125ff6d237b1e767d3  ./usr/bin/speaker-test
 74709d3521ca854df53093f5dc0683a9  ./usr/bin/sqlite3
 bb7ebf6d047e9cda2441279ab77bd641  ./usr/bin/strings
 0334059bfea8c018fc74a4921217fc83  ./usr/bin/strip
-e58b3066f9c03629f18a38839fbb0bde  ./usr/bin/sudo
 671f790aa92df3bb30dd69145246a85e  ./usr/bin/touchpad-edge-detector
 e68f8f21f3827b13e496b23e5b3981bf  ./usr/bin/ts_calibrate
 7f36b93fa65ecd35d9dda7551d32bc04  ./usr/bin/ts_conf
