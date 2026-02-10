@@ -1101,7 +1101,7 @@ class zmod_color:
                     default_values = [result[i]['ID'] if i < len(result) else result[-1]['ID'] for i in range(allowed_tool_count)] if result else [1] * allowed_tool_count
                     tools = []
                     for i in range(allowed_tool_count):
-                      tools += [gcmd.get_int(f"T{i}", int(default_values[i]))]
+                        tools += [gcmd.get_int(f"T{i}", int(default_values[i]))]
                 else:
                     tools = [1] * allowed_tool_count
                     auto_result = self.get_auto_tool_assignments(gcmd, tools, result, auto_selection_output_text, one_based_indexes)
