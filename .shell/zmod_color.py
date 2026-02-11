@@ -974,7 +974,10 @@ class zmod_color:
         for iTool in range(len(tools)):
             for file_color in file_colors:
                 if iTool == file_color[0]:  # not a failure if we don't find any match between i and file_color[0] - it is expected on unused tool indexes
-                    tool_name = f"tool T{iTool}" if not one_based_indexes else f"color {iTool + 1}"
+                    if self.lang == 'ru':
+                        tool_name = f"T{iTool}" if not one_based_indexes else f"цвет {iTool + 1}"
+                    else:
+                        tool_name = f"tool T{iTool}" if not one_based_indexes else f"color {iTool + 1}"
                     candidates = []
                     if file_color[2] != '':
                         for slot in slots:
