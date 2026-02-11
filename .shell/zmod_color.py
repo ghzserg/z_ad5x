@@ -1489,7 +1489,7 @@ class zmod_color:
                 result = self.parse_printer_response(response_data)
 
                 for slot in result:
-                    if zslot == slot['ID']:
+                    if zslot == int(slot['ID']):
                         zhex = slot['HEX']
                         ztype = slot['Material']
                         break;
