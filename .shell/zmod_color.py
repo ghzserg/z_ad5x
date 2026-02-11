@@ -1492,7 +1492,6 @@ class zmod_color:
                         break;
             else:
                 gcmd.respond_raw(self._t('no_response', json.dumps(response_data)))
-        else:
 
         color_name = self.COLOR_MAPPING.get(zhex.lower(), zhex)
 
