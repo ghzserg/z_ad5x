@@ -15,7 +15,7 @@ file_path = sys.argv[1]
 try:
     with open(file_path, 'rb') as f:
         content = f.read()
-        
+
     if content.startswith(b'; MD5:'):
         end_line_pos = content.index('\n')
         content = content[end_line_pos+1:]
