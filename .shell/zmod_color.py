@@ -1485,6 +1485,9 @@ class zmod_color:
             else:
                 status_code, response_data = self.get_printer_data_detail()
             if status_code:
+
+                result = self.parse_printer_response(response_data)
+
                 for slot in result:
                     if zslot == slot['ID']:
                         zhex = slot['HEX']

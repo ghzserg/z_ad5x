@@ -783,6 +783,7 @@ class zmod_ifs:
         gcmd_tmp = self.gcode.create_gcode_command("IFS_F24", "IFS_F24", {'PRUTOK': prutok})
         self.cmd_IFS_F24(gcmd_tmp)
 
+
         # Проверяем есть ли чтото в экструдере
         if self.get_extruder_sensor():
             self.gcode.respond_info("В экструдере есть пруток" if self.lang == 'ru' else "There is filament in the extruder")
@@ -820,6 +821,8 @@ class zmod_ifs:
                 gcmd_tmp = self.gcode.create_gcode_command("IFS_F11", "IFS_F11", {'PRUTOK': prutok, 'LEN': config["filament_autoinsert_ret_length"], 'SPEED': config["filament_autoinsert_speed"]})
                 self.cmd_IFS_F11(gcmd_tmp)
 
+        self.gcode.run_script_from_command(f"RUN_ZCOLOR SLOT={prutok} HIDE=1")
+
         # Помечаем как вставленный
         gcmd_tmp = self.gcode.create_gcode_command("IFS_F23", "IFS_F23", {'PRUTOK': prutok})
         self.cmd_IFS_F23(gcmd_tmp)
@@ -827,8 +830,6 @@ class zmod_ifs:
         # Отжимаем пруток
         gcmd_tmp = self.gcode.create_gcode_command("IFS_F39", "IFS_F39", {'PRUTOK': prutok})
         self.cmd_IFS_F39(gcmd_tmp)
-
-        self.gcode.run_script_from_command(f"RUN_ZCOLOR SLOT={prutok} HIDE=1")
 
     def _cmd_IFS_F10(self, prutok, leng, speed):
         if not self.ifs:
