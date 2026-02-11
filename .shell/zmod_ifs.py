@@ -828,6 +828,8 @@ class zmod_ifs:
         gcmd_tmp = self.gcode.create_gcode_command("IFS_F39", "IFS_F39", {'PRUTOK': prutok})
         self.cmd_IFS_F39(gcmd_tmp)
 
+        self.gcode.run_script_from_command(f"RUN_ZCOLOR SLOT={prutok} HIDE=1")
+
     def _cmd_IFS_F10(self, prutok, leng, speed):
         if not self.ifs:
             self.gcode.run_script_from_command("_IFS_OFF")

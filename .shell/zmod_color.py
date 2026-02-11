@@ -1477,6 +1477,22 @@ class zmod_color:
 
         zhex = gcmd.get('HEX', '161616').upper()
         ztype = gcmd.get('TYPE', '').upper()
+        hide = gcmd.get_int('HIDE', 0)
+
+        if hide == 1:
+            if self.display:
+                status_code, response_data = self.zsend_post_request("/detail")
+            else:
+                status_code, response_data = self.get_printer_data_detail()
+            if status_code:
+                for slot in result:
+                    if zslot == slot['ID']:
+                        zhex = slot['HEX']
+                        ztype = slot['Material']
+                        break;
+            else:
+                gcmd.respond_raw(self._t('no_response', json.dumps(response_data)))
+        else:
 
         color_name = self.COLOR_MAPPING.get(zhex.lower(), zhex)
 
@@ -1496,14 +1512,16 @@ class zmod_color:
             f"// action:prompt_button {self._t('change_type')}|"
             f"CHANGE_ZCOLOR SLOT={zslot} HEX={zhex}|primary"
         )
-        gcmd.respond_raw(
-            f"// action:prompt_button {self._t('load')}|"
-            f"IN_ZCOLOR SLOT={zslot} NAPR=0|primary"
-        )
-        gcmd.respond_raw(
-            f"// action:prompt_button {self._t('unload')}|"
-            f"IN_ZCOLOR SLOT={zslot} NAPR=1|primary"
-        )
+
+        if hide == 0:
+            gcmd.respond_raw(
+                f"// action:prompt_button {self._t('load')}|"
+                f"IN_ZCOLOR SLOT={zslot} NAPR=0|primary"
+            )
+            gcmd.respond_raw(
+                f"// action:prompt_button {self._t('unload')}|"
+                f"IN_ZCOLOR SLOT={zslot} NAPR=1|primary"
+            )
         gcmd.respond_raw("// action:prompt_button_group_end")
 
         gcmd.respond_raw(f"// action:prompt_footer_button {self._t('cancel')}|RESPOND TYPE=command MSG=action:prompt_end")
