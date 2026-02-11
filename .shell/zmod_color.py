@@ -561,7 +561,7 @@ TRANSLATIONS = {
         'unload': "Boşalt"
     }
 }
-      
+
 AUTO_ASSIGN_ANY_SUCCESS =       1 << 0 # Some success occurred (complete success if no other flags). If absent, the original tool data is unmodified.
 AUTO_ASSIGN_MATERIAL_FAILURE =  1 << 1 # At least one material could not be matched (either due to missing file data or no matching material loaded)
 AUTO_ASSIGN_COLOR_FAILURE =     1 << 2 # At least one color could not be matched (due to missing file data, or no materials loaded at all)
@@ -860,43 +860,43 @@ class zmod_color:
                 gcmd.respond_raw("// action:prompt_show")
         else:
             gcmd.respond_raw(self._t('no_response', json.dumps(response_data)))
-            
+
     def get_allowed_tool_count(self, gcmd):
         if self.display:
             return 4
-      
+
         save_variables = self.printer.lookup_object('save_variables', None)
         save_variables = {} if save_variables == None else save_variables.allVariables
-        
+
         allowed_tool_count = save_variables.get('allowed_tool_count', 0)
         if allowed_tool_count <= 0:
             allowed_tool_count = 4
-            
+
         return allowed_tool_count
-      
+
     def get_used_colors(self, gcmd):
         # Returns list of tuples. (tool ID, color, material)
-        
+
         save_variables = self.printer.lookup_object('save_variables', None)
         save_variables = {} if save_variables == None else save_variables.allVariables
-        
+
         scan_files_setting = save_variables.get('scan_file_colors', 0)
-        
+
         if scan_files_setting == 0:
             tool_count = self.get_allowed_tool_count(gcmd)
             return [(i, '', '') for i in range(tool_count)]
-        
+
         fname = gcmd.get('FILENAME', '')
         if fname == '':
             raise gcmd.error(self._t('error_no_filename'))
-                    
+
         result_colors = []
         highest_result_color = -1
         filament_color_line = ''
         filament_type_line = ''
-        
+
         color_data_line = ''
-        
+
         with open(f"/usr/data/gcodes/{fname}", 'r') as f:
             for line_raw in f:
                 line = line_raw.strip().casefold()
@@ -950,13 +950,13 @@ class zmod_color:
             filament_types = color_data_params[2].split(',')
 
         return sorted([(tool_index, filament_colors[tool_index], filament_types[tool_index]) for tool_index in result_colors])
-      
-    def get_auto_tool_assignments(self, gcmd, orig_tools, raw_slots, output_text, one_based_indexes):   
+
+    def get_auto_tool_assignments(self, gcmd, orig_tools, raw_slots, output_text, one_based_indexes):
         if len(raw_slots) == 0:
             return AUTO_ASSIGN_MATERIAL_FAILURE | AUTO_ASSIGN_COLOR_FAILURE
-        
+
         result_flags = 0
-      
+
         slots = [slot.copy() for slot in raw_slots]
         for slot in slots:
             try:
@@ -967,10 +967,10 @@ class zmod_color:
                 slot['red'] = -1
                 slot['green'] = -1
                 slot['blue'] = -1
-      
+
         tools = [0] * len(orig_tools)
         file_colors = self.file_colors
-        
+
         for iTool in range(len(tools)):
             for file_color in file_colors:
                 if iTool == file_color[0]:  # not a failure if we don't find any match between i and file_color[0] - it is expected on unused tool indexes
@@ -988,53 +988,53 @@ class zmod_color:
                     else:
                         result_flags |= AUTO_ASSIGN_ANY_SUCCESS
                         this_material_failure = False
-                        
+
                     if file_color[1] == '':
                         result_flags |= AUTO_ASSIGN_COLOR_FAILURE
                         if not this_material_failure:
                             tools[iTool] = int(candidates[0]['ID'])
                         output_text += [f"// {self._t('auto_assign_no_color_match', tool_name)}"]
                         continue
-                        
+
                     closest_slot = None
                     closest_slot_difference = float('inf')
-                    
+
                     file_color_red = int(file_color[1][1:3], 16)
                     file_color_green = int(file_color[1][3:5], 16)
                     file_color_blue = int(file_color[1][5:7], 16)
                     for slot in candidates:
                         if slot['red'] < 0 or slot['green'] < 0 or slot['blue'] < 0:
                             continue
-                            
+
                         this_color_difference = (
                             (file_color_red - slot['red']) ** 2 +
                             (file_color_green - slot['green']) ** 2 +
                             (file_color_blue - slot['blue']) ** 2
                         )
-                        
+
                         if this_color_difference < closest_slot_difference:
                             closest_slot = slot
                             closest_slot_difference = this_color_difference
-                    
+
                     if closest_slot == None:
                         result_flags |= AUTO_ASSIGN_COLOR_FAILURE
                         if not this_material_failure:
                             tools[iTool] = int(candidates[0]['ID'])
                         output_text += [f"// {self._t('auto_assign_no_color_match', tool_name)}"]
                         continue
-                      
-                    result_flags |= AUTO_ASSIGN_ANY_SUCCESS  
-                      
+
+                    result_flags |= AUTO_ASSIGN_ANY_SUCCESS
+
                     if closest_slot_difference >= AUTO_ASSIGN_WEAK_COLOR_CUTOFF:
                         result_flags |= AUTO_ASSIGN_COLOR_WEAK
-                      
+
                     if closest_slot_difference >= AUTO_ASSIGN_WEAK_COLOR_CUTOFF:
-                        output_text += [f"// {self._t('auto_assign_weak_match', tool_name, closest_slot['ID'])}"]  
+                        output_text += [f"// {self._t('auto_assign_weak_match', tool_name, closest_slot['ID'])}"]
                     else:
-                        output_text += [f"// {self._t('auto_assign_success', tool_name, closest_slot['ID'])}"]  
-                        
+                        output_text += [f"// {self._t('auto_assign_success', tool_name, closest_slot['ID'])}"]
+
                     tools[iTool] = int(closest_slot['ID'])
-                    
+
         if (result_flags & AUTO_ASSIGN_ANY_SUCCESS) != 0:  # Safety check - only write back to orig_tools if success flag has been marked
             for i in range(len(tools)):
                 if tools[i] > 0:
@@ -1045,14 +1045,14 @@ class zmod_color:
                                 result_flags |= AUTO_ASSIGN_DUPLICATE
                                 break
         return result_flags
-    
+
 
     def cmd_SET_ZCOLOR(self, gcmd):
         save_variables = self.printer.lookup_object('save_variables', None)
         save_variables = {} if save_variables == None else save_variables.allVariables
-        
+
         one_based_indexes = (save_variables.get('color_menu_1_based', 0) != 0)
-        
+
         silent = gcmd.get_int('SILENT', 0)
 
         fname = gcmd.get('FILENAME', '')
@@ -1062,7 +1062,7 @@ class zmod_color:
         leveling = gcmd.get_int('LEVELING', 0)
         if leveling not in (0, 1):
             raise gcmd.error(self._t('error_leveling', leveling))
-        
+
         if gcmd.get_int('ALLOWED_TOOL_COUNT', 0) == 0:
             self.file_colors = self.get_used_colors(gcmd)
             if self.display and any(file_color[0] > 3 for file_color in self.file_colors):
@@ -1070,9 +1070,9 @@ class zmod_color:
             auto_assign_setting = save_variables.get('auto_assign_colors', 0)
         else:
             auto_assign_setting = 0
-            
+
         auto_assign = gcmd.get_int('AUTO_ASSIGN', auto_assign_setting)
-                
+
         file_colors = self.file_colors
         color_indexes = [file_color[0] for file_color in file_colors]
 
@@ -1081,7 +1081,7 @@ class zmod_color:
             if leveling
             else self._t('prompt_leveling_off')
         )
-        
+
         auto_selection_output_text = []
 
         if self.display:
@@ -1090,7 +1090,7 @@ class zmod_color:
             status_code, response_data = self.get_printer_data_detail()
         if status_code:
             allowed_tool_count = max(file_colors, key=lambda entry: entry[0])[0] + 1
-          
+
             result = self.parse_printer_response(response_data)
 
             if not self.ifs:
@@ -1109,12 +1109,12 @@ class zmod_color:
                     if tool < 1 or tool > 4:
                         raise gcmd.error(self._t('error_tool', i, tool))
 
-            if silent == 0:                
+            if silent == 0:
                 current_tools_param_text = ""
                 for i in range(allowed_tool_count):
                     current_tools_param_text += f" T{i}={tools[i]}"
                 current_tools_param_text = current_tools_param_text[1:]
-              
+
                 gcmd.respond_raw("// action:prompt_end")
                 gcmd.respond_raw(f"// action:prompt_begin {self._t('prompt_material')}")
                 prompt_text = f"Extruder: None ({self.get_current_channel()})"
@@ -1139,13 +1139,13 @@ class zmod_color:
                 gcmd.respond_raw("// action:prompt_button_group_end")
 
                 # gcmd.respond_raw(f"// action:prompt_text {self._t('prompt_map_color')}")
-                
+
                 buttons_per_group = 4
                 if len(color_indexes) < 10:
                     buttons_per_group = 3
                 if len(color_indexes) < 7:
                     buttons_per_group = 2
-                  
+
                 button_index = 0
 
                 for tool_idx, tool_val in enumerate(tools):
@@ -1157,16 +1157,16 @@ class zmod_color:
                         if int(slot_info['ID']) != tool_val:
                             continue
                         color_name = slot_info['Color'].replace('_', '/', 1) if slot_info['Color'].startswith('_') else ''
-                        
+
                         tool_name = f"T{tool_idx}" if not one_based_indexes else str(tool_idx+1)
-                        
+
                         btn_text = (
                             f"{tool_name} -> "
                             f"{slot_info['ID']}: "
                             f"{slot_info['Material']}{color_name}"
                         )
                         params = f"LEVELING={leveling} FILENAME=\"{fname}\" ALLOWED_TOOL_COUNT={allowed_tool_count} {current_tools_param_text}"
-                        
+
                         gcmd.respond_raw(
                             f"// action:prompt_button {btn_text}|"
                             f"CHANGE_T_ZCOLOR T={tool_idx} {params}|primary|{slot_info['HEX']}"
@@ -1182,7 +1182,7 @@ class zmod_color:
                 )
                 gcmd.respond_raw(f"// action:prompt_footer_button {self._t('cancel')}|RESPOND TYPE=command MSG=action:prompt_end")
                 gcmd.respond_raw("// action:prompt_show")
-                
+
                 for line in auto_selection_output_text:
                     gcmd.respond_raw(line)
             elif silent == 1:
@@ -1194,7 +1194,7 @@ class zmod_color:
                         for line in auto_selection_output_text:
                             gcmd.respond_raw(line)
                         raise gcmd.error(self._t('error_auto_assign_result', pass_check))
-              
+
                 gcmd.respond_raw(f"// {fname}")
                 gcmd.respond_raw(f"// {leveling_text}")
                 gcmd.respond_raw("// IFS ON // SAVE_ZMOD_DATA SILENT=1")
@@ -1213,14 +1213,14 @@ class zmod_color:
                             f"{slot_info['ID']}: "
                             f"{slot_info['Material']}/{slot_info['Color']}"
                         )
-                
+
                 new_gcmd_params = {
                         'LEVELING': leveling, 'FILENAME': fname, 'ALLOWED_TOOL_COUNT': allowed_tool_count
                         }
-                
+
                 for i in range(len(tools)):
                     new_gcmd_params[f"T{i}"] = tools[i]
-                
+
                 gcmd2 = self.gcode.create_gcode_command("PRINT_ZCOLOR", "PRINT_ZCOLOR", new_gcmd_params)
                 self.cmd_PRINT_ZCOLOR(gcmd2)
             elif silent == 2:
@@ -1362,7 +1362,7 @@ class zmod_color:
                 save_variables = {} if save_variables == None else save_variables.allVariables
                 if save_variables.get('always_full_color_change', 0) == 0:
                     full_color_change = False
-        
+
             if full_color_change:
                 self.gcode.run_script_from_command(f"INSERT_PRUTOK_IFS PRUTOK={spool_number} NEED_STOP=0 TRASH=0")
             else:
@@ -1397,9 +1397,9 @@ class zmod_color:
     def cmd_CHANGE_T_ZCOLOR(self, gcmd):
         save_variables = self.printer.lookup_object('save_variables', None)
         save_variables = {} if save_variables == None else save_variables.allVariables
-        
+
         one_based_indexes = (save_variables.get('color_menu_1_based', 0) != 0)
-        
+
         gcmd.respond_raw("// action:prompt_end")
         fname = gcmd.get('FILENAME', '')
         if fname == '':
@@ -1431,7 +1431,6 @@ class zmod_color:
             if ztool < 0 or ztool >= allowed_tool_count:
                 raise gcmd.error(self._t('error_tool', '', ztool))
 
-            
             params = f"FILENAME=\"{fname}\" LEVELING={leveling} ALLOWED_TOOL_COUNT={allowed_tool_count}"
             for i in range(allowed_tool_count):
                 if i == ztool:
@@ -1442,7 +1441,7 @@ class zmod_color:
             gcmd.respond_raw(f"// action:prompt_text {fname}")
 
             gcmd.respond_raw(f"// action:prompt_text {self._t('prompt_map_color')}")
-            
+
             tool_label = f"T{ztool}" if not one_based_indexes else f"Color {ztool+1}"
             gcmd.respond_raw(f"// action:prompt_text {tool_label}:")
 
