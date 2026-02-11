@@ -1,76 +1,61 @@
 #!/bin/bash
 
-# Translated from Python file by Google Gemini AI. Tested by Namida Verasche (ninjamida).
+# Gemini AI translation of addColorAndMD5.py to Bash
 
 FILE_PATH="$1"
-if [ ! -f "$FILE_PATH" ]; then
-    echo "Usage: $0 <file_path>"
+
+# Ensure a file was provided
+if [[ -z "$FILE_PATH" || ! -f "$FILE_PATH" ]]; then
+    echo "Usage: $0 <gcode_file>"
     exit 1
 fi
 
-# 1. Clean existing MD5 and extract variables using awk
-# This single pass mimics the Python loop
-eval $(awk '
-    BEGIN { IGNORECASE=1; highest=-1; header_end=0; existing=-1; found_end=0 }
-    NR==1 && /^; MD5/ { next }
-    {
-        line = tolower($0)
-        if (!found_end) { header_end = NR }
-        if (line ~ /^t[0-9]+/) {
-            split(line, a, "t"); idx = a[2] + 0
-            colors[idx] = idx
-            if (idx > highest) highest = idx
-        }
-        if (line ~ /^; filament_colour =/) { split($0, a, "="); f_col = a[2] }
-        if (line ~ /^; filament_type =/) { split($0, a, "="); f_typ = a[2] }
-        if (line ~ /^; zmod_color_data =/) { existing = NR }
-        if (line ~ /^; header_block_end/) { found_end = 1 }
-    }
-    END {
-        printf "HIGHEST=%d; F_COL=\"%s\"; F_TYP=\"%s\"; HEADER_END=%d; EXISTING=%d; ", highest, f_col, f_typ, header_end, existing
-        printf "RESULT_COLORS=\""; for (i in colors) printf "%s,", i; print "\""
-    }
-' "$FILE_PATH")
+# 1. Load content and remove existing MD5/zmod lines
+# We use a temporary file to hold the intermediate state
+TEMP_CONTENT=$(mktemp)
 
-# 2. Format the zmod_color_data string
-# Handle empty result colors
-[ "$HIGHEST" -lt 0 ] && HIGHEST=0 && RESULT_COLORS="0,"
-RESULT_COLORS=$(echo $RESULT_COLORS | sed 's/,$//')
+# Filter out existing MD5 and zmod_color_data lines (case-insensitive)
+# We also ensure the line endings match the CRLF expected in G-code
+grep -viE '^; (MD5:|zmod_color_data =)' "$FILE_PATH" > "$TEMP_CONTENT"
 
-# Function to pad and join filament data
-format_filament() {
-    local input="$1"
-    local count=$((HIGHEST + 1))
-    IFS=';' read -r -a array <<< "$input"
-    local output=""
-    for ((i=0; i<count; i++)); do
-        val=$(echo "${array[i]}" | xargs)
-        output+="$val,"
-    done
-    echo "${output%,}"
-}
+# 2. Extract Tool Numbers (Lines starting with T followed by digits)
+# Note: Python script looks for lines starting with 't'
+TOOL_IDS=$(grep -iE '^T[0-9]+' "$TEMP_CONTENT" | sed -E 's/^[Tt]([0-9]+).*/\1/' | sort -nu | paste -sd "," -)
 
-F_COL_STR=$(format_filament "$F_COL")
-F_TYP_STR=$(format_filament "$F_TYP")
-ZMOD_LINE="; zmod_color_data = $RESULT_COLORS|$F_COL_STR|$F_TYP_STR"
+# Default to 0 if no tools are found (per Python logic)
+if [[ -z "$TOOL_IDS" ]]; then TOOL_IDS="0"; fi
 
-# 3. Assemble the file (without MD5 yet)
-TEMP_BODY=$(mktemp)
-awk -v skip=$EXISTING -v ins=$HEADER_END -v txt="$ZMOD_LINE" '
-    NR==1 && /^; MD5/ { next }
-    NR==skip { next }
-    NR==ins { print txt }
-    { print }
-' "$FILE_PATH" > "$TEMP_BODY"
+# 3. Extract Filament Colors and Types
+# Python splits by ';' and then joins by ','
+FILAMENT_COLOURS=$(grep -i "^; filament_colour =" "$TEMP_CONTENT" | cut -d'=' -f2- | tr -d ' ' | tr ';' ',')
+FILAMENT_TYPES=$(grep -i "^; filament_type =" "$TEMP_CONTENT" | cut -d'=' -f2- | tr -d ' ' | tr ';' ',')
 
-# 4. Calculate MD5 (OS agnostic)
-if command -v md5sum >/dev/null; then
-    MD5_HASH=$(md5sum "$TEMP_BODY" | awk '{print $1}')
-elif command -v md5 >/dev/null; then
-    MD5_HASH=$(md5 -q "$TEMP_BODY")
+# 4. Construct the zmod_color_data line
+# Format: ; zmod_color_data = tools|colors|types
+ZMOD_LINE="; zmod_color_data = ${TOOL_IDS}|${FILAMENT_COLOURS}|${FILAMENT_TYPES}"
+
+# 5. Insert the zmod line before the Header End
+# Python logic: if header_block_end exists, insert before it; otherwise append.
+FINAL_TEMP=$(mktemp)
+if grep -qi "; HEADER_BLOCK_END" "$TEMP_CONTENT"; then
+    # Insert before the line containing HEADER_BLOCK_END
+    sed "/; HEADER_BLOCK_END/i $ZMOD_LINE" "$TEMP_CONTENT" > "$FINAL_TEMP"
+else
+    cat "$TEMP_CONTENT" > "$FINAL_TEMP"
+    echo "$ZMOD_LINE" >> "$FINAL_TEMP"
 fi
 
-# 5. Final output
-echo "; MD5:$MD5_HASH" > "$FILE_PATH"
-cat "$TEMP_BODY" >> "$FILE_PATH"
-rm "$TEMP_BODY"
+# 6. Calculate MD5 of the content and prepend it
+# Use md5sum (Linux) or md5 -q (macOS)
+if command -v md5sum >/dev/null; then
+    MD5_HASH=$(md5sum "$FINAL_TEMP" | awk '{print $1}')
+else
+    MD5_HASH=$(md5 -q "$FINAL_TEMP")
+fi
+
+# 7. Overwrite the original file
+echo "; MD5:${MD5_HASH}" > "$FILE_PATH"
+cat "$FINAL_TEMP" >> "$FILE_PATH"
+
+# Cleanup
+rm "$TEMP_CONTENT" "$FINAL_TEMP"
