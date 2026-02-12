@@ -1526,7 +1526,10 @@ class zmod_color:
             )
         gcmd.respond_raw("// action:prompt_button_group_end")
 
-        gcmd.respond_raw(f"// action:prompt_footer_button {self._t('cancel')}|RESPOND TYPE=command MSG=action:prompt_end")
+        if hide == 0:
+            gcmd.respond_raw(f"// action:prompt_footer_button {self._t('cancel')}|RESPOND TYPE=command MSG=action:prompt_end")
+        else:
+            gcmd.respond_raw(f"// action:prompt_footer_button OK|RESPOND TYPE=command MSG=action:prompt_end")
         gcmd.respond_raw("// action:prompt_show")
 
     def cmd_CHANGE_ZCOLOR(self, gcmd):
