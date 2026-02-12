@@ -47,13 +47,12 @@ DEFAULT_FILAMENT_SETTINGS = {
     "filament_unload_after_drop": 3,        # Ретракт после сброса филамента (немного вытащить пруток из сопла, для предотвращения протечки,
                                             #   когда смена прутка уже прошла и сопло едет дальше печатать)
     "filament_load_speed": 300,             # Скорость загрузки филамента (скорость вращения экструдера, 300 мм/м = 5 мм/c)
-    "filament_unload_speed": 600,           # Скорость подъема  филамента (скорость вращения экструдера, 600 мм/м = 10 мм/c)
-                                            #   IFS работает на скорости 2*filament_unload_speed
-    "filament_tube_length": 1000,           # Длина полной загрузки/выгрузки филамента (длинна тефлоновой трубки от IFS до головы, полезно дял тех у кого не стоковые трубки)
+    "filament_unload_speed": 1200,           # Скорость подъема  филамента (скорость вращения экструдера, 600 мм/м = 10 мм/c)
+    "filament_tube_length": 650,           # Длина полной загрузки/выгрузки филамента (длинна тефлоновой трубки от IFS до головы, полезно дял тех у кого не стоковые трубки)
     "filament_drop_length": 90,             # Длина сброса в какашник (дистанция прутка который будет выдавлен в какашник, то есть дистанция прочистки сопла
                                             #   от преведущего филамената и смешения цветов, полезно когда не используется башня для сброса смешанных цветов)
     "filament_drop_length_add": 90,         # Дополнительная длина сброса в какашник при смене типа филамента (смена разных материаалов, к примеру PETG на композитный PETG)
-    "nozzle_cleaning_length": 70,           # Длина прочистки сопла (дистанция на сколько вытаскивать пруток из экструдера
+    "nozzle_cleaning_length": 110,           # Длина прочистки сопла (дистанция на сколько вытаскивать пруток из экструдера
                                             #   (то есть на сколько милиметров доставать пруток из фидера, когда текущая катушка больше не используется)
     "filament_fan_speed": 102,              # Скорость работы вентилятора при сбросе через какашник (то есть сдувает подтеки из сопла, когда происходит очистка)
 
@@ -1112,11 +1111,12 @@ class zmod_ifs:
 
         temp = int(gcmd.get_float('TEMP', 0.0))
         need_trash = gcmd.get_int('NEED_TRASH', 0)
+        bypass_temperature_check = int(gcmd.get_int('BYPASS_TEMPERATURE_CHECK'), 0)
 
         prutok = self.get_current_channel_from_config()
         config = self.get_prutok_config(prutok)
 
-        if temp < int(config['temp']):
+        if temp < int(config['temp']) and bypass_temperature_check == 0:
             gcmd.respond_info(f"Extruder Temp: {config['temp']}")
             self.gcode.run_script_from_command(f"M104 S{config['temp']}")
             self.gcode.run_script_from_command(f"TEMPERATURE_WAIT SENSOR=extruder MINIMUM={config['temp']-2} MAXIMUM={config['temp']+4}")
