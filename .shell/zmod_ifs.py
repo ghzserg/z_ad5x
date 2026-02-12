@@ -1111,7 +1111,7 @@ class zmod_ifs:
 
         temp = int(gcmd.get_float('TEMP', 0.0))
         need_trash = gcmd.get_int('NEED_TRASH', 0)
-        bypass_temperature_check = int(gcmd.get_int('BYPASS_TEMPERATURE_CHECK'), 0)
+        bypass_temperature_check = gcmd.get_int('BYPASS_TEMPERATURE_CHECK', 0)
 
         prutok = self.get_current_channel_from_config()
         config = self.get_prutok_config(prutok)
