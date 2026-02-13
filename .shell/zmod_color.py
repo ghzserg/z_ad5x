@@ -904,13 +904,15 @@ class zmod_color:
                     continue
                 if line[0] == 't':
                     try:
+                        if ';' in line:
+                            line = line.split(';')[0].strip()
                         index = int(line[1:])
                         if index not in result_colors:
                             result_colors += [index]
                         highest_result_color = max(highest_result_color, index)
                     except:
                         pass
-                if line[0] == ';':
+                elif line[0] == ';':
                     if line.startswith('; filament_colour ='):
                         _, _, filament_color_line = line.partition('=')
                     if line.startswith('; filament_type ='):
