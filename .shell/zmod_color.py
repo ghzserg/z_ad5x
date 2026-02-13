@@ -906,6 +906,8 @@ class zmod_color:
                     try:
                         if ';' in line:
                             line = line.split(';')[0].strip()
+                        if ' ' in line:
+                            line = line.split(' ')[0]
                         index = int(line[1:])
                         if index not in result_colors:
                             result_colors += [index]
