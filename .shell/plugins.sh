@@ -26,10 +26,13 @@ get_origin_from_config() {
   ' "$config_file"
 }
 
-if grep -q "[update_manager $1]" ${MOD_CONF}/moonraker.conf || grep -q "[update_manager $1]" ${MOD_CONF}/mod_data/user.moonraker.conf; then
+if grep -q "[update_manager $1]" ${MOD_CONF}/moonraker.conf || grep -q "[update_manager $1]" ${MOD_CONF}/mod_data/user.moonraker.conf || grep -q "[update_manager $1]" ${MOD_CONF}/mod/extra_plugins.moonraker.conf; then
     url=$(get_origin_from_config ${MOD_CONF}/moonraker.conf "$1")
     if [ "$url" == "" ]; then
         url=$(get_origin_from_config ${MOD_CONF}/mod_data/user.moonraker.conf "$1")
+        if [ "$url" == "" ]; then
+            url=$(get_origin_from_config ${MOD_CONF}/mod/extra_plugins.moonraker.conf "$1")
+        fi
     fi
     if [ "$url" != "" ]; then
         if ! [ -d "${MOD_CONF}/mod_data/plugins/$1" ]; then
@@ -97,8 +100,8 @@ if grep -q "[update_manager $1]" ${MOD_CONF}/moonraker.conf || grep -q "[update_
     echo "FIRMWARE_RESTART" >/tmp/printer
 else
     if [ "${ZLANG}" != 'ru' ]; then
-        echo "Plugin $1 not found in moonraker.conf, mod_data/user.moonraker.conf"
+        echo "Plugin $1 not found in moonraker.conf, mod/extra_plugins.moonraker.conf, mod_data/user.moonraker.conf"
     else
-        echo "Плагин $1 не найден в файлах moonraker.conf, mod_data/user.moonraker.conf"
+        echo "Плагин $1 не найден в файлах moonraker.conf, mod/extra_plugins.moonraker.conf, mod_data/user.moonraker.conf"
     fi
 fi
