@@ -903,12 +903,9 @@ class zmod_color:
                 if len(line) == 0:
                     continue
                 if line[0] == 't':
+                    main_part = line.split(';', 1)[0].split(' ', 1)[0].strip()
                     try:
-                        if ';' in line:
-                            line = line.split(';')[0].strip()
-                        if ' ' in line:
-                            line = line.split(' ')[0]
-                        index = int(line[1:])
+                        index = int(main_part[1:])
                         if index not in result_colors:
                             result_colors += [index]
                         highest_result_color = max(highest_result_color, index)
