@@ -311,13 +311,17 @@ fix_config()
         check_link ${MOD_CONF}/mod/display_off.cfg translate/${ZLANG}/ff5m_display_off.cfg
         check_link ${MOD_CONF}/mod/ff5.cfg translate/${ZLANG}/ff5.cfg
         check_link ${MOD_CONF}/mod/mod.cfg translate/${ZLANG}/mod.cfg
+        check_link ${MOD_CONF}/mod/ff5m_config_native.cfg translate/${ZLANG}/ff5m_config_native.cfg
+        check_link ${MOD_CONF}/mod/ff5m_config_off.cfg translate/${ZLANG}/ff5m_config_off.cfg
     else
         check_link ${MOD_CONF}/mod/klipper13.cfg translate/${ZLANG}/klipper13_ad5x.cfg
         check_link ${MOD_CONF}/mod/display_off.cfg translate/${ZLANG}/ad5x_display_off.cfg
         check_link ${MOD_CONF}/mod/ad5x.cfg translate/${ZLANG}/ad5x.cfg
-        check_link ${MOD_CONF}/mod/base_mod.cfg translate/${ZLANG}/mod.cfg
+        check_link ${MOD_CONF}/mod/ad5x_config_native.cfg translate/${ZLANG}/ad5x_config_native.cfg
+        check_link ${MOD_CONF}/mod/ad5x_config_off.cfg translate/${ZLANG}/ad5x_config_off.cfg
     fi
-        check_link ${MOD_CONF}/mod/base_display_off.cfg translate/${ZLANG}/base_display_off.cfg
+    check_link ${MOD_CONF}/mod/base_mod.cfg translate/${ZLANG}/base_mod.cfg
+    check_link ${MOD_CONF}/mod/base_display_off.cfg translate/${ZLANG}/base_display_off.cfg
     check_link ${MOD_CONF}/mod/motion_sensor.cfg translate/${ZLANG}/motion_sensor.cfg
     check_link ${MOD_CONF}/mod/switch_sensor_display_off.cfg translate/${ZLANG}/switch_sensor_display_off.cfg
 
