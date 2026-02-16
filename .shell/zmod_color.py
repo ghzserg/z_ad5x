@@ -903,8 +903,9 @@ class zmod_color:
                 if len(line) == 0:
                     continue
                 if line[0] == 't':
+                    main_part = line.split(';', 1)[0].strip()
                     try:
-                        index = int(line[1:])
+                        index = int(main_part[1:])
                         if index not in result_colors:
                             result_colors += [index]
                         highest_result_color = max(highest_result_color, index)
@@ -1526,7 +1527,10 @@ class zmod_color:
             )
         gcmd.respond_raw("// action:prompt_button_group_end")
 
-        gcmd.respond_raw(f"// action:prompt_footer_button {self._t('cancel')}|RESPOND TYPE=command MSG=action:prompt_end")
+        if hide == 0:
+            gcmd.respond_raw(f"// action:prompt_footer_button {self._t('cancel')}|RESPOND TYPE=command MSG=action:prompt_end")
+        else:
+            gcmd.respond_raw(f"// action:prompt_footer_button OK|RESPOND TYPE=command MSG=action:prompt_end")
         gcmd.respond_raw("// action:prompt_show")
 
     def cmd_CHANGE_ZCOLOR(self, gcmd):
