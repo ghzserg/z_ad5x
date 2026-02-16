@@ -147,20 +147,24 @@ else
     [ ${ZLANG} != 'ru' ] && echo "Restoring the correct ZMOD language" || echo "Восстановление правильного языка ZMOD"
     check_link ${MOD_CONF}/mod/base.cfg translate/${ZLANG}/base.cfg &>/dev/null
     check_link ${MOD_CONF}/mod/client.cfg translate/${ZLANG}/client.cfg &>/dev/null
-    check_link ${MOD_CONF}/mod/klipper13_base.cfg translate/${ZLANG}/klipper13_base.cfg &>/dev/null
+    check_link ${MOD_CONF}/mod/base_klipper13.cfg translate/${ZLANG}/base_klipper13.cfg &>/dev/null
     if [ ${AD5X} -eq 0 ]; then
-        check_link ${MOD_CONF}/mod/klipper13.cfg translate/${ZLANG}/klipper13_ff5m.cfg &>/dev/null
-        check_link ${MOD_CONF}/mod/klipper11_base.cfg translate/${ZLANG}/klipper11_base.cfg &>/dev/null
+        check_link ${MOD_CONF}/mod/klipper13.cfg translate/${ZLANG}/ff5m_klipper13.cfg &>/dev/null
+        check_link ${MOD_CONF}/mod/base_klipper11.cfg translate/${ZLANG}/base_klipper11.cfg &>/dev/null
         grep -q 'Adventurer5MPro' /etc/os-release && check_link ${MOD_CONF}/mod/klipper11.cfg translate/${ZLANG}/klipper11_pro.cfg &>/dev/null || check_link ${MOD_CONF}/mod/klipper11.cfg translate/${ZLANG}/klipper11.cfg &>/dev/null
         check_link ${MOD_CONF}/mod/display_off.cfg translate/${ZLANG}/ff5m_display_off.cfg &>/dev/null
         check_link ${MOD_CONF}/mod/ff5.cfg translate/${ZLANG}/ff5.cfg &>/dev/null
         check_link ${MOD_CONF}/mod/mod.cfg translate/${ZLANG}/mod.cfg &>/dev/null
+        check_link ${MOD_CONF}/mod/ff5m_config_native.cfg translate/${ZLANG}/ff5m_config_native.cfg &>/dev/null
+        check_link ${MOD_CONF}/mod/ff5m_config_off.cfg translate/${ZLANG}/ff5m_config_off.cfg &>/dev/null
     else
-        check_link ${MOD_CONF}/mod/klipper13.cfg translate/${ZLANG}/klipper13_ad5x.cfg &>/dev/null
+        check_link ${MOD_CONF}/mod/klipper13.cfg translate/${ZLANG}/ad5x_klipper13.cfg &>/dev/null
         check_link ${MOD_CONF}/mod/display_off.cfg translate/${ZLANG}/ad5x_display_off.cfg &>/dev/null
         check_link ${MOD_CONF}/mod/ad5x.cfg translate/${ZLANG}/ad5x.cfg &>/dev/null
-        check_link ${MOD_CONF}/mod/base_mod.cfg translate/${ZLANG}/mod.cfg &>/dev/null
+        check_link ${MOD_CONF}/mod/ad5x_config_native.cfg translate/${ZLANG}/ad5x_config_native.cfg &>/dev/null
+        check_link ${MOD_CONF}/mod/ad5x_config_off.cfg translate/${ZLANG}/ad5x_config_off.cfg &>/dev/null
     fi
+    check_link ${MOD_CONF}/mod/base_mod.cfg translate/${ZLANG}/base_mod.cfg &>/dev/null
     check_link ${MOD_CONF}/mod/base_display_off.cfg translate/${ZLANG}/base_display_off.cfg &>/dev/null
     check_link ${MOD_CONF}/mod/motion_sensor.cfg translate/${ZLANG}/motion_sensor.cfg &>/dev/null
     check_link ${MOD_CONF}/mod/switch_sensor_display_off.cfg translate/${ZLANG}/switch_sensor_display_off.cfg &>/dev/null
