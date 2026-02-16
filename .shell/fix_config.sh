@@ -299,14 +299,14 @@ fix_config()
 
     check_link ${MOD_CONF}/mod/base.cfg translate/${ZLANG}/base.cfg
     check_link ${MOD_CONF}/mod/client.cfg translate/${ZLANG}/client.cfg
-    check_link ${MOD_CONF}/mod/klipper13_base.cfg translate/${ZLANG}/klipper13_base.cfg
+    check_link ${MOD_CONF}/mod/base_klipper13.cfg translate/${ZLANG}/base_klipper13.cfg
 
     [ -f ${MOD_CONF}/.theme/custom.css ] || cp -a ${MOD_CONF}/mod/.shell/.theme ${MOD_CONF}/mod_data/
     check_link ${MOD_CONF}/.theme mod_data/.theme
 
     if [ ${AD5X} -eq 0 ]; then
-        check_link ${MOD_CONF}/mod/klipper13.cfg translate/${ZLANG}/klipper13_ff5m.cfg
-        check_link ${MOD_CONF}/mod/klipper11_base.cfg translate/${ZLANG}/klipper11_base.cfg
+        check_link ${MOD_CONF}/mod/klipper13.cfg translate/${ZLANG}/ff5m_klipper13.cfg
+        check_link ${MOD_CONF}/mod/base_klipper11.cfg translate/${ZLANG}/base_klipper11.cfg
         grep -q '^MACHINE=Adventurer5MPro$' /opt/auto_run.sh && check_link ${MOD_CONF}/mod/klipper11.cfg translate/${ZLANG}/klipper11_pro.cfg || check_link ${MOD_CONF}/mod/klipper11.cfg translate/${ZLANG}/klipper11.cfg
         check_link ${MOD_CONF}/mod/display_off.cfg translate/${ZLANG}/ff5m_display_off.cfg
         check_link ${MOD_CONF}/mod/ff5.cfg translate/${ZLANG}/ff5.cfg
@@ -314,7 +314,7 @@ fix_config()
         check_link ${MOD_CONF}/mod/ff5m_config_native.cfg translate/${ZLANG}/ff5m_config_native.cfg
         check_link ${MOD_CONF}/mod/ff5m_config_off.cfg translate/${ZLANG}/ff5m_config_off.cfg
     else
-        check_link ${MOD_CONF}/mod/klipper13.cfg translate/${ZLANG}/klipper13_ad5x.cfg
+        check_link ${MOD_CONF}/mod/klipper13.cfg translate/${ZLANG}/ad5x_klipper13.cfg
         check_link ${MOD_CONF}/mod/display_off.cfg translate/${ZLANG}/ad5x_display_off.cfg
         check_link ${MOD_CONF}/mod/ad5x.cfg translate/${ZLANG}/ad5x.cfg
         check_link ${MOD_CONF}/mod/ad5x_config_native.cfg translate/${ZLANG}/ad5x_config_native.cfg
