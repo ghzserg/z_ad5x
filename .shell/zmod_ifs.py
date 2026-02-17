@@ -1,4 +1,4 @@
-# (C) 2025 ghzserg https://github.com/ghzserg/zmod/
+# (C) 2025-2026 ghzserg https://github.com/ghzserg/zmod/
 import json
 import os
 import serial
@@ -46,14 +46,15 @@ DEFAULT_FILAMENT_SETTINGS = {
     "filament_unload_after_cutting": 5,     # На сколько поднимать филамент ПОСЛЕ того как отрезали (по умолчанию 5)
     "filament_unload_after_drop": 3,        # Ретракт после сброса филамента (немного вытащить пруток из сопла, для предотвращения протечки,
                                             #   когда смена прутка уже прошла и сопло едет дальше печатать)
-    "filament_load_speed": 300,             # Скорость загрузки филамента (скорость вращения экструдера, 300 мм/м = 5 мм/c)
-    "filament_unload_speed": 1200,           # Скорость подъема  филамента (скорость вращения экструдера, 600 мм/м = 10 мм/c)
-    "filament_tube_length": 650,           # Длина полной загрузки/выгрузки филамента (длинна тефлоновой трубки от IFS до головы, полезно дял тех у кого не стоковые трубки)
+    "filament_extruder_speed": 300,         # Скорость работы экструдера (скорость вращения экструдера, 300 мм/м = 5 мм/c)
+    "filament_ifs_speed": 1200,             # Скорость IFS (скорость IFS без экструдера, 1200 мм/м = 20 мм/c)
+    "filament_tube_length": 1000,           # Длина полной загрузки/выгрузки филамента (длинна тефлоновой трубки от IFS до головы, полезно дял тех у кого не стоковые трубки)
     "filament_drop_length": 90,             # Длина сброса в какашник (дистанция прутка который будет выдавлен в какашник, то есть дистанция прочистки сопла
                                             #   от преведущего филамената и смешения цветов, полезно когда не используется башня для сброса смешанных цветов)
     "filament_drop_length_add": 90,         # Дополнительная длина сброса в какашник при смене типа филамента (смена разных материаалов, к примеру PETG на композитный PETG)
-    "nozzle_cleaning_length": 110,           # Длина прочистки сопла (дистанция на сколько вытаскивать пруток из экструдера
+    "nozzle_cleaning_length": 20,           # Длина прочистки сопла (дистанция на сколько вытаскивать пруток из экструдера
                                             #   (то есть на сколько милиметров доставать пруток из фидера, когда текущая катушка больше не используется)
+    "filament_unload_into_tube": 110,        # Сколько филамента извлекать из модуля 4 в 1, когда экструдер уже не помогает
     "filament_fan_speed": 102,              # Скорость работы вентилятора при сбросе через какашник (то есть сдувает подтеки из сопла, когда происходит очистка)
 
     "filament_autoinsert_empty_length": 600,# Сколько мм затягивать при автоматической вставке прутка, если экструдер пустой
@@ -389,11 +390,30 @@ class zmod_ifs:
             with open(TYPECONFIG, 'r') as f:
                 existing_file_data = json.load(f)
 
-            if 'default' in existing_file_data:
-                self.print_str('Filament.json already contains default section')
-                return
+            # Проверяем, содержит ли файл секцию 'default'
+            has_default = 'default' in existing_file_data
 
-            default_filament = DEFAULT_FILAMENT_SETTINGS.copy()
+            # Если файл содержит секцию 'default', проверяем наличие новых параметров
+            if has_default:
+                default_settings = existing_file_data['default']
+
+                # Проверяем наличие всех необходимых новых параметров
+                required_new_params = [
+                    'filament_extruder_speed',
+                    'filament_ifs_speed',
+                    'filament_unload_into_tube'
+                ]
+
+                all_new_params_exist = all(param in default_settings for param in required_new_params)
+
+                # Если все новые параметры уже существуют, выходим
+                if all_new_params_exist:
+                    self.print_str('Filament.json already contains required parameters')
+                    return
+
+                default_filament = default_settings
+            else:
+                default_filament = DEFAULT_FILAMENT_SETTINGS.copy()
 
             for key in default_filament:
                 value_frequency = {}
@@ -417,9 +437,41 @@ class zmod_ifs:
                 if default_filament[key] not in value_frequency or value_frequency[default_filament[key]] < highest_frequency:
                     default_filament[key] = next(iter(value_frequency.keys()))
 
+            # 1. filament_load_speed -> filament_extruder_speed
+            if 'filament_load_speed' in default_filament:
+                default_filament['filament_extruder_speed'] = default_filament['filament_load_speed']
+                del default_filament['filament_load_speed']
+
+            # 2. filament_unload_speed -> filament_ifs_speed * 2
+            if 'filament_unload_speed' in default_filament:
+                default_filament['filament_ifs_speed'] = default_filament['filament_unload_speed'] * 2
+                del default_filament['filament_unload_speed']
+
+            # 3. filament_unload_into_tube  -> nozzle_cleaning_length * 1.68 - 60
+            default_filament['filament_unload_into_tube'] = int(default_filament['nozzle_cleaning_length'] * 1.68) - 60
+
+            # 4. nozzle_cleaning_length = 60
+            default_filament['nozzle_cleaning_length'] = 60
+
             data = {'default': default_filament}
             for filament_name in existing_file_data:
+                if filament_name == 'default':
+                    continue
+
                 new_filament = existing_file_data[filament_name].copy()
+
+                # Преобразуем старые параметры в новые для каждого профиля
+                if 'filament_load_speed' in new_filament:
+                    new_filament['filament_extruder_speed'] = new_filament['filament_load_speed']
+                    del new_filament['filament_load_speed']
+
+                if 'filament_unload_speed' in new_filament:
+                    new_filament['filament_ifs_speed'] = new_filament['filament_unload_speed'] * 2
+                    del new_filament['filament_unload_speed']
+
+                if 'nozzle_cleaning_length' in new_filament:
+                    new_filament['filament_unload_into_tube'] = int(new_filament['nozzle_cleaning_length'] * 1.68) - 60
+                    del new_filament['nozzle_cleaning_length']
 
                 for key in NO_EXCLUDE_FIELDS:
                     if key not in new_filament:
@@ -490,12 +542,9 @@ class zmod_ifs:
         changed = False
 
         try:
+            self.upgrade_filament_json()
             with open(TYPECONFIG, 'r') as f:
                 data = json.load(f)
-            if 'default' not in data:
-                self.upgrade_filament_json()
-                with open(TYPECONFIG, 'r') as f:
-                    data = json.load(f)
         except (FileNotFoundError, json.JSONDecodeError):
             data = {'default': DEFAULT_FILAMENT_SETTINGS.copy()}
             changed = True
@@ -654,8 +703,8 @@ class zmod_ifs:
             f"TEMP={config['temp']} "
             f"NEED_STOP={need_stop} "
             f"FILAMENT_TYPE={config['filament_type']} "
-            f"FILAMENT_UNLOAD_SPEED={config['filament_unload_speed']} "
-            f"FILAMENT_LOAD_SPEED={config['filament_load_speed']} "
+            f"FILAMENT_IFS_SPEED={config['filament_ifs_speed']} "
+            f"FILAMENT_EXTRUDER_SPEED={config['filament_extruder_speed']} "
             f"FILAMENT_UNLOAD_BEFORE_CUTTING={config['filament_unload_before_cutting']} "
             f"FILAMENT_UNLOAD_AFTER_CUTTING={config['filament_unload_after_cutting']} "
             f"FILAMENT_UNLOAD_AFTER_DROP={config['filament_unload_after_drop']} "
@@ -663,6 +712,7 @@ class zmod_ifs:
             f"FILAMENT_DROP_LENGTH={config['filament_drop_length']} "
             f"FILAMENT_FAN_SPEED={config['filament_fan_speed']} "
             f"NOZZLE_CLEANING_LENGTH={config['nozzle_cleaning_length']} "
+            f"FILAMENT_UNLOAD_INTO_TUBE={config['filament_unload_into_tube']} "
         )
 
     # Очистить пруток от IFS до экструдера
@@ -677,8 +727,8 @@ class zmod_ifs:
                 f"_PURGE_PRUTOK_IFS "
                 f"PRUTOK={prutok} "
                 f"FILAMENT_TYPE={config['filament_type']} "
-                f"FILAMENT_UNLOAD_SPEED={config['filament_unload_speed']} "
-                f"FILAMENT_LOAD_SPEED={config['filament_load_speed']} "
+                f"FILAMENT_IFS_SPEED={config['filament_ifs_speed']} "
+                f"FILAMENT_EXTRUDER_SPEED={config['filament_extruder_speed']} "
                 f"FILAMENT_UNLOAD_BEFORE_CUTTING={config['filament_unload_before_cutting']} "
                 f"FILAMENT_UNLOAD_AFTER_CUTTING={config['filament_unload_after_cutting']} "
                 f"FILAMENT_UNLOAD_AFTER_DROP={config['filament_unload_after_drop']} "
@@ -686,6 +736,7 @@ class zmod_ifs:
                 f"FILAMENT_DROP_LENGTH={config['filament_drop_length']} "
                 f"FILAMENT_FAN_SPEED={config['filament_fan_speed']} "
                 f"NOZZLE_CLEANING_LENGTH={config['nozzle_cleaning_length']} "
+                f"FILAMENT_UNLOAD_INTO_TUBE={config['filament_unload_into_tube']} "
             )
             cycle_count += 1
         self.gcode.run_script_from_command("SET_GCODE_VARIABLE MACRO=_A_CHANGE_FILAMENT VARIABLE=purge VALUE=0")
@@ -711,8 +762,8 @@ class zmod_ifs:
             f"NEED_STOP={need_stop} "
             f"TRASH={trash} "
             f"FILAMENT_TYPE={config['filament_type']} "
-            f"FILAMENT_UNLOAD_SPEED={config['filament_unload_speed']} "
-            f"FILAMENT_LOAD_SPEED={config['filament_load_speed']} "
+            f"FILAMENT_IFS_SPEED={config['filament_ifs_speed']} "
+            f"FILAMENT_EXTRUDER_SPEED={config['filament_extruder_speed']} "
             f"FILAMENT_UNLOAD_BEFORE_CUTTING={config['filament_unload_before_cutting']} "
             f"FILAMENT_UNLOAD_AFTER_CUTTING={config['filament_unload_after_cutting']} "
             f"FILAMENT_UNLOAD_AFTER_DROP={config['filament_unload_after_drop']} "
@@ -721,6 +772,7 @@ class zmod_ifs:
             f"FILAMENT_DROP_LENGTH_ADD={filament_drop_length_add} "
             f"FILAMENT_FAN_SPEED={config['filament_fan_speed']} "
             f"NOZZLE_CLEANING_LENGTH={config['nozzle_cleaning_length']} "
+            f"FILAMENT_UNLOAD_INTO_TUBE={config['filament_unload_into_tube']} "
         )
 
     def print_result(self, ret_code, values, prutok, info=True):
@@ -1082,8 +1134,8 @@ class zmod_ifs:
             f"NEED_TRASH={need_trash} "
             f"TEMP={config['temp']} "
             f"FILAMENT_TYPE={config['filament_type']} "
-            f"FILAMENT_UNLOAD_SPEED={config['filament_unload_speed']} "
-            f"FILAMENT_LOAD_SPEED={config['filament_load_speed']} "
+            f"FILAMENT_IFS_SPEED={config['filament_ifs_speed']} "
+            f"FILAMENT_EXTRUDER_SPEED={config['filament_extruder_speed']} "
             f"FILAMENT_UNLOAD_BEFORE_CUTTING={config['filament_unload_before_cutting']} "
             f"FILAMENT_UNLOAD_AFTER_CUTTING={config['filament_unload_after_cutting']} "
             f"FILAMENT_UNLOAD_AFTER_DROP={config['filament_unload_after_drop']} "
@@ -1091,6 +1143,7 @@ class zmod_ifs:
             f"FILAMENT_DROP_LENGTH={config['filament_drop_length']} "
             f"FILAMENT_FAN_SPEED={config['filament_fan_speed']} "
             f"NOZZLE_CLEANING_LENGTH={config['nozzle_cleaning_length']} "
+            f"FILAMENT_UNLOAD_INTO_TUBE={config['filament_unload_into_tube']} "
         )
 
         if self.get_extruder_sensor():
