@@ -540,12 +540,9 @@ class zmod_ifs:
         changed = False
 
         try:
+            self.upgrade_filament_json()
             with open(TYPECONFIG, 'r') as f:
                 data = json.load(f)
-            if 'default' not in data:
-                self.upgrade_filament_json()
-                with open(TYPECONFIG, 'r') as f:
-                    data = json.load(f)
         except (FileNotFoundError, json.JSONDecodeError):
             data = {'default': DEFAULT_FILAMENT_SETTINGS.copy()}
             changed = True
