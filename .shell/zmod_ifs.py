@@ -1112,11 +1112,12 @@ class zmod_ifs:
 
         temp = int(gcmd.get_float('TEMP', 0.0))
         need_trash = gcmd.get_int('NEED_TRASH', 0)
+        bypass_temperature_check = gcmd.get_int('BYPASS_TEMPERATURE_CHECK', 0)
 
         prutok = self.get_current_channel_from_config()
         config = self.get_prutok_config(prutok)
 
-        if temp < int(config['temp']):
+        if temp < int(config['temp']) and bypass_temperature_check == 0:
             gcmd.respond_info(f"Extruder Temp: {config['temp']}")
             self.gcode.run_script_from_command(f"M104 S{config['temp']}")
             self.gcode.run_script_from_command(f"TEMPERATURE_WAIT SENSOR=extruder MINIMUM={config['temp']-2} MAXIMUM={config['temp']+4}")
