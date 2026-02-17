@@ -713,7 +713,7 @@ class zmod_ifs:
             f"FILAMENT_DROP_LENGTH={config['filament_drop_length']} "
             f"FILAMENT_FAN_SPEED={config['filament_fan_speed']} "
             f"NOZZLE_CLEANING_LENGTH={config['nozzle_cleaning_length']} "
-            f"FILAMENT_UNLOAD_INTO_TUBE={config['filament_unload_into_tube'] "
+            f"FILAMENT_UNLOAD_INTO_TUBE={config['filament_unload_into_tube']} "
         )
 
     # Очистить пруток от IFS до экструдера
@@ -737,7 +737,7 @@ class zmod_ifs:
                 f"FILAMENT_DROP_LENGTH={config['filament_drop_length']} "
                 f"FILAMENT_FAN_SPEED={config['filament_fan_speed']} "
                 f"NOZZLE_CLEANING_LENGTH={config['nozzle_cleaning_length']} "
-                f"FILAMENT_UNLOAD_INTO_TUBE={config['filament_unload_into_tube'] "
+                f"FILAMENT_UNLOAD_INTO_TUBE={config['filament_unload_into_tube']} "
             )
             cycle_count += 1
         self.gcode.run_script_from_command("SET_GCODE_VARIABLE MACRO=_A_CHANGE_FILAMENT VARIABLE=purge VALUE=0")
@@ -773,7 +773,7 @@ class zmod_ifs:
             f"FILAMENT_DROP_LENGTH_ADD={filament_drop_length_add} "
             f"FILAMENT_FAN_SPEED={config['filament_fan_speed']} "
             f"NOZZLE_CLEANING_LENGTH={config['nozzle_cleaning_length']} "
-            f"FILAMENT_UNLOAD_INTO_TUBE={config['filament_unload_into_tube'] "
+            f"FILAMENT_UNLOAD_INTO_TUBE={config['filament_unload_into_tube']} "
         )
 
     def print_result(self, ret_code, values, prutok, info=True):
@@ -1144,7 +1144,7 @@ class zmod_ifs:
             f"FILAMENT_DROP_LENGTH={config['filament_drop_length']} "
             f"FILAMENT_FAN_SPEED={config['filament_fan_speed']} "
             f"NOZZLE_CLEANING_LENGTH={config['nozzle_cleaning_length']} "
-            f"FILAMENT_UNLOAD_INTO_TUBE={config['filament_unload_into_tube'] "
+            f"FILAMENT_UNLOAD_INTO_TUBE={config['filament_unload_into_tube']} "
         )
 
         if self.get_extruder_sensor():
