@@ -411,7 +411,9 @@ class zmod_ifs:
                     self.print_str('Filament.json already contains required parameters')
                     return
 
-            default_filament = DEFAULT_FILAMENT_SETTINGS.copy()
+                default_filament = default_settings
+            else:
+                default_filament = DEFAULT_FILAMENT_SETTINGS.copy()
 
             for key in default_filament:
                 value_frequency = {}
