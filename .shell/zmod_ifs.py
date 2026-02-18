@@ -408,8 +408,7 @@ class zmod_ifs:
 
                 # Если все новые параметры уже существуют, выходим
                 if all_new_params_exist:
-                    self.print_str('Filament.json already contains required parameters')
-                    return
+                    return existing_file_data
 
                 default_filament = default_settings
             else:
@@ -479,12 +478,7 @@ class zmod_ifs:
 
                 data[filament_name] = new_filament
 
-            self.save_filament_json(data, True)
-
-            if self.lang == 'ru':
-                self.print_str('Filament.json: Секция по умолчанию создана успешно')
-            else:
-                self.print_str('Filament.json: Default section generated successfully')
+            return self.save_filament_json(data, True)
 
         except (FileNotFoundError, json.JSONDecodeError):
             if self.lang == 'ru':
@@ -532,6 +526,7 @@ class zmod_ifs:
 
         with open(TYPECONFIG, 'w') as f:
             json.dump(new_data, f, indent=4)
+            return new_data
 
     # Получить конфиг прутка по номеру прутка
     def get_prutok_config(self, prutok):
@@ -542,9 +537,7 @@ class zmod_ifs:
         changed = False
 
         try:
-            self.upgrade_filament_json()
-            with open(TYPECONFIG, 'r') as f:
-                data = json.load(f)
+            data = self.upgrade_filament_json()
         except (FileNotFoundError, json.JSONDecodeError):
             data = {'default': DEFAULT_FILAMENT_SETTINGS.copy()}
             changed = True
