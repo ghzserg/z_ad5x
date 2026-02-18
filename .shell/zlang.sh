@@ -24,4 +24,5 @@ echo "Use lang: ${ZLANG}"
 sync
 sleep 5
 sync
-/opt/config/mod/.shell/zremote.sh reboot
+
+echo "REBOOT" >/tmp/printer
