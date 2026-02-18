@@ -103,6 +103,8 @@ class zmod_ifs:
             return
         self.ifs_data = IfsData()
 
+        self.filament_json_validated = False
+
         self.zmod_color.valid_types = list(self.temp_defaults.keys()) + ['?']
 
         # Синхронизация потоков
@@ -387,6 +389,9 @@ class zmod_ifs:
     # https://github.com/ninjamida
     def upgrade_filament_json(self):
         try:
+            if self.filament_json_validated:
+                return
+
             with open(TYPECONFIG, 'r') as f:
                 existing_file_data = json.load(f)
 
@@ -408,6 +413,7 @@ class zmod_ifs:
 
                 # Если все новые параметры уже существуют, выходим
                 if all_new_params_exist:
+                    self.filament_json_validated = True
                     self.print_str('Filament.json already contains required parameters')
                     return
 
