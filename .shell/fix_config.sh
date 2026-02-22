@@ -85,6 +85,7 @@ restore_base()
     fi
     grep -q receive_time ${KLIPPER_DIR}/klippy/extras/buttons.py && cp ${MOD_CONF}/mod/.shell/buttons.py.orig ${KLIPPER_DIR}/klippy/extras/buttons.py
     rm -f ${KLIPPER_DIR}/klippy/extras/zmod.py
+    rm -f ${KLIPPER_DIR}/klippy/extras/ens160.py
     [ ${AD5X} -eq 1 ] && rm -f ${KLIPPER_DIR}/klippy/extras/zmod_color.py
     [ ${AD5X} -eq 1 ] && rm -f ${KLIPPER_DIR}/klippy/extras/zmod_tenz.py
     [ ${AD5X} -eq 1 ] && rm -f ${KLIPPER_DIR}/klippy/extras/zmod_ifs.py
@@ -447,6 +448,7 @@ unset LD_PRELOAD
     fi
 
     check_link ${KLIPPER_DIR}/klippy/extras/zmod.py ${MOD_CONF}/mod/.shell/zmod.py
+    check_link ${KLIPPER_DIR}/klippy/extras/ens160.py ${MOD_CONF}/mod/.shell/ens160.py
     [ ${AD5X} -eq 1 ] && check_link ${KLIPPER_DIR}/klippy/extras/zmod_color.py ${MOD_CONF}/mod/.shell/zmod_color.py
     [ ${AD5X} -eq 1 ] && check_link ${KLIPPER_DIR}/klippy/extras/zmod_tenz.py ${MOD_CONF}/mod/.shell/zmod_tenz.py
     [ ${AD5X} -eq 1 ] && check_link ${KLIPPER_DIR}/klippy/extras/zmod_ifs.py ${MOD_CONF}/mod/.shell/zmod_ifs.py
