@@ -120,6 +120,15 @@ prepare_chroot()
     [ -L /etc/init.d/S99camera ] || ln -s /opt/config/mod/.shell/root/S99camera /etc/init.d/
     [ -L /etc/init.d/S60klipper ] || ln -s /opt/config/mod/.shell/root/S60klipper /etc/init.d/
 
+    [ -d /srv/helixscreen/ ] || mkdir -p /srv/helixscreen/
+    if ! [ -f /srv/helixscreen/release_info.json ]; then
+        if [ ${AD5X} -eq 0 ]; then
+            echo '{"project_name":"helixscreen","project_owner":"ghzserg","version":"v0.0.1","asset_name":"helixscreen-ad5m.zip"}' >/srv/helixscreen/release_info.json
+        else
+            echo '{"project_name":"helixscreen","project_owner":"ghzserg","version":"v0.0.1","asset_name":"helixscreen-ad5x.zip"}' >/srv/helixscreen/release_info.json
+        fi
+    fi
+
     check_link /root/klipper-env/klippy /opt/config/base/klipper/klippy
     if [ -f /opt/config/base/klipper/klippy/klippy.py ]; then
         check_link ${MOD_CONF}/base/klipper/klippy/extras/gcode_shell_command.py ${MOD_CONF}/mod/.shell/gcode_shell_command.py
