@@ -72,6 +72,11 @@ restart() {
     start
 }
 
+if grep -q "helix = 1" /opt/config/mod_data/variables.cfg && [ -f /etc/init.d/S80helixscreen ]; then
+    /etc/init.d/S80helixscreen "$1"
+    exit
+fi
+
 case "$1" in
     start)
         start &> /opt/config/mod_data/log/guppyscreen_start.log
