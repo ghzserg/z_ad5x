@@ -61,8 +61,8 @@ class ZmodIfsSwitchSensor:
 
     def get_filament(self):
         timestamp, value = self.query_adc.adc["temperature_sensor filamentValue"].get_last_value()
-        if value > 1e8 and timestamp < 1.0:
-            timestamp, value = value, timestamp
+        if timestamp < 5:
+            value = timestamp
 
         return value >= 0.72 if value > 0.3 else True
 

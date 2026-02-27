@@ -339,8 +339,8 @@ class zmod_ifs:
 
     def get_extruder_sensor(self):
         timestamp, value = self.query_adc.adc["temperature_sensor filamentValue"].get_last_value()
-        if value > 1e8 and timestamp < 1.0:
-            timestamp, value = value, timestamp
+        if timestamp < 5:
+            value = timestamp
 
         result = True
         if value > 0.3:
