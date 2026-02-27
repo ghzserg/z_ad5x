@@ -123,10 +123,12 @@ prepare_chroot()
     [ -d /srv/helixscreen/ ] || mkdir -p /srv/helixscreen/
     if ! [ -f /srv/helixscreen/release_info.json ]; then
         if [ ${AD5X} -eq 0 ]; then
-            echo '{"project_name":"helixscreen","project_owner":"ghzserg","version":"v0.0.1","asset_name":"helixscreen-ad5m.zip"}' >/srv/helixscreen/release_info.json
+            echo '{"project_name":"helixscreen","project_owner":"prestonbrown","version":"v0.0.1","asset_name":"helixscreen-ad5m.zip"}' >/srv/helixscreen/release_info.json
         else
-            echo '{"project_name":"helixscreen","project_owner":"ghzserg","version":"v0.0.1","asset_name":"helixscreen-ad5x.zip"}' >/srv/helixscreen/release_info.json
+            echo '{"project_name":"helixscreen","project_owner":"prestonbrown","version":"v0.0.1","asset_name":"helixscreen-ad5x.zip"}' >/srv/helixscreen/release_info.json
         fi
+    else
+        sed -i 's/ghzserg/prestonbrown/' /srv/helixscreen/release_info.json
     fi
 
     check_link /root/klipper-env/klippy /opt/config/base/klipper/klippy
