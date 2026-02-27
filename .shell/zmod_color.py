@@ -653,7 +653,10 @@ class zmod_color:
         return 0
 
     def get_extruder_sensor(self):
-        value, timestamp = self.query_adc.adc["temperature_sensor filamentValue"].get_last_value()
+        timestamp, value = self.query_adc.adc["temperature_sensor filamentValue"].get_last_value()
+        if value > 1e8 and timestamp < 1.0:
+            timestamp, value = value, timestamp
+
         result = True
         if value > 0.3:
             result = (value >= 0.72)
