@@ -19,9 +19,9 @@ start_zlink()
     mv ${MOD_CONF}/mod_data/log/zlink.log   ${MOD_CONF}/mod_data/log/zlink.1.log 2>/dev/null
 
     if [ -f /ZMOD ]; then
-        /opt/config/mod/.shell/zlink 2>/dev/null
+        /opt/config/mod/.shell/root/zlink 2>/dev/null
     else
-        chroot ${MOD} /opt/config/mod/.shell/zlink 2>/dev/null
+        chroot ${MOD} /opt/config/mod/.shell/root/zlink 2>/dev/null
     fi
 }
 
