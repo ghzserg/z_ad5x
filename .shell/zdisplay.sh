@@ -38,7 +38,11 @@ wifi_on()
 if [ $1 = "test" ] && grep -q display_off.cfg /opt/config/printer.cfg; then
     killall firmwareExe
 
-    grep -q "guppy = 1" /opt/config/mod_data/variables.cfg && /opt/config/mod/.shell/zguppy.sh up || xzcat /opt/config/mod/.shell/screen_off.raw.xz > /dev/fb0
+    if grep -q "guppy = 1" /opt/config/mod_data/variables.cfg || grep -q "helix = 1" /opt/config/mod_data/variables.cfg ; then
+        /opt/config/mod/.shell/zguppy.sh up
+    else
+        xzcat /opt/config/mod/.shell/screen_off.raw.xz > /dev/fb0
+    fi
     echo '/opt/config/mod/.shell/automount.sh' > /proc/sys/kernel/hotplug
     wifi_off
 fi
@@ -50,7 +54,7 @@ if [ $1 = "on" ]; then
     /opt/config/mod/.shell/zremote.sh reboot
 fi
 
-if [ $1 = "off" ] || [ $1 = "guppy" ]; then
+if [ $1 = "off" ] || [ $1 = "guppy" ] || [ $1 = "helix" ]; then
     sed -i 's|\[include ./mod/mod.cfg\]|\[include ./mod/display_off.cfg\]|' /opt/config/printer.cfg
     sync
     killall firmwareExe guppyscreen console_log
