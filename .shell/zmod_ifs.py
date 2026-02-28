@@ -389,105 +389,105 @@ class zmod_ifs:
 
     # https://github.com/ninjamida
     def upgrade_filament_json(self):
+        existing_file_data = {}
         try:
             with open(TYPECONFIG, 'r') as f:
                 existing_file_data = json.load(f)
-
-            # Проверяем, содержит ли файл секцию 'default'
-            has_default = 'default' in existing_file_data
-
-            # Если файл содержит секцию 'default', проверяем наличие новых параметров
-            if has_default:
-                default_settings = existing_file_data['default']
-
-                # Проверяем наличие всех необходимых новых параметров
-                required_new_params = [
-                    'filament_extruder_speed',
-                    'filament_ifs_speed',
-                    'filament_unload_into_tube'
-                ]
-
-                all_new_params_exist = all(param in default_settings for param in required_new_params)
-
-                # Если все новые параметры уже существуют, выходим
-                if all_new_params_exist:
-                    return existing_file_data
-
-                default_filament = default_settings
-            else:
-                default_filament = DEFAULT_FILAMENT_SETTINGS.copy()
-
-            for key in default_filament:
-                value_frequency = {}
-                for filament_name in existing_file_data:
-                    if key not in existing_file_data[filament_name]:
-                        continue
-
-                    this_value = existing_file_data[filament_name][key]
-
-                    if this_value in value_frequency:
-                        value_frequency[this_value] += 1
-                    else:
-                        value_frequency[this_value] = 1
-
-                if len(value_frequency) == 0:
-                    continue
-
-                value_frequency = dict(sorted(value_frequency.items(), key=lambda item: item[1], reverse=True))
-                highest_frequency = next(iter(value_frequency.values()))
-
-                if default_filament[key] not in value_frequency or value_frequency[default_filament[key]] < highest_frequency:
-                    default_filament[key] = next(iter(value_frequency.keys()))
-
-            # 1. filament_load_speed -> filament_extruder_speed
-            if 'filament_load_speed' in default_filament:
-                default_filament['filament_extruder_speed'] = default_filament['filament_load_speed']
-                del default_filament['filament_load_speed']
-
-            # 2. filament_unload_speed -> filament_ifs_speed * 2
-            if 'filament_unload_speed' in default_filament:
-                default_filament['filament_ifs_speed'] = default_filament['filament_unload_speed'] * 2
-                del default_filament['filament_unload_speed']
-
-            # 3. filament_unload_into_tube  -> nozzle_cleaning_length * 1.68 - 60
-            default_filament['filament_unload_into_tube'] = int(default_filament['nozzle_cleaning_length'] * 1.68) - 60
-
-            # 4. nozzle_cleaning_length = 60
-            default_filament['nozzle_cleaning_length'] = 60
-
-            data = {'default': default_filament}
-            for filament_name in existing_file_data:
-                if filament_name == 'default':
-                    continue
-
-                new_filament = existing_file_data[filament_name].copy()
-
-                # Преобразуем старые параметры в новые для каждого профиля
-                if 'filament_load_speed' in new_filament:
-                    new_filament['filament_extruder_speed'] = new_filament['filament_load_speed']
-                    del new_filament['filament_load_speed']
-
-                if 'filament_unload_speed' in new_filament:
-                    new_filament['filament_ifs_speed'] = new_filament['filament_unload_speed'] * 2
-                    del new_filament['filament_unload_speed']
-
-                if 'nozzle_cleaning_length' in new_filament:
-                    new_filament['filament_unload_into_tube'] = int(new_filament['nozzle_cleaning_length'] * 1.68) - 60
-                    del new_filament['nozzle_cleaning_length']
-
-                for key in NO_EXCLUDE_FIELDS:
-                    if key not in new_filament:
-                        new_filament[key] = default_filament[key]
-
-                data[filament_name] = new_filament
-
-            return self.save_filament_json(data, True)
-
         except (FileNotFoundError, json.JSONDecodeError):
             if self.lang == 'ru':
                 self.print_str('Filament.json: Файл не найден')
             else:
                 self.print_str('Filament.json not found')
+
+        # Проверяем, содержит ли файл секцию 'default'
+        has_default = 'default' in existing_file_data
+
+        # Если файл содержит секцию 'default', проверяем наличие новых параметров
+        if has_default:
+            default_settings = existing_file_data['default']
+
+            # Проверяем наличие всех необходимых новых параметров
+            required_new_params = [
+                'filament_extruder_speed',
+                'filament_ifs_speed',
+                'filament_unload_into_tube'
+            ]
+
+            all_new_params_exist = all(param in default_settings for param in required_new_params)
+
+            # Если все новые параметры уже существуют, выходим
+            if all_new_params_exist:
+                return existing_file_data
+
+            default_filament = default_settings
+        else:
+            default_filament = DEFAULT_FILAMENT_SETTINGS.copy()
+
+        for key in default_filament:
+            value_frequency = {}
+            for filament_name in existing_file_data:
+                if key not in existing_file_data[filament_name]:
+                    continue
+
+                this_value = existing_file_data[filament_name][key]
+                if this_value in value_frequency:
+                    value_frequency[this_value] += 1
+                else:
+                    value_frequency[this_value] = 1
+
+            if len(value_frequency) == 0:
+                continue
+
+            value_frequency = dict(sorted(value_frequency.items(), key=lambda item: item[1], reverse=True))
+            highest_frequency = next(iter(value_frequency.values()))
+
+            if default_filament[key] not in value_frequency or value_frequency[default_filament[key]] < highest_frequency:
+                default_filament[key] = next(iter(value_frequency.keys()))
+
+        # 1. filament_load_speed -> filament_extruder_speed
+        if 'filament_load_speed' in default_filament:
+            default_filament['filament_extruder_speed'] = default_filament['filament_load_speed']
+            del default_filament['filament_load_speed']
+
+        # 2. filament_unload_speed -> filament_ifs_speed * 2
+        if 'filament_unload_speed' in default_filament:
+            default_filament['filament_ifs_speed'] = default_filament['filament_unload_speed'] * 2
+            del default_filament['filament_unload_speed']
+
+        # 3. filament_unload_into_tube  -> nozzle_cleaning_length * 1.68 - 60
+        default_filament['filament_unload_into_tube'] = int(default_filament['nozzle_cleaning_length'] * 1.68) - 60
+
+        # 4. nozzle_cleaning_length = 60
+        default_filament['nozzle_cleaning_length'] = 60
+
+        data = {'default': default_filament}
+        for filament_name in existing_file_data:
+            if filament_name == 'default':
+                continue
+
+            new_filament = existing_file_data[filament_name].copy()
+
+            # Преобразуем старые параметры в новые для каждого профиля
+            if 'filament_load_speed' in new_filament:
+                new_filament['filament_extruder_speed'] = new_filament['filament_load_speed']
+                del new_filament['filament_load_speed']
+
+            if 'filament_unload_speed' in new_filament:
+                new_filament['filament_ifs_speed'] = new_filament['filament_unload_speed'] * 2
+                del new_filament['filament_unload_speed']
+
+            if 'nozzle_cleaning_length' in new_filament:
+                new_filament['filament_unload_into_tube'] = int(new_filament['nozzle_cleaning_length'] * 1.68) - 60
+                del new_filament['nozzle_cleaning_length']
+
+            for key in NO_EXCLUDE_FIELDS:
+                if key not in new_filament:
+                    new_filament[key] = default_filament[key]
+
+            data[filament_name] = new_filament
+
+        return self.save_filament_json(data, True)
+
 
     # https://github.com/ninjamida
     def save_filament_json(self, data, cleanup=False):
