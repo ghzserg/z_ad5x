@@ -105,7 +105,7 @@ prepare_chroot()
     [ ${AD5X} -eq 0 ] && mv /tmp/localtime /etc/localtime
 
     if [ ${AD5X} -eq 1 ]; then
-        [ -f /opt/config/mod_data/filament.json ] || echo "" >/opt/config/mod_data/filament.json
+        [ -f /opt/config/mod_data/filament.json ] || echo "{}" >/opt/config/mod_data/filament.json
     fi
 
     mv /tmp/pointercal /etc/pointercal
