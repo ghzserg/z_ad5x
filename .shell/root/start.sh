@@ -104,12 +104,18 @@ prepare_chroot()
     echo ZMOD >/ZMOD
     [ ${AD5X} -eq 0 ] && mv /tmp/localtime /etc/localtime
 
+    if [ ${AD5X} -eq 1 ]; then
+        [ -f /opt/config/mod/mod_data/filament.json ] || echo "" >/opt/config/mod/mod_data/filament.json
+    fi
+
     mv /tmp/pointercal /etc/pointercal
     mv /tmp/ts.conf /etc/ts.conf
 
     [ -d /root/guppyscreen ] || mkdir -p /root/guppyscreen
     rm -f /root/guppyscreen/guppyscreen
     cp /opt/config/mod/.shell/root/guppyscreen /root/guppyscreen/guppyscreen
+
+    [ -d /var/run/ ] || mkdir -p /var/run/
 
     [ -L /root/printer_data/scripts ] || ln -s /opt/config/mod/.shell /root/printer_data/scripts
 
@@ -153,12 +159,12 @@ prepare_chroot()
     fi
 
     check_link /root/moonraker-env/moonraker /opt/config/base/moonraker
+    check_link /etc/init.d/S80helixscreen /opt/config/mod/.shell/root/S80helixscreen
+    check_link /etc/init.d/S80guppyscreen /opt/config/mod/.shell/root/S80guppyscreen
+    check_link /etc/init.d/S65moonraker /opt/config/mod/.shell/root/S65moonraker
+    check_link /etc/init.d/S70httpd /opt/config/mod/.shell/root/S70httpd
 
     [ -L /etc/init.d/S35tslib ] && rm -f /etc/init.d/S35tslib
-    [ -L /etc/init.d/S80guppyscreen ] || ln -s /opt/config/mod/.shell/root/S80guppyscreen /etc/init.d/
-
-    [ -L /etc/init.d/S65moonraker ] || ln -s /opt/config/mod/.shell/root/S65moonraker /etc/init.d/
-    [ -L /etc/init.d/S70httpd ] || ln -s /opt/config/mod/.shell/root/S70httpd /etc/init.d/
 
     [ -L /usr/lib/python3.12/site-packages/mido ] || ln -s /opt/config/mod/.shell/root/mido/ /usr/lib/python3.12/site-packages/
     [ -L /usr/lib/python3.12/site-packages/mido-1.3.3.dist-info ] || ln -s /opt/config/mod/.shell/root/mido-1.3.3.dist-info/ /usr/lib/python3.12/site-packages/
