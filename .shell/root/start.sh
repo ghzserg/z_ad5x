@@ -111,6 +111,8 @@ prepare_chroot()
     rm -f /root/guppyscreen/guppyscreen
     cp /opt/config/mod/.shell/root/guppyscreen /root/guppyscreen/guppyscreen
 
+    [ -d /var/run/ ] || mkdir -p /var/run/
+
     [ -L /root/printer_data/scripts ] || ln -s /opt/config/mod/.shell /root/printer_data/scripts
 
     [ -d /etc/init.d/ ] || mkdir -p /etc/init.d/
@@ -153,12 +155,12 @@ prepare_chroot()
     fi
 
     check_link /root/moonraker-env/moonraker /opt/config/base/moonraker
+    check_link /etc/init.d/S80helixscreen /opt/config/mod/.shell/root/S80guppyscreen/S80helixscreen
+    check_link /etc/init.d/S80guppyscreen /opt/config/mod/.shell/root/S80guppyscreen/S80guppyscreen
+    check_link /etc/init.d/S65moonraker /opt/config/mod/.shell/root/S80guppyscreen/S65moonraker
+    check_link /etc/init.d/S70httpd /opt/config/mod/.shell/root/S80guppyscreen/S70httpd
 
     [ -L /etc/init.d/S35tslib ] && rm -f /etc/init.d/S35tslib
-    [ -L /etc/init.d/S80guppyscreen ] || ln -s /opt/config/mod/.shell/root/S80guppyscreen /etc/init.d/
-
-    [ -L /etc/init.d/S65moonraker ] || ln -s /opt/config/mod/.shell/root/S65moonraker /etc/init.d/
-    [ -L /etc/init.d/S70httpd ] || ln -s /opt/config/mod/.shell/root/S70httpd /etc/init.d/
 
     [ -L /usr/lib/python3.12/site-packages/mido ] || ln -s /opt/config/mod/.shell/root/mido/ /usr/lib/python3.12/site-packages/
     [ -L /usr/lib/python3.12/site-packages/mido-1.3.3.dist-info ] || ln -s /opt/config/mod/.shell/root/mido-1.3.3.dist-info/ /usr/lib/python3.12/site-packages/
