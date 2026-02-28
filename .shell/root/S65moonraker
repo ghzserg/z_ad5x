@@ -15,6 +15,7 @@ FNAME="/opt/config/mod/fluidd.sql"
 [ ${ZLANG} != 'ru' ] && FNAME="/opt/config/mod/fluidd_en.sql"
 
 start() {
+    grep -q helixscreen /root/printer_data/moonraker.asvc || echo "helixscreen" >>/root/printer_data/moonraker.asvc
     grep -q Spoolman /root/printer_data/moonraker.asvc || echo "Spoolman" >>/root/printer_data/moonraker.asvc
     grep -q klipper_mcu /root/printer_data/moonraker.asvc || echo "klipper_mcu" >>/root/printer_data/moonraker.asvc
     grep -q webcamd /root/printer_data/moonraker.asvc || echo "webcamd" >>/root/printer_data/moonraker.asvc
