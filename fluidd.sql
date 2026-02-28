@@ -367,7 +367,7 @@ INSERT INTO "main"."namespace_store" ("namespace", "key", "value") VALUES ('flui
             "categoryId": "944c031b-feef-4b75-badf-21c30508fb24",
             "color": "",
             "disabledWhilePrinting": false,
-            "name": "restart_guppy",
+            "name": "restart_screen",
             "order": 11,
             "visible": true
         },
@@ -1478,7 +1478,7 @@ INSERT INTO "main"."namespace_store" ("namespace", "key", "value") VALUES ('main
             },
             {
                "color" : "group",
-               "name" : "RESTART_GUPPY",
+               "name" : "RESTART_SCREEN",
                "pos" : 29,
                "showInPause" : false,
                "showInPrinting" : false,
@@ -1722,7 +1722,7 @@ INSERT INTO "main"."namespace_store" ("namespace", "key", "value") VALUES ('gupp
     "REBOOT": {
       "hidden": true
     },
-    "RESTART_GUPPY": {
+    "RESTART_SCREEN": {
       "hidden": true
     },
     "REMOVE_ZMOD": {
