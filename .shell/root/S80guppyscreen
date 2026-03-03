@@ -66,26 +66,33 @@ stop() {
     killall guppyscreen
 }
 
-restart() {
-    stop
-    sleep 2
-    start
-}
-
+HELIX=0
 if grep -q "helix = 1" /opt/config/mod_data/variables.cfg && [ -f /etc/init.d/S80helixscreen ]; then
-    /etc/init.d/S80helixscreen "$1"
-    exit
+    HELIX=1
 fi
 
 case "$1" in
     start)
-        start &> /opt/config/mod_data/log/guppyscreen_start.log
+        if [ $HELIX -eq 1 ]; then
+            /etc/init.d/S80helixscreen "$1"
+        else
+            start &> /opt/config/mod_data/log/guppyscreen_start.log
+        fi
         ;;
     stop)
         stop
+        if [ $HELIX -eq 1 ]; then
+            /etc/init.d/S80helixscreen "$1"
+        else
         ;;
     restart|reload)
-        restart
+        stop
+        if [ $HELIX -eq 1 ]; then
+            /etc/init.d/S80helixscreen "$1"
+        else
+            sleep 2
+            start
+        fi
         ;;
   *)
         echo "Usage: $0 {start|stop|restart}"
