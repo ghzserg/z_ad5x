@@ -83,7 +83,7 @@ case "$1" in
         stop
         if [ $HELIX -eq 1 ]; then
             /etc/init.d/S80helixscreen "$1"
-        else
+        fi
         ;;
     restart|reload)
         stop
