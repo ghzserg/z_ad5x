@@ -57,7 +57,7 @@ fi
 if [ $1 = "off" ] || [ $1 = "guppy" ] || [ $1 = "helix" ]; then
     sed -i 's|\[include ./mod/mod.cfg\]|\[include ./mod/display_off.cfg\]|' /opt/config/printer.cfg
     sync
-    killall firmwareExe guppyscreen console_log
+    killall firmwareExe guppyscreen console_log helix-watchdog helix-screen
     [ -f /ZMOD ] && /opt/config/mod/.shell/root/console_log --save --${ZLANG} || chroot ${MOD} /opt/config/mod/.shell/root/console_log --save --${ZLANG}
 
     if [ $1 = "off" ]; then
