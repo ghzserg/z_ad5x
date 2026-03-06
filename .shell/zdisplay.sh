@@ -37,7 +37,7 @@ wifi_on()
 
 if [ $1 = "test" ] && grep -q display_off.cfg /opt/config/printer.cfg; then
     killall firmwareExe helix-watchdog helix-screen helix-splash
-
+    sleep 1
     if grep -q "guppy = 1" /opt/config/mod_data/variables.cfg || grep -q "helix = 1" /opt/config/mod_data/variables.cfg ; then
         /opt/config/mod/.shell/zguppy.sh up
     else
