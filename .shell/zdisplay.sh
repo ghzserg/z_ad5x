@@ -36,8 +36,8 @@ wifi_on()
 }
 
 if [ $1 = "test" ] && grep -q display_off.cfg /opt/config/printer.cfg; then
-    killall firmwareExe
-
+    killall firmwareExe helix-watchdog helix-screen helix-splash
+    sleep 1
     if grep -q "guppy = 1" /opt/config/mod_data/variables.cfg || grep -q "helix = 1" /opt/config/mod_data/variables.cfg ; then
         /opt/config/mod/.shell/zguppy.sh up
     else
@@ -57,7 +57,7 @@ fi
 if [ $1 = "off" ] || [ $1 = "guppy" ] || [ $1 = "helix" ]; then
     sed -i 's|\[include ./mod/mod.cfg\]|\[include ./mod/display_off.cfg\]|' /opt/config/printer.cfg
     sync
-    killall firmwareExe guppyscreen console_log helix-watchdog helix-screen
+    killall firmwareExe guppyscreen console_log helix-watchdog helix-screen helix-splash
     [ -f /ZMOD ] && /opt/config/mod/.shell/root/console_log --save --${ZLANG} || chroot ${MOD} /opt/config/mod/.shell/root/console_log --save --${ZLANG}
 
     if [ $1 = "off" ]; then
