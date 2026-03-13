@@ -15,13 +15,14 @@ class ZmodIfsMotionSensor:
         self.name = config.get_name().split()[-1]
         # Read config
         self.printer = config.get_printer()
+        self.color_limit = printer.lookup_object('configfile').config.get('zmod_ifs', {}).get('color_limit', 4)
         self.extruder_name = config.get('extruder', 'extruder')
         self.detection_length = config.getfloat(
                 'detection_length', 10., above=0.)
         # Get printer objects
         self.reactor = self.printer.get_reactor()
         self.runout_helper = filament_switch_sensor.RunoutHelper(config)
-        self.port = config.getint('port', 0, minval=0, maxval=4)
+        self.port = config.getint('port', 0, minval=0, maxval=self.color_limit)
         sig = inspect.signature(self.runout_helper.note_filament_present)
 
         self.zmod_color = self.printer.lookup_object('zmod_color', None)

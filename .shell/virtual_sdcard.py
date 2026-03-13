@@ -6,7 +6,6 @@
 import os, sys, logging, io
 
 VALID_GCODE_EXTS = ['gcode', 'g', 'gco','gx']
-VALID_GCODE_T = {'T0', 'T1', 'T2', 'T3','T4', 'T5', 'T6', 'T7','T8', 'T9', 'T10', 'T11','T12', 'T13', 'T14', 'T15'}
 
 DEFAULT_ERROR_GCODE = """
 {% if 'heaters' in printer %}
@@ -256,6 +255,7 @@ class VirtualSD:
         self.next_file_position = pos
     def is_cmd_from_sd(self):
         return self.cmd_from_sd
+    
     # Background work timer
     def work_handler(self, eventtime):
         logging.info("Starting SD card print (position %d)", self.file_position)
@@ -310,7 +310,7 @@ class VirtualSD:
                 #self.reactor.pause(self.reactor.monotonic() + .005)
             if line.startswith("T") and self.enable_ffm:
                 cmd = line.split(';', 1)[0].strip()
-                if cmd in VALID_GCODE_T:
+                if cmd[1:].isdigit():
                     self.print_channel = int(cmd[1:])
                     if self.print_channel != self.load_channel:
                         self.gcode.run_script("M400")

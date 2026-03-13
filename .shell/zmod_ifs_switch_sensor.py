@@ -72,10 +72,11 @@ class ZmodIfsSwitchSensor:
 class ZmodIfsPortSensor:
     def __init__(self, config):
         self.printer = config.get_printer()
+        self.color_limit = printer.lookup_object('configfile').config.get('zmod_ifs', {}).get('color_limit', 4)
         self.name = config.get_name().split()[-1]
 
         self.runout_helper = RunoutHelper(config)
-        self.port = config.getint('port', 0, minval=0, maxval=4)
+        self.port = config.getint('port', 0, minval=0, maxval=self.color_limit)
         self.get_status = self.runout_helper.get_status
         self.printer.add_object(f"filament_switch_sensor {self.name}", self)
 
