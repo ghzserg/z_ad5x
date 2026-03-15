@@ -154,6 +154,13 @@ start_prepare()
     start_moon
 }
 
+cnt=$(find ${PROGRAM_DIR}control/ -name Update | wc -l)
+
+if [ "$cnt" -ge 1 ]; then
+    echo "Update MCU. Exit zMod"
+    exit 0
+fi
+
 if [ -f ${MOD_CONF}/mod/SKIP_ZMOD ]; then
     rm -f ${MOD_CONF}/mod/SKIP_ZMOD
     exit 0
