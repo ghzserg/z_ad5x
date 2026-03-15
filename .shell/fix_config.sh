@@ -373,6 +373,7 @@ cors_domains:
         check_link /etc/init.d/S99camera /opt/config/mod/.shell/S99camera
         check_link /etc/init.d/S99moon /opt/config/mod/.shell/S99moon
         check_link /etc/init.d/K99moon /etc/init.d/S99moon
+        check_link /etc/init.d/prepare.sh /opt/config/mod/.shell/prepare.sh
     fi
 
     check_link ${LOG_FILES}/zmod ${MOD_CONF}/mod_data/log/
