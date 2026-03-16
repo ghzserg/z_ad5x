@@ -146,7 +146,8 @@ prepare_chroot()
         if [ ${AD5X} -eq 0 ]; then
             check_link /opt/config/base/klipper/klippy/chelper/c_helper.so /opt/config/base/klipper/mcu/ff5m/c_helper.so
             check_link ${MOD_CONF}/base/klipper/klippy/extras/ens160.py ${MOD_CONF}/mod/.shell/ens160.py
-            check_link ${MOD_CONF}/base/klipper/klippy/extras/flashforge_loadcell.py ${MOD_CONF}/mod/.shell/flashforge_loadcell.py
+            #check_link ${MOD_CONF}/base/klipper/klippy/extras/flashforge_loadcell.py ${MOD_CONF}/mod/.shell/flashforge_loadcell.py
+            [ -L ${MOD_CONF}/base/klipper/klippy/extras/flashforge_loadcell.py ] && rm -f ${MOD_CONF}/base/klipper/klippy/extras/flashforge_loadcell.py
         else
             check_link ${MOD_CONF}/base/klipper/klippy/chelper/c_helper.so ${MOD_CONF}/base/klipper/mcu/ad5x/c_helper.so
             check_link ${MOD_CONF}/base/klipper/klippy/extras/zmod_color.py ${MOD_CONF}/mod/.shell/zmod_color.py
