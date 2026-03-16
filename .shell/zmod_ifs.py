@@ -81,6 +81,7 @@ class zmod_ifs:
         self.ifs = False
         self.zmod = self.printer.lookup_object('zmod', None)
         self.zmod_color = self.printer.lookup_object('zmod_color', None)
+
         temp_defaults = {
             "PLA": 220,
             "PLA-CF": 220,
@@ -97,8 +98,8 @@ class zmod_ifs:
                 temp_defaults[filament_type] = temp
             except Exception:
                 pass
-
         self.temp_defaults = temp_defaults
+
         if not self.zmod_color or self.zmod_color.get_display():
             return
         self.ifs_data = IfsData()
