@@ -423,27 +423,6 @@ class zmod_ifs:
         else:
             default_filament = DEFAULT_FILAMENT_SETTINGS.copy()
 
-        for key in default_filament:
-            value_frequency = {}
-            for filament_name in existing_file_data:
-                if key not in existing_file_data[filament_name]:
-                    continue
-
-                this_value = existing_file_data[filament_name][key]
-                if this_value in value_frequency:
-                    value_frequency[this_value] += 1
-                else:
-                    value_frequency[this_value] = 1
-
-            if len(value_frequency) == 0:
-                continue
-
-            value_frequency = dict(sorted(value_frequency.items(), key=lambda item: item[1], reverse=True))
-            highest_frequency = next(iter(value_frequency.values()))
-
-            if default_filament[key] not in value_frequency or value_frequency[default_filament[key]] < highest_frequency:
-                default_filament[key] = next(iter(value_frequency.keys()))
-
         # 1. filament_load_speed -> filament_extruder_speed
         if 'filament_load_speed' in default_filament:
             default_filament['filament_extruder_speed'] = default_filament['filament_load_speed']
