@@ -491,21 +491,20 @@ class zmod_ifs:
         for filament_name in data.keys():
             if filament_name == 'default':
                 continue
+            new_filament = {}
             if filament_name not in existing_file_data:
                 this_filament = data[filament_name]
-                new_filament = {}
                 for key in this_filament.keys():
                     if key in NO_EXCLUDE_FIELDS or this_filament[key] != new_data['default'][key]:
                         new_filament[key] = this_filament[key]
-                new_data[filament_name] = new_filament
             else:
                 this_filament = existing_file_data[filament_name]
-                new_filament = {}
                 for key in this_filament:
                     new_filament[key] = this_filament[key]
                 for key in NO_EXCLUDE_FIELDS:
                     if key not in new_filament:
                         new_filament[key] = data[filament_name][key]
+            new_data[filament_name] = new_filament
 
         with open(TYPECONFIG, 'w') as f:
             json.dump(new_data, f, indent=4)
