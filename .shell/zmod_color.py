@@ -1376,6 +1376,19 @@ class zmod_color:
                 gcmd.respond_raw(f"Current Prutok = Prutok = {spool_number}")
             self.gcode.run_script_from_command("END_CHANGE_FILAMENT")
 
+            # Notify Spoolman of active spool for this IFS slot
+            try:
+                save_variables = self.printer.lookup_object('save_variables', None)
+                save_variables = {} if save_variables == None else save_variables.allVariables
+                spool_id = save_variables.get(f'spool_id_{spool_number}', 0)
+                if spool_id:
+                    self.gcode.run_script_from_command(f"SET_ACTIVE_SPOOL ID={spool_id}")
+                else:
+                    self.gcode.run_script_from_command("CLEAR_ACTIVE_SPOOL")
+                    gcmd.respond_raw(f"// No Spoolman spool set for IFS slot {spool_number}")
+            except Exception:
+                pass  # Spoolman is optional - never interrupt a print
+
         except Exception as e:
             if restore == 1:
                 if self.lang == 'ru':
