@@ -1,4 +1,18 @@
 version: "3.3"
+
+# ============================================================
+# English
+# This is an example docker-compose file
+# Run it on the external host for the Telegram bot
+#
+# mkdir config log timelapse_finished timelapse
+# chmod 777 config log timelapse_finished timelapse
+#
+# docker-compose up -d or docker compose up -d
+#
+# Place the telegram.conf file into the config folder
+#
+# Russian
 # Это пример файла докер композ
 # Его запускать на внешнем хосте для телеграм бота
 #
@@ -8,6 +22,18 @@ version: "3.3"
 # docker-compose up -d или docker compose up -d
 #
 # Файл telegram.conf поместить в папку config
+#
+# German
+# Dies ist eine Beispiel-Docker-Compose-Datei
+# Führen Sie sie auf dem externen Host für den Telegram-Bot aus
+#
+# mkdir config log timelapse_finished timelapse
+# chmod 777 config log timelapse_finished timelapse
+#
+# docker-compose up -d oder docker compose up -d
+#
+# Legen Sie die Datei telegram.conf in den Ordner config
+# ============================================================
 
 services:
   moonraker-telegram-bot:
@@ -15,6 +41,14 @@ services:
     restart: unless-stopped
     network_mode: host
     environment:
+      # English
+      # Uncomment the appropriate timezone for your region
+      #
+      # Russian
+      # Раскомментируйте подходящий часовой пояс для вашего региона
+      #
+      # German
+      # Kommentieren Sie die passende Zeitzone für Ihre Region ein
 #      - TZ=Europe/Kaliningrad
 #      - TZ=Europe/Moscow
 #      - TZ=Europe/Samara
@@ -39,6 +73,27 @@ services:
       - ./timelapse:/home/moonraker-telegram-bot/moonraker-telegram-bot-timelapse
       - ./timelapse_finished:/home/moonraker-telegram-bot/timelapse_finished
 
+# ============================================================
+# English
+# Comment out or remove Spoolman if you don't need it
+#
+# 1. Open the port in the firewall if you are using it
+# iptables -I INPUT -p tcp --dport 7912 -j ACCEPT
+#
+# 2. Create the spoolman folder
+# mkdir spoolman
+# chmod 777 spoolman
+#
+# 3. On the printer, add the following to mod_data/user.moonraker.conf
+#
+# [spoolman]
+# server: http://external_IP:7912
+# sync_rate: 5
+#
+# external_IP - the external IP address of the server where Docker is running
+# The printer MUST have access to this IP
+#
+# Russian
 # Закоментируйте или удалите Spoolman если он вам не нужен
 #
 # 1. Откройте порт в фаерволе если он у вас используется
@@ -56,6 +111,26 @@ services:
 #
 # external_IP - внешний ИП сервера на котором стоит docker
 # У принтера ДОЛЖЕН быть доступ к этому IP
+#
+# German
+# Kommentieren Sie Spoolman aus oder entfernen Sie es, wenn Sie es nicht benötigen
+#
+# 1. Öffnen Sie den Port in der Firewall, falls Sie ihn verwenden
+# iptables -I INPUT -p tcp --dport 7912 -j ACCEPT
+#
+# 2. Erstellen Sie den Ordner spoolman
+# mkdir spoolman
+# chmod 777 spoolman
+#
+# 3. Fügen Sie im Drucker Folgendes in mod_data/user.moonraker.conf hinzu
+#
+# [spoolman]
+# server: http://external_IP:7912
+# sync_rate: 5
+#
+# external_IP - die externe IP-Adresse des Servers, auf dem Docker läuft
+# Der Drucker MUSS Zugriff auf diese IP haben
+# ============================================================
   spoolman:
     image: ghcr.io/donkie/spoolman:latest
     restart: unless-stopped
@@ -64,4 +139,12 @@ services:
     ports:
       - "7912:8000"
     environment:
+      # English
+      # Timezone (adjust if needed)
+      #
+      # Russian
+      # Часовой пояс (при необходимости измените)
+      #
+      # German
+      # Zeitzone (bei Bedarf anpassen)
       - TZ=Asia/Yekaterinburg
