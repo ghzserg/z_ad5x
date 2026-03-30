@@ -229,6 +229,19 @@ fix_config()
     echo 15 > /proc/sys/vm/swappiness
     /usr/data/config/mod/.shell/serial/serial_start.sh
 
+    if [ ${AD5X} -eq 1 ]; then
+        if [ -L /etc/dropbear \
+             -a "$(readlink /etc/dropbear)" = "/var/run/dropbear" ]
+        then
+                if rm -f /etc/dropbear >/dev/null 2>&1; then
+                        mkdir -p /etc/dropbear
+                else
+                        mkdir -p "$(readlink /etc/dropbear)"
+                fi
+        fi
+        /etc/init.d/S50dropbear restart
+    fi
+
     fstrim ${DATA} -v
     [ ${AD5X} -eq 0 ] && fstrim / -v || fstrim /usr/prog -v
 
