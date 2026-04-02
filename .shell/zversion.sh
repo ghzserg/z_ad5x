@@ -36,7 +36,7 @@ fi
 
 [ ${ZLANG} != 'ru' ] && echo "Enabled Plugins: $plugins" || echo "Активные плагины: $plugins"
 if ! grep -q "extra_plugins.moonraker.conf" ${MOD_CONF}/mod_data/extra_plugins.moonraker.conf && [ ${AD5X} -eq 1 ]; then
-    [ ${ZLANG} != 'ru' ] && echo "To enable the repository of third-party plugins not developed by zMod author, run the ENABLE_EXTRA_PLUGINS command." || echo "Чтобы включить репозиторий внешних плагинов, не разрабатываемых автором zMod, выполните команду ENABLE_EXTRA_PLUGINS."
+    [ ${ZLANG} != 'ru' ] && echo "To enable the repository of third-party plugins not developed by Z-Mod author, run the ENABLE_EXTRA_PLUGINS command." || echo "Чтобы включить репозиторий внешних плагинов, не разрабатываемых автором Z-Mod, выполните команду ENABLE_EXTRA_PLUGINS."
 fi
 
 if ! echo "$plugins" | grep -q "^recommend$\|,recommend$\|^recommend,\|,recommend," && ! grep -q "no_recommend = 1" /opt/config/mod_data/variables.cfg; then
@@ -46,11 +46,11 @@ fi
 
 if [ "${VER_FF}" != "${VER_MOD}" ]; then
     if [ ${ZLANG} != 'ru' ]; then
-        echo "RESPOND TYPE=error MSG=\"Update ZMOD from USB, latest version ${VER_FF_FULL}, current version ${VER_MOD_FULL}\"" >/tmp/printer
+        echo "RESPOND TYPE=error MSG=\"Update Z-Mod from USB, latest version ${VER_FF_FULL}, current version ${VER_MOD_FULL}\"" >/tmp/printer
         echo "You can use ZFLASH macro to update from USB over network"
         echo 'https://github.com/ghzserg/zmod/wiki/Setup_en'
     else
-        echo "RESPOND TYPE=error MSG=\"Обновите ZMOD с флешки, последняя версия ${VER_FF_FULL}, текущая версия ${VER_MOD_FULL}\"" >/tmp/printer
+        echo "RESPOND TYPE=error MSG=\"Обновите Z-Mod с флешки, последняя версия ${VER_FF_FULL}, текущая версия ${VER_MOD_FULL}\"" >/tmp/printer
         echo "Можно использовать макрос ZFLASH, для обновления с флешки по сети"
         echo 'https://github.com/ghzserg/zmod/wiki/Setup'
     fi

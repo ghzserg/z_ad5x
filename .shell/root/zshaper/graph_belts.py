@@ -579,7 +579,7 @@ def belts_calibration(lognames, klipperdir="~/klipper", max_freq=200., graph_spe
         title_line2 = dt.strftime('%x %X')
     except:
         #print("Warning: CSV filenames look to be different than expected (%s , %s)" % (lognames[0], lognames[1]))
-        title_line2 = lognames[0].split('/')[-1] + " / " +  lognames[1].split('/')[-1] + " ZMOD"
+        title_line2 = lognames[0].split('/')[-1] + " / " +  lognames[1].split('/')[-1] + " Z-Mod"
     fig.suptitle(title_line2)
 
     # Plot the graphs
