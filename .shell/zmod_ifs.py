@@ -82,6 +82,7 @@ class zmod_ifs:
         self.ifs = False
         self.zmod = self.printer.lookup_object('zmod', None)
         self.zmod_color = self.printer.lookup_object('zmod_color', None)
+
         temp_defaults = {
             "PLA": 220,
             "PLA-CF": 220,
@@ -98,8 +99,8 @@ class zmod_ifs:
                 temp_defaults[filament_type] = temp
             except Exception:
                 pass
-
         self.temp_defaults = temp_defaults
+
         if not self.zmod_color or self.zmod_color.get_display():
             return
         self.ifs_data = IfsData(self.color_limit)
@@ -424,27 +425,6 @@ class zmod_ifs:
         else:
             default_filament = DEFAULT_FILAMENT_SETTINGS.copy()
 
-        for key in default_filament:
-            value_frequency = {}
-            for filament_name in existing_file_data:
-                if key not in existing_file_data[filament_name]:
-                    continue
-
-                this_value = existing_file_data[filament_name][key]
-                if this_value in value_frequency:
-                    value_frequency[this_value] += 1
-                else:
-                    value_frequency[this_value] = 1
-
-            if len(value_frequency) == 0:
-                continue
-
-            value_frequency = dict(sorted(value_frequency.items(), key=lambda item: item[1], reverse=True))
-            highest_frequency = next(iter(value_frequency.values()))
-
-            if default_filament[key] not in value_frequency or value_frequency[default_filament[key]] < highest_frequency:
-                default_filament[key] = next(iter(value_frequency.keys()))
-
         # 1. filament_load_speed -> filament_extruder_speed
         if 'filament_load_speed' in default_filament:
             default_filament['filament_extruder_speed'] = default_filament['filament_load_speed']
@@ -512,21 +492,20 @@ class zmod_ifs:
         for filament_name in data.keys():
             if filament_name == 'default':
                 continue
+            new_filament = {}
             if filament_name not in existing_file_data:
                 this_filament = data[filament_name]
-                new_filament = {}
                 for key in this_filament.keys():
                     if key in NO_EXCLUDE_FIELDS or this_filament[key] != new_data['default'][key]:
                         new_filament[key] = this_filament[key]
-                new_data[filament_name] = new_filament
             else:
                 this_filament = existing_file_data[filament_name]
-                new_filament = {}
                 for key in this_filament:
                     new_filament[key] = this_filament[key]
                 for key in NO_EXCLUDE_FIELDS:
                     if key not in new_filament:
                         new_filament[key] = data[filament_name][key]
+            new_data[filament_name] = new_filament
 
         with open(TYPECONFIG, 'w') as f:
             json.dump(new_data, f, indent=4)

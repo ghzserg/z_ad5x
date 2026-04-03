@@ -15,7 +15,7 @@ INSERT INTO "main"."namespace_store" ("namespace", "key", "value") VALUES ('flui
         },
         {
             "id": "09a46273-5af4-4fc4-b232-442934c1e810",
-            "name": "3. ZMOD"
+            "name": "3. Z-Mod"
         },
         {
             "id": "89ac157d-a16a-43f1-900a-498d683bf557",
@@ -417,7 +417,7 @@ INSERT INTO "main"."namespace_store" ("namespace", "key", "value") VALUES ('flui
             "visible": true
         },
         {
-            "alias": "Отключить ZMOD камеру",
+            "alias": "Отключить Z-Mod камеру",
             "categoryId": "09a46273-5af4-4fc4-b232-442934c1e810",
             "color": "",
             "disabledWhilePrinting": false,
@@ -435,7 +435,7 @@ INSERT INTO "main"."namespace_store" ("namespace", "key", "value") VALUES ('flui
             "visible": true
         },
         {
-            "alias": "Включить ZMOD камеру",
+            "alias": "Включить Z-Mod камеру",
             "categoryId": "09a46273-5af4-4fc4-b232-442934c1e810",
             "color": "",
             "disabledWhilePrinting": false,
@@ -511,7 +511,7 @@ INSERT INTO "main"."namespace_store" ("namespace", "key", "value") VALUES ('flui
             "visible": false
         },
         {
-            "alias": "Удалить ZMOD",
+            "alias": "Удалить Z-Mod",
             "categoryId": "69809e15-439e-45e3-b181-42ccbdde50eb",
             "color": "#ff0000",
             "disabledWhilePrinting": true,
@@ -827,7 +827,7 @@ INSERT INTO "main"."namespace_store" ("namespace", "key", "value") VALUES ('flui
             "visible": true
         },
         {
-            "alias": "Получить параметры ZMOD",
+            "alias": "Получить параметры Z-Mod",
             "categoryId": "09a46273-5af4-4fc4-b232-442934c1e810",
             "color": "",
             "disabledWhilePrinting": false,
@@ -881,7 +881,7 @@ INSERT INTO "main"."namespace_store" ("namespace", "key", "value") VALUES ('flui
             "visible": true
         },
         {
-            "alias": "Параметры ZMOD",
+            "alias": "Параметры Z-Mod",
             "categoryId": "944c031b-feef-4b75-badf-21c30508fb24",
             "color": "#008800",
             "disabledWhilePrinting": false,

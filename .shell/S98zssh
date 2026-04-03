@@ -55,7 +55,7 @@ start() {
                 dbclient -i /opt/config/mod_data/ssh.key -p${SSH_PORT} ${SSH_USER}@${SSH_SERVER} -T -f -y ${REMOTE_RUN} >> ${LOG_FILE} 2>&1
         fi
     else
-        echo "SSH отключен"
+        [ ${ZLANG} != 'ru' ] && echo "SSH Off" || echo "SSH отключен"
     fi
 }
 

@@ -80,7 +80,7 @@ if ! [ -f /ZMOD ]; then
         cd "$b"
     done
 else
-    [ ${ZLANG} != 'ru' ] && echo "ZMOD system check started. It may take a long time" || echo "Началась проверка ZMOD. Она может занять много времени..."
+    [ ${ZLANG} != 'ru' ] && echo "Z-Mod system check started. It may take a long time" || echo "Началась проверка Z-Mod. Она может занять много времени..."
 fi
 
 echo "/"
@@ -106,7 +106,7 @@ fi
 cnt=$(cat /opt/config/mod_data/bad.list|grep ": FAILED$"| wc -l)
 if [ "$cnt" -ne 0 ]; then
     if [ -f /ZMOD ]; then
-        [ ${ZLANG} != 'ru' ] && echo "Damage to ZMOD found. Reinstall the mod from a flash drive. ZFLASH" || echo "Найдены повреждения ZMOD. Переустановите мод с флешки. ZFLASH"
+        [ ${ZLANG} != 'ru' ] && echo "Damage to Z-Mod found. Reinstall the mod from a flash drive. ZFLASH" || echo "Найдены повреждения Z-Mod. Переустановите мод с флешки. ZFLASH"
     else
         if [ "$1" == "restore" ]; then
             cat /opt/config/mod_data/bad.list|grep ": FAILED$"|sed 's|: FAILED||' | sed 's|^./|/|' | while read a; do restore_file "$a"; done
@@ -144,7 +144,7 @@ else
     git restore . 2>&1 |grep -v ".cfg"
     git status --porcelain 2>&1 |grep -v ".cfg"
 
-    [ ${ZLANG} != 'ru' ] && echo "Restoring the correct ZMOD language" || echo "Восстановление правильного языка ZMOD"
+    [ ${ZLANG} != 'ru' ] && echo "Restoring the correct Z-Mod language" || echo "Восстановление правильного языка Z-Mod"
     check_link ${MOD_CONF}/mod/base.cfg translate/${ZLANG}/base.cfg &>/dev/null
     check_link ${MOD_CONF}/mod/client.cfg translate/${ZLANG}/client.cfg &>/dev/null
     check_link ${MOD_CONF}/mod/base_klipper13.cfg translate/${ZLANG}/base_klipper13.cfg &>/dev/null
@@ -170,5 +170,5 @@ else
     check_link ${MOD_CONF}/mod/switch_sensor_display_off.cfg translate/${ZLANG}/switch_sensor_display_off.cfg &>/dev/null
     find /opt/config/ -name '*.pyc' -delete
 
-    [ ${ZLANG} != 'ru' ] && echo "ZMOD self-test completed" || echo "Самопроверка ZMOD окончена"
+    [ ${ZLANG} != 'ru' ] && echo "Z-Mod self-test completed" || echo "Самопроверка Z-Mod окончена"
 fi

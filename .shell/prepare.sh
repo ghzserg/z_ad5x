@@ -157,7 +157,7 @@ start_prepare()
 cnt=$(find ${PROGRAM_DIR}control/ -name Update | wc -l)
 
 if [ "$cnt" -ge 1 ]; then
-    echo "Update MCU. Exit zMod"
+    echo "Update MCU. Exit Z-Mod"
     exit 0
 fi
 

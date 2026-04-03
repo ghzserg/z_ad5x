@@ -15,7 +15,7 @@ INSERT INTO "main"."namespace_store" ("namespace", "key", "value") VALUES ('flui
         },
         {
             "id": "09a46273-5af4-4fc4-b232-442934c1e810",
-            "name": "3. ZMOD"
+            "name": "3. Z-Mod"
         },
         {
             "id": "89ac157d-a16a-43f1-900a-498d683bf557",
