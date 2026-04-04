@@ -1,3 +1,4 @@
+import os
 import re
 import json
 import requests
@@ -5,6 +6,7 @@ import logging
 import subprocess
 
 FFCONFIG='/usr/prog/config/Adventurer5M.json'
+CUSTOM_FFCONFIG='/usr/data/config/mod_data/channels.json'
 FILE_CONFIG='/usr/data/config/mod_data/file.json'
 
 TRANSLATIONS = {
@@ -573,7 +575,7 @@ AUTO_ASSIGN_WEAK_COLOR_CUTOFF = (63 ** 2) * 3 # If the squares of each component
 class zmod_color:
     def __init__(self, config):
         self.printer = config.get_printer()
-        self.color_limit = printer.lookup_object('configfile').config.get('zmod_ifs', {}).get('color_limit', 4)
+        self.color_limit = 4
 
         self.display = config.getboolean('display', True)
         self.lang = 'en'
@@ -612,6 +614,8 @@ class zmod_color:
         self.zmod_ifs = self.printer.lookup_object('zmod_ifs', None)
         self.query_adc = self.printer.lookup_object('query_adc')
         self.virtual_sd = self.printer.lookup_object('virtual_sdcard')
+        
+        self.color_limit = self.zmod_ifs.color_limit
 
     def cmd_UPDATE_FF_OFFSET(self, gcmd):
         with open(FFCONFIG, 'r') as file:
@@ -645,7 +649,7 @@ class zmod_color:
 
     def get_current_channel(self):
         if self.ifs:
-            with open(FFCONFIG, 'r') as file:
+            with open(self.get_material_config_file(), 'r') as file:
                 config = json.load(file)
                 prutok = int(config["FFMInfo"].get("channel", 0))
                 if not self.display:
@@ -662,6 +666,47 @@ class zmod_color:
         if value > 0.3:
             result = (value >= 0.72)
         return result
+            
+    def get_material_config_file(self, force_regenerate = False):
+        if not force_regenerate:
+            if os.path.isfile(CUSTOM_FFCONFIG):
+                return CUSTOM_FFCONFIG
+            if self.color_limit == 4:
+                return FFCONFIG
+        
+        self.prepare_custom_ffconfig()
+        return CUSTOM_FFCONFIG
+            
+    def prepare_custom_ffconfig(self):
+        if os.path.isfile(CUSTOM_FFCONFIG):
+            source_file = CUSTOM_FFCONFIG
+        else:
+            source_file = FFCONFIG
+            
+        with open(source_file, 'r') as file:
+            config = json.load(file)
+            new_data = {}
+            new_data['FFMInfo'] = config.get('FFMInfo', {})
+               
+        i = 0
+        while i <= self.color_limit or f'ffmColor{i}' in new_data['FFMInfo'] or f'ffmType{i}' in new_data['FFMInfo']:
+            if i <= self.color_limit:
+                if f'ffmColor{i}' not in new_data['FFMInfo']:
+                    new_data['FFMInfo'][f'ffmColor{i}'] = '#FFFFFF'
+                if f'ffmType{i}' not in new_data['FFMInfo']:
+                    new_data['FFMInfo'][f'ffmType{i}'] = 'PLA'
+            else:
+                if f'ffmColor{i}' in new_data['FFMInfo']:
+                    new_data['FFMInfo'].pop(f'ffmColor{i}')
+                if f'ffmType{i}' in new_data['FFMInfo']:
+                    new_data['FFMInfo'].pop(f'ffmType{i}')
+            i += 1
+        
+        json_string = json.dumps(new_data, indent='\t')
+        formatted_json_string = re.sub(r'(":)', r'" : ', json_string)
+            
+        with open(CUSTOM_FFCONFIG, 'w', encoding='utf-8') as out_file: 
+            out_file.write(formatted_json_string)
 
     def get_printer_data_detail(self):
         response_data = {
@@ -675,10 +720,11 @@ class zmod_color:
             }
         }
 
-        with open(FFCONFIG, 'r') as file:
+        with open(self.get_material_config_file(), 'r') as file:
             config = json.load(file)
 
             ffm_info = config["FFMInfo"]
+            
             response_data["detail"]["hasMatlStation"] = self.zmod_ifs.get_ifs_status()
             response_data["detail"]["indepMatlInfo"] = {
                 "materialName": ffm_info.get("ffmType0", "N/A"),
@@ -695,7 +741,7 @@ class zmod_color:
                         "materialName": ffm_info.get(type_key, "N/A"),
                         "materialColor": ffm_info[color_key],
                         "hasFilament": self.zmod_ifs.get_port(i)
-                    }
+                    }                    
                     response_data["detail"]["matlStationInfo"]["slotInfos"].append(slot)
 
         return 200,response_data
@@ -707,17 +753,17 @@ class zmod_color:
         if not zcolor.startswith('#'):
             return 500, "Bed color"
 
-        with open(FFCONFIG, 'r') as file:
+        with open(self.get_material_config_file(), 'r') as file:
             config = json.load(file)
 
             config["FFMInfo"][f"ffmColor{zslot}"] = zcolor
             config["FFMInfo"][f"ffmType{zslot}"] = ztype
 
-            with open(FFCONFIG, 'w', encoding='utf-8') as file:
-                json_string = json.dumps(config, indent='\t')
-                formatted_json_string = re.sub(r'(":)', r'" : ', json_string)
-                file.write(formatted_json_string)
-                return 200, formatted_json_string
+        with open(self.get_material_config_file(), 'w', encoding='utf-8') as file:
+            json_string = json.dumps(config, indent='\t')
+            formatted_json_string = re.sub(r'(":)', r'" : ', json_string)
+            file.write(formatted_json_string)
+            return 200, formatted_json_string
 
         return 500, "Error"
 
@@ -801,18 +847,18 @@ class zmod_color:
         if self.display:
             raise gcmd.error("Error: Display on")
         else:
-            with open(FFCONFIG, 'r') as file:
+            with open(self.get_material_config_file(), 'r') as file:
                 config = json.load(file)
 
                 config["FFMInfo"]["channel"] = zslot
                 if not self.display:
                     self.zmod_ifs.set_cur_port(zslot)
 
-                with open(FFCONFIG, 'w', encoding='utf-8') as file:
-                    json_string = json.dumps(config, indent='\t')
-                    formatted_json_string = re.sub(r'(":)', r'" : ', json_string)
-                    file.write(formatted_json_string)
-                    gcmd.respond_raw(f"Extruder: {zslot}")
+            with open(self.get_material_config_file(), 'w', encoding='utf-8') as file:
+                json_string = json.dumps(config, indent='\t')
+                formatted_json_string = re.sub(r'(":)', r'" : ', json_string)
+                file.write(formatted_json_string)
+                gcmd.respond_raw(f"Extruder: {zslot}")
 
     def cmd_GET_ZCOLOR(self, gcmd):
         silent = gcmd.get_int('SILENT', 0)

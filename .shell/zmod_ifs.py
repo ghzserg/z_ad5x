@@ -17,7 +17,6 @@ TIMEOUT = 0.2
 HOST_REPORT_TIME = 0.2
 OPROS_EXTRUDER = 0.1
 
-FFCONFIG='/usr/prog/config/Adventurer5M.json'
 TYPECONFIG='/usr/data/config/mod_data/filament.json'
 FILE_CONFIG='/usr/data/config/mod_data/file.json'
 
@@ -66,7 +65,8 @@ DEFAULT_FILAMENT_SETTINGS = {
 class zmod_ifs:
     def __init__(self, config):
         self.printer = config.get_printer()
-        self.color_limit = printer.lookup_object('configfile').config.get('zmod_ifs', {}).get('color_limit', 4)
+        
+        self.color_limit = config.getint('color_limit', 4)
 
         self.debug = config.getboolean('debug', False)
         self.stall_count = config.getint('stall_count', 3, minval=1)    # с какой попытки засчитывать что пруток остановилося
@@ -371,7 +371,7 @@ class zmod_ifs:
 
     # Получить текущий активный пруток из конфига
     def get_current_channel_from_config(self):
-        with open(FFCONFIG, 'r') as file:
+        with open(self.zmod_color.get_material_config_file(), 'r') as file:
             config = json.load(file)
             prutok = int(config["FFMInfo"].get("channel", 0))
             self.set_cur_port(prutok)
@@ -382,7 +382,7 @@ class zmod_ifs:
     def get_prutok_type_from_config(self, prutok):
         ret="PLA"
 
-        with open(FFCONFIG, 'r') as file:
+        with open(self.zmod_color.get_material_config_file(), 'r') as file:
             config = json.load(file)
             ret=config["FFMInfo"].get(f"ffmType{prutok}", "PLA")
         if ret not in self.temp_defaults:
@@ -623,7 +623,7 @@ class zmod_ifs:
         prutok = 1
         t_prutok = 0
 
-        with open(FFCONFIG, 'r') as file:
+        with open(self.zmod_color.get_material_config_file(), 'r') as file:
             config = json.load(file)
             ffm_info = config["FFMInfo"]
             prutok = ffm_info.get("channel", 1)
@@ -1333,7 +1333,7 @@ class IfsData:
     def get_port(self, port):
         with self.lock:
             if port > 0 and port <= self.color_limit:
-                return self.Ports[self.color_limit]
+                return self.Ports[port - 1]
             else:
                 return False
 
