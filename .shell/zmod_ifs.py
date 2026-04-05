@@ -65,8 +65,6 @@ DEFAULT_FILAMENT_SETTINGS = {
 class zmod_ifs:
     def __init__(self, config):
         self.printer = config.get_printer()
-        
-        self.color_limit = config.getint('color_limit', 4)
 
         self.debug = config.getboolean('debug', False)
         self.stall_count = config.getint('stall_count', 3, minval=1)    # с какой попытки засчитывать что пруток остановилося
@@ -82,6 +80,13 @@ class zmod_ifs:
         self.ifs = False
         self.zmod = self.printer.lookup_object('zmod', None)
         self.zmod_color = self.printer.lookup_object('zmod_color', None)
+        
+        self.color_limit = config.getint('color_limit', 0) if not self.zmod_color.get_display() else 4
+        if self.color_limit == 0:
+            self.color_limit = 4
+            self.auto_update_color_limit = True
+        else:
+            self.auto_update_color_limit = False
 
         temp_defaults = {
             "PLA": 220,
@@ -174,6 +179,11 @@ class zmod_ifs:
 
     def get_ifs_status(self):
         return self.ifs
+        
+    def update_color_limit(self, new_limit):
+        self.color_limit = new_limit
+        self.ifs_data.update_color_limit(new_limit)
+        self.zmod_color.update_color_limit(new_limit)
 
     def send_command_and_wait(self, command, timeout=5.0, result=None, extruder=None):
         """
@@ -1214,6 +1224,11 @@ class zmod_ifs:
                     if command_id == -1:
                         self.ifs_data.update_from_string(response)
                         current_values = self.ifs_data.get_values()
+                        
+                        if self.auto_update_color_limit:
+                            reported_color_limit = current_values.get('ReportedColorLimit', 0)
+                            if reported_color_limit > 0 and reported_color_limit != self.color_limit:
+                                self.update_color_limit(reported_color_limit)
 
                         #self._respond_info(response)
                         #self._respond_info(json.dumps(current_values))
@@ -1262,6 +1277,20 @@ class IfsData:
         self.stall_state = 0    # Движение по любому порту RAW
         self.State = 0          # Состояние IFS
         self.NeedInsert = False # Нужно ли вставлять пруток
+        self.ReportedColorLimit = 0 # Value reported by IFS on last IFS_F13
+        
+    def update_color_limit(self, new_limit):
+        if new_limit > self.color_limit:
+            self.Ports += [False] * (new_limit - self.color_limit)
+            self.Stalls += [False] * (new_limit - self.color_limit)
+        elif new_limit < self.color_limit:
+            self.Ports = self.Ports[:new_limit]
+            self.Stalls = self.Stalls[:new_limit]
+        if self.Chan > new_limit:
+            self.Chan = 0
+            
+        self.color_limit = new_limit
+        
 
     def update_from_string(self, data_str):
         if data_str is None:
@@ -1273,6 +1302,7 @@ class IfsData:
         insert = 0
         stall_state = 0
         state = 0
+        channel_count = 0
 
         state_match = re.search(r'FFS_state:\s*(\d+)', data_str)
         if state_match:
@@ -1300,6 +1330,10 @@ class IfsData:
         new_stall = [False] * self.color_limit
         for i in range(self.color_limit):
             new_stall[i] = (stall_state >> i) & 1 == 1
+            
+        channel_count_match = re.search(r'channel_count:\s*(\d+)', data_str)
+        if channel_count_match:
+            channel_count = int(channel_count_match.group(1))
 
         with self.lock:
             self.Ports = new_ports
@@ -1314,6 +1348,7 @@ class IfsData:
             self.Chan = chan
             self.NeedInsert = insert != 0 and insert != self.Insert and state == FFS_STATUS_READY
             self.Insert = insert
+            self.ReportedColorLimit = channel_count
 
     def set_cur_port(self, port):
         with self.lock:
@@ -1347,7 +1382,8 @@ class IfsData:
                 'Insert': self.Insert,
                 'NeedInsert': self.NeedInsert,
                 'Stall':  self.Stall,
-                'stall_state': self.stall_state
+                'stall_state': self.stall_state,
+                'ReportedColorLimit': self.ReportedColorLimit
             }
 
 

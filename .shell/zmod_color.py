@@ -616,6 +616,9 @@ class zmod_color:
         self.virtual_sd = self.printer.lookup_object('virtual_sdcard')
         
         self.color_limit = self.zmod_ifs.color_limit
+        
+    def update_color_limit(self, new_limit):
+        self.color_limit = new_limit
 
     def cmd_UPDATE_FF_OFFSET(self, gcmd):
         with open(FFCONFIG, 'r') as file:
@@ -669,6 +672,8 @@ class zmod_color:
             
     def get_material_config_file(self, force_regenerate = False):
         if not force_regenerate:
+            if self.display:
+                return FFCONFIG
             if os.path.isfile(CUSTOM_FFCONFIG):
                 return CUSTOM_FFCONFIG
             if self.color_limit == 4:
@@ -688,19 +693,11 @@ class zmod_color:
             new_data = {}
             new_data['FFMInfo'] = config.get('FFMInfo', {})
                
-        i = 0
-        while i <= self.color_limit or f'ffmColor{i}' in new_data['FFMInfo'] or f'ffmType{i}' in new_data['FFMInfo']:
-            if i <= self.color_limit:
-                if f'ffmColor{i}' not in new_data['FFMInfo']:
-                    new_data['FFMInfo'][f'ffmColor{i}'] = '#FFFFFF'
-                if f'ffmType{i}' not in new_data['FFMInfo']:
-                    new_data['FFMInfo'][f'ffmType{i}'] = 'PLA'
-            else:
-                if f'ffmColor{i}' in new_data['FFMInfo']:
-                    new_data['FFMInfo'].pop(f'ffmColor{i}')
-                if f'ffmType{i}' in new_data['FFMInfo']:
-                    new_data['FFMInfo'].pop(f'ffmType{i}')
-            i += 1
+        for i in range(self.color_limit + 1):
+            if f'ffmColor{i}' not in new_data['FFMInfo']:
+                new_data['FFMInfo'][f'ffmColor{i}'] = '#FFFFFF'
+            if f'ffmType{i}' not in new_data['FFMInfo']:
+                new_data['FFMInfo'][f'ffmType{i}'] = 'PLA'
         
         json_string = json.dumps(new_data, indent='\t')
         formatted_json_string = re.sub(r'(":)', r'" : ', json_string)
@@ -738,11 +735,18 @@ class zmod_color:
                 if color_key in ffm_info:
                     slot = {
                         "slotId": str(i),
-                        "materialName": ffm_info.get(type_key, "N/A"),
+                        "materialName": ffm_info.get(type_key, "PLA"),
                         "materialColor": ffm_info[color_key],
                         "hasFilament": self.zmod_ifs.get_port(i)
                     }                    
-                    response_data["detail"]["matlStationInfo"]["slotInfos"].append(slot)
+                else:
+                    slot = {
+                        "slotId": str(i),
+                        "materialName": "PLA",
+                        "materialColor": "#FFFFFF",
+                        "hasFilament": self.zmod_ifs.get_port(i)
+                    }      
+                response_data["detail"]["matlStationInfo"]["slotInfos"].append(slot)
 
         return 200,response_data
 
