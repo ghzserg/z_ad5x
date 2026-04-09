@@ -1375,7 +1375,6 @@ class IfsData:
                 'Insert': self.Insert,
                 'NeedInsert': self.NeedInsert,
                 'Stall':  self.Stall,
-                'stall_state': self.stall_state,
                 'stall_state': self.stall_state
             }
 
