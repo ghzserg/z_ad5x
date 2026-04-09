@@ -80,7 +80,7 @@ class zmod_ifs:
         self.ifs = False
         self.zmod = self.printer.lookup_object('zmod', None)
         self.zmod_color = self.printer.lookup_object('zmod_color', None)
-        
+
         color_limit = config.getint('color_limit', 0)
         self.color_limit = max(color_limit, 1) if not self.zmod_color.get_display() else 4
 
@@ -175,7 +175,7 @@ class zmod_ifs:
 
     def get_ifs_status(self):
         return self.ifs
-        
+
     def update_color_limit(self, new_limit):
         self.color_limit = new_limit
         self.ifs_data.update_color_limit(new_limit)
@@ -1269,7 +1269,7 @@ class IfsData:
         self.State = 0          # Состояние IFS
         self.NeedInsert = False # Нужно ли вставлять пруток
         self.LastResponseRaw = '' # Raw output of last F13 command
-        
+
     def update_color_limit(self, new_limit):
         if new_limit > self.color_limit:
             self.Ports += [False] * (new_limit - self.color_limit)
@@ -1279,14 +1279,14 @@ class IfsData:
             self.Stalls = self.Stalls[:new_limit]
         if self.Chan > new_limit:
             self.Chan = 0
-            
+
         self.color_limit = new_limit
-        
+
 
     def update_from_string(self, data_str):
         if data_str is None:
             return
-            
+
         self.lastResponseRaw = data_str
 
         silk_state = 0
@@ -1323,7 +1323,7 @@ class IfsData:
         new_stall = [False] * self.color_limit
         for i in range(self.color_limit):
             new_stall[i] = (stall_state >> i) & 1 == 1
-            
+
         channel_count_match = re.search(r'channel_count:\s*(\d+)', data_str)
         if channel_count_match:
             channel_count = int(channel_count_match.group(1))

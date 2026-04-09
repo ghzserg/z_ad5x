@@ -614,9 +614,9 @@ class zmod_color:
         self.zmod_ifs = self.printer.lookup_object('zmod_ifs', None)
         self.query_adc = self.printer.lookup_object('query_adc')
         self.virtual_sd = self.printer.lookup_object('virtual_sdcard')
-        
+
         self.color_limit = self.zmod_ifs.color_limit
-        
+
     def update_color_limit(self, new_limit):
         self.color_limit = new_limit
 
@@ -669,7 +669,7 @@ class zmod_color:
         if value > 0.3:
             result = (value >= 0.72)
         return result
-            
+
     def get_material_config_file(self, force_regenerate = False):
         if not force_regenerate:
             if self.display:
@@ -678,31 +678,31 @@ class zmod_color:
                 return CUSTOM_FFCONFIG
             if self.color_limit == 4:
                 return FFCONFIG
-        
+
         self.prepare_custom_ffconfig()
         return CUSTOM_FFCONFIG
-            
+
     def prepare_custom_ffconfig(self):
         if os.path.isfile(CUSTOM_FFCONFIG):
             source_file = CUSTOM_FFCONFIG
         else:
             source_file = FFCONFIG
-            
+
         with open(source_file, 'r') as file:
             config = json.load(file)
             new_data = {}
             new_data['FFMInfo'] = config.get('FFMInfo', {})
-               
+
         for i in range(self.color_limit + 1):
             if f'ffmColor{i}' not in new_data['FFMInfo']:
                 new_data['FFMInfo'][f'ffmColor{i}'] = '#FFFFFF'
             if f'ffmType{i}' not in new_data['FFMInfo']:
                 new_data['FFMInfo'][f'ffmType{i}'] = 'PLA'
-        
+
         json_string = json.dumps(new_data, indent='\t')
         formatted_json_string = re.sub(r'(":)', r'" : ', json_string)
-            
-        with open(CUSTOM_FFCONFIG, 'w', encoding='utf-8') as out_file: 
+
+        with open(CUSTOM_FFCONFIG, 'w', encoding='utf-8') as out_file:
             out_file.write(formatted_json_string)
 
     def get_printer_data_detail(self):
@@ -721,7 +721,7 @@ class zmod_color:
             config = json.load(file)
 
             ffm_info = config["FFMInfo"]
-            
+
             response_data["detail"]["hasMatlStation"] = self.zmod_ifs.get_ifs_status()
             response_data["detail"]["indepMatlInfo"] = {
                 "materialName": ffm_info.get("ffmType0", "N/A"),
@@ -738,14 +738,14 @@ class zmod_color:
                         "materialName": ffm_info.get(type_key, "PLA"),
                         "materialColor": ffm_info[color_key],
                         "hasFilament": self.zmod_ifs.get_port(i)
-                    }                    
+                    }
                 else:
                     slot = {
                         "slotId": str(i),
                         "materialName": "PLA",
                         "materialColor": "#FFFFFF",
                         "hasFilament": self.zmod_ifs.get_port(i)
-                    }      
+                    }
                 response_data["detail"]["matlStationInfo"]["slotInfos"].append(slot)
 
         return 200,response_data

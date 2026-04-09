@@ -58,7 +58,7 @@ class VirtualSD:
             desc=self.cmd_SDCARD_SET_CHANNEL_help)
         self.gcode.register_command(
             "SDCARD_ENABLE_FFM", self.cmd_SDCARD_ENABLE_FFM,
-            desc=self.cmd_SDCARD_ENABLE_FFM_help)   
+            desc=self.cmd_SDCARD_ENABLE_FFM_help)
     def handle_shutdown(self):
         if self.work_timer is not None:
             self.must_pause_work = True
@@ -255,7 +255,7 @@ class VirtualSD:
         self.next_file_position = pos
     def is_cmd_from_sd(self):
         return self.cmd_from_sd
-    
+
     # Background work timer
     def work_handler(self, eventtime):
         logging.info("Starting SD card print (position %d)", self.file_position)
