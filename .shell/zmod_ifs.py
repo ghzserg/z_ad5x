@@ -17,6 +17,7 @@ TIMEOUT = 0.2
 HOST_REPORT_TIME = 0.2
 OPROS_EXTRUDER = 0.1
 
+FFCONFIG='/usr/prog/config/Adventurer5M.json'
 TYPECONFIG='/usr/data/config/mod_data/filament.json'
 FILE_CONFIG='/usr/data/config/mod_data/file.json'
 
@@ -377,7 +378,7 @@ class zmod_ifs:
 
     # Получить текущий активный пруток из конфига
     def get_current_channel_from_config(self):
-        with open(self.zmod_color.get_material_config_file(), 'r') as file:
+        with open(FFCONFIG, 'r') as file:
             config = json.load(file)
             prutok = int(config["FFMInfo"].get("channel", 0))
             self.set_cur_port(prutok)
@@ -388,7 +389,7 @@ class zmod_ifs:
     def get_prutok_type_from_config(self, prutok):
         ret="PLA"
 
-        with open(self.zmod_color.get_material_config_file(), 'r') as file:
+        with open(FFCONFIG, 'r') as file:
             config = json.load(file)
             ret=config["FFMInfo"].get(f"ffmType{prutok}", "PLA")
         if ret not in self.temp_defaults:
@@ -629,7 +630,7 @@ class zmod_ifs:
         prutok = 1
         t_prutok = 0
 
-        with open(self.zmod_color.get_material_config_file(), 'r') as file:
+        with open(FFCONFIG, 'r') as file:
             config = json.load(file)
             ffm_info = config["FFMInfo"]
             prutok = ffm_info.get("channel", 1)

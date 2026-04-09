@@ -6,7 +6,6 @@ import logging
 import subprocess
 
 FFCONFIG='/usr/prog/config/Adventurer5M.json'
-CUSTOM_FFCONFIG='/usr/data/config/mod_data/channels.json'
 FILE_CONFIG='/usr/data/config/mod_data/file.json'
 
 TRANSLATIONS = {
@@ -652,7 +651,7 @@ class zmod_color:
 
     def get_current_channel(self):
         if self.ifs:
-            with open(self.get_material_config_file(), 'r') as file:
+            with open(FFCONFIG, 'r') as file:
                 config = json.load(file)
                 prutok = int(config["FFMInfo"].get("channel", 0))
                 if not self.display:
@@ -670,41 +669,6 @@ class zmod_color:
             result = (value >= 0.72)
         return result
 
-    def get_material_config_file(self, force_regenerate = False):
-        if not force_regenerate:
-            if self.display:
-                return FFCONFIG
-            if os.path.isfile(CUSTOM_FFCONFIG):
-                return CUSTOM_FFCONFIG
-            if self.color_limit == 4:
-                return FFCONFIG
-
-        self.prepare_custom_ffconfig()
-        return CUSTOM_FFCONFIG
-
-    def prepare_custom_ffconfig(self):
-        if os.path.isfile(CUSTOM_FFCONFIG):
-            source_file = CUSTOM_FFCONFIG
-        else:
-            source_file = FFCONFIG
-
-        with open(source_file, 'r') as file:
-            config = json.load(file)
-            new_data = {}
-            new_data['FFMInfo'] = config.get('FFMInfo', {})
-
-        for i in range(self.color_limit + 1):
-            if f'ffmColor{i}' not in new_data['FFMInfo']:
-                new_data['FFMInfo'][f'ffmColor{i}'] = '#FFFFFF'
-            if f'ffmType{i}' not in new_data['FFMInfo']:
-                new_data['FFMInfo'][f'ffmType{i}'] = 'PLA'
-
-        json_string = json.dumps(new_data, indent='\t')
-        formatted_json_string = re.sub(r'(":)', r'" : ', json_string)
-
-        with open(CUSTOM_FFCONFIG, 'w', encoding='utf-8') as out_file:
-            out_file.write(formatted_json_string)
-
     def get_printer_data_detail(self):
         response_data = {
             "detail": {
@@ -717,7 +681,7 @@ class zmod_color:
             }
         }
 
-        with open(self.get_material_config_file(), 'r') as file:
+        with open(FFCONFIG, 'r') as file:
             config = json.load(file)
 
             ffm_info = config["FFMInfo"]
@@ -757,13 +721,13 @@ class zmod_color:
         if not zcolor.startswith('#'):
             return 500, "Bed color"
 
-        with open(self.get_material_config_file(), 'r') as file:
+        with open(FFCONFIG, 'r') as file:
             config = json.load(file)
 
             config["FFMInfo"][f"ffmColor{zslot}"] = zcolor
             config["FFMInfo"][f"ffmType{zslot}"] = ztype
 
-        with open(self.get_material_config_file(), 'w', encoding='utf-8') as file:
+        with open(FFCONFIG, 'w', encoding='utf-8') as file:
             json_string = json.dumps(config, indent='\t')
             formatted_json_string = re.sub(r'(":)', r'" : ', json_string)
             file.write(formatted_json_string)
@@ -851,14 +815,14 @@ class zmod_color:
         if self.display:
             raise gcmd.error("Error: Display on")
         else:
-            with open(self.get_material_config_file(), 'r') as file:
+            with open(FFCONFIG, 'r') as file:
                 config = json.load(file)
 
                 config["FFMInfo"]["channel"] = zslot
                 if not self.display:
                     self.zmod_ifs.set_cur_port(zslot)
 
-            with open(self.get_material_config_file(), 'w', encoding='utf-8') as file:
+            with open(FFCONFIG, 'w', encoding='utf-8') as file:
                 json_string = json.dumps(config, indent='\t')
                 formatted_json_string = re.sub(r'(":)', r'" : ', json_string)
                 file.write(formatted_json_string)
