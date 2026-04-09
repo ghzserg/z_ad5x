@@ -81,7 +81,7 @@ class zmod_ifs:
         self.zmod = self.printer.lookup_object('zmod', None)
         self.zmod_color = self.printer.lookup_object('zmod_color', None)
 
-        color_limit = config.getint('color_limit', 0)
+        color_limit = config.getint('color_limit', 4)
         self.color_limit = max(color_limit, 1) if not self.zmod_color.get_display() else 4
 
         temp_defaults = {
