@@ -81,12 +81,8 @@ class zmod_ifs:
         self.zmod = self.printer.lookup_object('zmod', None)
         self.zmod_color = self.printer.lookup_object('zmod_color', None)
         
-        self.color_limit = config.getint('color_limit', 0) if not self.zmod_color.get_display() else 4
-        if self.color_limit == 0:
-            self.color_limit = 4
-            self.auto_update_color_limit = True
-        else:
-            self.auto_update_color_limit = False
+        color_limit = config.getint('color_limit', 0)
+        self.color_limit = max(color_limit, 1) if not self.zmod_color.get_display() else 4
 
         temp_defaults = {
             "PLA": 220,
@@ -120,8 +116,6 @@ class zmod_ifs:
         self._ret_command_lock = threading.Lock()
         self._ret_command_data = ""
         self._ret_command_id = 0
-        
-        self.last_F13_raw_response = ""
 
         self.stop_thread = False
         self.sensor_thread = threading.Thread(target=self._sensor_reader)
@@ -1225,13 +1219,7 @@ class zmod_ifs:
 
                     if command_id == -1:
                         self.ifs_data.update_from_string(response)
-                        self.last_F13_raw_response = response
                         current_values = self.ifs_data.get_values()
-                        
-                        if self.auto_update_color_limit:
-                            reported_color_limit = current_values.get('ReportedColorLimit', 0)
-                            if reported_color_limit > 0 and reported_color_limit != self.color_limit:
-                                self.update_color_limit(reported_color_limit)
 
                         #self._respond_info(response)
                         #self._respond_info(json.dumps(current_values))
@@ -1280,7 +1268,7 @@ class IfsData:
         self.stall_state = 0    # Движение по любому порту RAW
         self.State = 0          # Состояние IFS
         self.NeedInsert = False # Нужно ли вставлять пруток
-        self.ReportedColorLimit = 0 # Value reported by IFS on last IFS_F13
+        self.LastResponseRaw = '' # Raw output of last F13 command
         
     def update_color_limit(self, new_limit):
         if new_limit > self.color_limit:
@@ -1298,6 +1286,8 @@ class IfsData:
     def update_from_string(self, data_str):
         if data_str is None:
             return
+            
+        self.lastResponseRaw = data_str
 
         silk_state = 0
         silk = 0
@@ -1351,7 +1341,6 @@ class IfsData:
             self.Chan = chan
             self.NeedInsert = insert != 0 and insert != self.Insert and state == FFS_STATUS_READY
             self.Insert = insert
-            self.ReportedColorLimit = channel_count
 
     def set_cur_port(self, port):
         with self.lock:
@@ -1378,6 +1367,7 @@ class IfsData:
     def get_values(self):
         with self.lock:
             return {
+                'RawData': self.lastResponseRaw,
                 'State':  self.State,
                 'Ports':  self.Ports,
                 'Silk':   self.Silk,
@@ -1386,7 +1376,7 @@ class IfsData:
                 'NeedInsert': self.NeedInsert,
                 'Stall':  self.Stall,
                 'stall_state': self.stall_state,
-                'ReportedColorLimit': self.ReportedColorLimit
+                'stall_state': self.stall_state
             }
 
 
