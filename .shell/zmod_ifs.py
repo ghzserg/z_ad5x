@@ -120,6 +120,8 @@ class zmod_ifs:
         self._ret_command_lock = threading.Lock()
         self._ret_command_data = ""
         self._ret_command_id = 0
+        
+        self.last_F13_raw_response = ""
 
         self.stop_thread = False
         self.sensor_thread = threading.Thread(target=self._sensor_reader)
@@ -1223,6 +1225,7 @@ class zmod_ifs:
 
                     if command_id == -1:
                         self.ifs_data.update_from_string(response)
+                        self.last_F13_raw_response = response
                         current_values = self.ifs_data.get_values()
                         
                         if self.auto_update_color_limit:
