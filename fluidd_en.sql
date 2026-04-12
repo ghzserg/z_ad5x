@@ -463,6 +463,15 @@ INSERT INTO "main"."namespace_store" ("namespace", "key", "value") VALUES ('flui
             "visible": true
         },
         {
+            "alias": "IP",
+            "categoryId": "0077449b-cd10-4059-aebd-bf17be6cb270",
+            "color": "#ff0000",
+            "disabledWhilePrinting": false,
+            "name": "ip",
+            "order": 17,
+            "visible": true
+        },
+        {
             "alias": "",
             "categoryId": "0",
             "color": "",
