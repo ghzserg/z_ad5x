@@ -6,7 +6,7 @@ if [ "$ip" == "" ]; then
 fi
 
 if [ "$1" == 1 ]; then
-    echo "SHOW_MSG TITLE=IP MSG='$ip'" >/tmp/printer
+    echo "_SHOW_MSG TITLE=IP MSG='$ip'" >/tmp/printer
 else
     echo "IP: $ip"
 fi
