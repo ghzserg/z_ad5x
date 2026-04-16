@@ -600,7 +600,7 @@ class zmod_ifs:
         if not self.ifs:
             self.gcode.run_script_from_command("_IFS_OFF")
             return
-        cur_prutok = -1
+        cur_prutok = 99
 
         # Проверяем что пруток в экструдере
         if self.get_extruder_sensor():
@@ -611,7 +611,7 @@ class zmod_ifs:
                         mapping = json.load(f)
                         cur_prutok = mapping.index(n_prutok)
                 except Exception as e:
-                    cur_prutok = -2
+                    cur_prutok = 98
 
         channel = gcmd.get_int('CHANNEL', cur_prutok)
         if channel != cur_prutok:
