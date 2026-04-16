@@ -169,9 +169,9 @@ class SensorBase:
                 msg = (f"!! Nozzle hit bed or part detachment. Weight {int(temp)}>{self.max_temp}. Z={int(self.z)}. PAUSE."
                        if self.language != 'ru'
                        else f"!! Удар сопла о стол или отрыв детали. Вес {int(temp)}>{self.max_temp}. Z={int(self.z)}. PAUSE.")
-                url = ("https://github.com/ghzserg/zmod/wiki/Global_en#nozzle_control"
+                url = ("https://wiki.zmod.link/Global/#nozzle_control"
                        if self.language != 'ru'
-                       else "https://github.com/ghzserg/zmod/wiki/Global_ru#nozzle_control")
+                       else "https://wiki.zmod.link/ru/Global/#nozzle_control")
                 self.gcode.respond_raw(f"{msg} {url}")
                 self.zcontrol = 0
 
@@ -186,9 +186,9 @@ class SensorBase:
                 reactor.register_callback(async_pause)
             else:
                 shutdown_msg = (
-                    f"Nozzle hit bed or part detachment. Weight {int(temp)}>{self.max_temp}. Z={int(self.z)}. FIRMWARE_RESTART. https://github.com/ghzserg/zmod/wiki/Global_en#nozzle_control"
+                    f"Nozzle hit bed or part detachment. Weight {int(temp)}>{self.max_temp}. Z={int(self.z)}. FIRMWARE_RESTART. https://wiki.zmod.link/Global/#nozzle_control"
                     if self.language != 'ru'
-                    else f"Удар сопла о стол или отрыв детали. Вес {int(temp)}>{self.max_temp}. Z={int(self.z)}. FIRMWARE_RESTART. https://github.com/ghzserg/zmod/wiki/Global_ru#nozzle_control"
+                    else f"Удар сопла о стол или отрыв детали. Вес {int(temp)}>{self.max_temp}. Z={int(self.z)}. FIRMWARE_RESTART. https://wiki.zmod.link/ru/Global/#nozzle_control"
                 )
                 self.printer.invoke_async_shutdown(shutdown_msg)
             return
