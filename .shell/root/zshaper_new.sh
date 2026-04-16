@@ -18,9 +18,9 @@ SCV="$(cat /opt/config/mod_data/scv.txt)"
 SCV_INT="${SCV%%.*}"
 if [ "$SCV_INT" -ge 11 ] && ! $json_present; then
     if [ "${ZLANG}" != 'ru' ]; then
-        echo "!! SCV($SCV) too high detected // https://github.com/ghzserg/zmod/wiki/Global_en#fix_scv !!"
+        echo "!! SCV($SCV) too high detected // https://wiki.zmod.link/Global/#fix_scv !!"
     else
-        echo "!! Обнаружен завышенный SCV($SCV) // https://github.com/ghzserg/zmod/wiki/Global_ru#fix_scv !!"
+        echo "!! Обнаружен завышенный SCV($SCV) // https://wiki.zmod.link/ru/Global/#fix_scv !!"
     fi
 fi
 
