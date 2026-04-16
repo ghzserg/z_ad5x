@@ -5,7 +5,7 @@ source /opt/config/mod/.shell/0.sh
 
 # Более точный замер времени - Alexander
 if [ $# -ne 2 ] && [ $# -ne 3 ] && [ $# -ne 4 ]; then
-    [ ${ZLANG} != 'ru' ] && echo "Use $0 SIZE [SYNC] [FLASH] [RANDOM]\nhttps://github.com/ghzserg/zmod/wiki/System_en#test_emmc" || echo "Используйте $0 SIZE [SYNC] [FLASH] [RANDOM]\nhttps://github.com/ghzserg/zmod/wiki/System_ru#test_emmc"
+    [ ${ZLANG} != 'ru' ] && echo "Use $0 SIZE [SYNC] [FLASH] [RANDOM]\nhttps://wiki.zmod.link/System/#test_emmc" || echo "Используйте $0 SIZE [SYNC] [FLASH] [RANDOM]\nhttps://wiki.zmod.link/ru/System/#test_emmc"
     exit 1
 fi
 
