@@ -178,9 +178,10 @@ class zmod_ifs:
         return self.ifs
 
     def update_color_limit(self, new_limit):
-        self.color_limit = new_limit
-        self.ifs_data.update_color_limit(new_limit)
-        self.zmod_color.update_color_limit(new_limit)
+        if not self.zmod_color.get_display():
+            self.color_limit = new_limit
+            self.ifs_data.update_color_limit(new_limit)
+            self.zmod_color.update_color_limit(new_limit)
 
     def send_command_and_wait(self, command, timeout=5.0, result=None, extruder=None):
         """
