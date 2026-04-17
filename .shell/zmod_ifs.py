@@ -1256,7 +1256,7 @@ class zmod_ifs:
                 time.sleep(1)
 
 class IfsData:
-    def __init__(self, color_limit):
+    def __init__(self, color_limit = 4):
         self.color_limit = color_limit
         self.lock = threading.Lock()
         self.cur_port = 0       # Текущий активный порт
