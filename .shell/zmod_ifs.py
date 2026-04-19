@@ -82,6 +82,9 @@ class zmod_ifs:
         self.zmod = self.printer.lookup_object('zmod', None)
         self.zmod_color = self.printer.lookup_object('zmod_color', None)
 
+        color_limit = config.getint('color_limit', 4)
+        self.color_limit = max(color_limit, 1) if not self.zmod_color.get_display() else 4
+
         temp_defaults = {
             "PLA": 220,
             "PLA-CF": 220,
@@ -102,7 +105,7 @@ class zmod_ifs:
 
         if not self.zmod_color or self.zmod_color.get_display():
             return
-        self.ifs_data = IfsData()
+        self.ifs_data = IfsData(self.color_limit)
 
         self.zmod_color.valid_types = list(self.temp_defaults.keys()) + ['?']
 
@@ -173,6 +176,12 @@ class zmod_ifs:
 
     def get_ifs_status(self):
         return self.ifs
+
+    def update_color_limit(self, new_limit):
+        if not self.zmod_color.get_display():
+            self.color_limit = new_limit
+            self.ifs_data.update_color_limit(new_limit)
+            self.zmod_color.update_color_limit(new_limit)
 
     def send_command_and_wait(self, command, timeout=5.0, result=None, extruder=None):
         """
@@ -512,7 +521,7 @@ class zmod_ifs:
 
     # Получить конфиг прутка по номеру прутка
     def get_prutok_config(self, prutok):
-        if prutok < 0 or prutok > 4:
+        if prutok < 0 or prutok > self.color_limit:
             self.print_str(f"Некорректный номер прутка {prutok}" if self.lang == 'ru' else f"Incorrect filament number {prutok}", False)
         filament=self.get_prutok_type_from_config(prutok)
 
@@ -641,7 +650,7 @@ class zmod_ifs:
         except ValueError:
             t_prutok = 0
 
-        for i in range(1, 5):
+        for i in range(1, self.color_limit + 1):
             if (
                 f"ffmType{i}" not in ffm_info or
                 f"ffmColor{i}" not in ffm_info
@@ -1248,25 +1257,39 @@ class zmod_ifs:
                 time.sleep(1)
 
 class IfsData:
-    def __init__(self):
+    def __init__(self, color_limit = 4):
+        self.color_limit = color_limit
         self.lock = threading.Lock()
         self.cur_port = 0       # Текущий активный порт
-        self.Port1 = False      # Загрузка порта 1
-        self.Port2 = False      # Загрузка порта 2
-        self.Port3 = False      # Загрузка порта 3
-        self.Port4 = False      # Загрузка порта 4
+        self.Ports = [False] * self.color_limit
         self.Silk = 0           # Загруженные порты
         self.Chan = 0           # Текущий активный порт
         self.Insert = 0         # В каком порту появился филамент
         self.Stall = False      # Движение по любому порту
-        self.Stalls = [False, False, False, False]
+        self.Stalls = [False] * self.color_limit
         self.stall_state = 0    # Движение по любому порту RAW
         self.State = 0          # Состояние IFS
         self.NeedInsert = False # Нужно ли вставлять пруток
+        self.LastResponseRaw = '' # Raw output of last F13 command
+
+    def update_color_limit(self, new_limit):
+        if new_limit > self.color_limit:
+            self.Ports += [False] * (new_limit - self.color_limit)
+            self.Stalls += [False] * (new_limit - self.color_limit)
+        elif new_limit < self.color_limit:
+            self.Ports = self.Ports[:new_limit]
+            self.Stalls = self.Stalls[:new_limit]
+        if self.Chan > new_limit:
+            self.Chan = 0
+
+        self.color_limit = new_limit
+
 
     def update_from_string(self, data_str):
         if data_str is None:
             return
+
+        self.lastResponseRaw = data_str
 
         silk_state = 0
         silk = 0
@@ -1274,6 +1297,7 @@ class IfsData:
         insert = 0
         stall_state = 0
         state = 0
+        channel_count = 0
 
         state_match = re.search(r'FFS_state:\s*(\d+)', data_str)
         if state_match:
@@ -1282,10 +1306,9 @@ class IfsData:
         silk_match = re.search(r'silk_state:\s*(\d+)', data_str)
         if silk_match:
             silk_state = int(silk_match.group(1))
-        port1 = (silk_state >> 0) & 1 == 1
-        port2 = (silk_state >> 1) & 1 == 1
-        port3 = (silk_state >> 2) & 1 == 1
-        port4 = (silk_state >> 3) & 1 == 1
+        new_ports = [False] * self.color_limit
+        for i in range(self.color_limit):
+            new_ports[i] = (silk_state >> i) & 1 == 1
 
         chan_match = re.search(r'chan:\s*(\d+)', data_str)
         if chan_match:
@@ -1299,21 +1322,22 @@ class IfsData:
         stall_match = re.search(r'stall_state:\s*(\d+)', data_str)
         if stall_match:
             stall_state = int(stall_match.group(1))
+        new_stall = [False] * self.color_limit
+        for i in range(self.color_limit):
+            new_stall[i] = (stall_state >> i) & 1 == 1
+
+        channel_count_match = re.search(r'channel_count:\s*(\d+)', data_str)
+        if channel_count_match:
+            channel_count = int(channel_count_match.group(1))
 
         with self.lock:
-            self.Port1 = port1
-            self.Port2 = port2
-            self.Port3 = port3
-            self.Port4 = port4
+            self.Ports = new_ports
             self.stall_state = stall_state
             if self.cur_port == 0:
                 self.Stall = stall_state != 0
             else:
                 self.Stall = (stall_state >> (self.cur_port - 1) ) & 1 == 1
-            self.Stalls[0] = (stall_state >> 0 ) & 1 == 1
-            self.Stalls[1] = (stall_state >> 1 ) & 1 == 1
-            self.Stalls[2] = (stall_state >> 2 ) & 1 == 1
-            self.Stalls[3] = (stall_state >> 3 ) & 1 == 1
+            self.Stalls = new_stall
             self.Silk = silk_state
             self.State = state
             self.Chan = chan
@@ -1322,7 +1346,7 @@ class IfsData:
 
     def set_cur_port(self, port):
         with self.lock:
-            if port < 0 or port > 4:
+            if port < 0 or port > self.color_limit:
                 self.cur_port = 0
             else:
                 self.cur_port = port
@@ -1337,24 +1361,17 @@ class IfsData:
     # Возвращает статус конкретного порта
     def get_port(self, port):
         with self.lock:
-            if port == 1:
-                return self.Port1
-            if port == 2:
-                return self.Port2
-            if port == 3:
-                return self.Port3
-            if port == 4:
-                return self.Port4
-            return False
+            if port > 0 and port <= self.color_limit:
+                return self.Ports[port - 1]
+            else:
+                return False
 
     def get_values(self):
         with self.lock:
             return {
+                'RawData': self.lastResponseRaw,
                 'State':  self.State,
-                'Port1':  self.Port1,
-                'Port2':  self.Port2,
-                'Port3':  self.Port3,
-                'Port4':  self.Port4,
+                'Ports':  self.Ports,
                 'Silk':   self.Silk,
                 'Chan':   self.Chan,
                 'Insert': self.Insert,
