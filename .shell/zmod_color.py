@@ -617,6 +617,7 @@ class zmod_color:
         self.color_limit = self.zmod_ifs.color_limit
 
     def update_color_limit(self, new_limit):
+        # Do not call this directly. Call zmod_ifs.update_color_limit instead and let it call this.
         self.color_limit = new_limit
 
     def cmd_UPDATE_FF_OFFSET(self, gcmd):
