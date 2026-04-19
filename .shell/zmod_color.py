@@ -1,4 +1,3 @@
-import os
 import re
 import json
 import requests
@@ -574,7 +573,6 @@ AUTO_ASSIGN_WEAK_COLOR_CUTOFF = (63 ** 2) * 3 # If the squares of each component
 class zmod_color:
     def __init__(self, config):
         self.printer = config.get_printer()
-        self.color_limit = 4
 
         self.display = config.getboolean('display', True)
         self.lang = 'en'
@@ -613,12 +611,6 @@ class zmod_color:
         self.zmod_ifs = self.printer.lookup_object('zmod_ifs', None)
         self.query_adc = self.printer.lookup_object('query_adc')
         self.virtual_sd = self.printer.lookup_object('virtual_sdcard')
-
-        self.color_limit = self.zmod_ifs.color_limit
-
-    def update_color_limit(self, new_limit):
-        # Do not call this directly. Call zmod_ifs.update_color_limit instead and let it call this.
-        self.color_limit = new_limit
 
     def cmd_UPDATE_FF_OFFSET(self, gcmd):
         with open(FFCONFIG, 'r') as file:
@@ -692,31 +684,24 @@ class zmod_color:
                 "materialColor": ffm_info["ffmColor0"]
             }
 
-            for i in range(0, self.color_limit + 1):
+            for i in range(0, 5):
                 color_key = f"ffmColor{i}"
                 type_key = f"ffmType{i}"
 
                 if color_key in ffm_info:
                     slot = {
                         "slotId": str(i),
-                        "materialName": ffm_info.get(type_key, "PLA"),
+                        "materialName": ffm_info.get(type_key, "N/A"),
                         "materialColor": ffm_info[color_key],
                         "hasFilament": self.zmod_ifs.get_port(i)
                     }
-                else:
-                    slot = {
-                        "slotId": str(i),
-                        "materialName": "PLA",
-                        "materialColor": "#FFFFFF",
-                        "hasFilament": self.zmod_ifs.get_port(i)
-                    }
-                response_data["detail"]["matlStationInfo"]["slotInfos"].append(slot)
+                    response_data["detail"]["matlStationInfo"]["slotInfos"].append(slot)
 
         return 200,response_data
 
     def set_printer_data_detail(self, zslot, ztype, zcolor):
-        if not (0 <= zslot <= self.color_limit):
-            return 500, f"slot must be between 0 and {self.color_limit}"
+        if not (0 <= zslot <= 4):
+            return 500, "slot must be between 0 and 4"
 
         if not zcolor.startswith('#'):
             return 500, "Bed color"
@@ -810,7 +795,7 @@ class zmod_color:
 
     def cmd_SET_EXTRUDER_SLOT(self, gcmd):
         zslot = gcmd.get_int('SLOT', 0)
-        if zslot < 1 or zslot > self.color_limit:
+        if zslot < 1 or zslot > 4:
             raise gcmd.error(self._t('error_slot'))
         if self.display:
             raise gcmd.error("Error: Display on")
@@ -888,7 +873,7 @@ class zmod_color:
 
         allowed_tool_count = save_variables.get('allowed_tool_count', 0)
         if allowed_tool_count <= 0:
-            allowed_tool_count = self.color_limit
+            allowed_tool_count = 4
 
         return allowed_tool_count
 
@@ -1128,7 +1113,7 @@ class zmod_color:
                     auto_result = self.get_auto_tool_assignments(gcmd, tools, result, auto_selection_output_text, one_based_indexes)
 
                 for i, tool in enumerate(tools):
-                    if tool < 1 or tool > self.color_limit:
+                    if tool < 1 or tool > 4:
                         raise gcmd.error(self._t('error_tool', i, tool))
 
             if silent == 0:
@@ -1310,7 +1295,7 @@ class zmod_color:
               tools += [gcmd.get_int(f"T{i}", int(default_values[i]))]
 
             for i, tool in enumerate(tools):
-                if tool < 1 or tool > self.color_limit:
+                if tool < 1 or tool > 4:
                     raise gcmd.error(self._t('error_tool', i, tool))
 
             material_mappings = []
@@ -1446,7 +1431,7 @@ class zmod_color:
               tools += [gcmd.get_int(f"T{i}", int(default_values[i]))]
 
             for i, tool in enumerate(tools):
-                if tool < 1 or tool > self.color_limit:
+                if tool < 1 or tool > 4:
                     raise gcmd.error(self._t('error_tool', i, tool))
 
             ztool = gcmd.get_int('T', 0)
@@ -1491,7 +1476,7 @@ class zmod_color:
     def cmd_RUN_ZCOLOR(self, gcmd):
         gcmd.respond_raw("// action:prompt_end")
         zslot = gcmd.get_int('SLOT', 0)
-        if zslot < 0 or zslot > self.color_limit:
+        if zslot < 0 or zslot > 4:
             raise gcmd.error(self._t('error_slot'))
 
         zhex = gcmd.get('HEX', '161616').upper()
@@ -1554,7 +1539,7 @@ class zmod_color:
     def cmd_CHANGE_ZCOLOR(self, gcmd):
         gcmd.respond_raw("// action:prompt_end")
         zslot = gcmd.get_int('SLOT', 0)
-        if zslot < 0 or zslot > self.color_limit:
+        if zslot < 0 or zslot > 4:
             raise gcmd.error(self._t('error_slot'))
 
         zhex = gcmd.get('HEX', '').upper()
@@ -1647,7 +1632,7 @@ class zmod_color:
     def cmd_IN_ZCOLOR(self, gcmd):
         gcmd.respond_raw("// action:prompt_end")
         zslot = gcmd.get_int('SLOT', 0)
-        if zslot < 0 or zslot > self.color_limit:
+        if zslot < 0 or zslot > 4:
             raise gcmd.error(self._t('error_slot'))
 
         napr = gcmd.get_int('NAPR', 0)

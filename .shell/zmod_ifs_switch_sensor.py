@@ -75,7 +75,7 @@ class ZmodIfsPortSensor:
         self.name = config.get_name().split()[-1]
 
         self.runout_helper = RunoutHelper(config)
-        self.port = config.getint('port', 0, minval=0)
+        self.port = config.getint('port', 0, minval=0, maxval=4)
         self.get_status = self.runout_helper.get_status
         self.printer.add_object(f"filament_switch_sensor {self.name}", self)
 

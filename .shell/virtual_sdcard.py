@@ -6,6 +6,7 @@
 import os, sys, logging, io
 
 VALID_GCODE_EXTS = ['gcode', 'g', 'gco','gx']
+VALID_GCODE_T = {'T0', 'T1', 'T2', 'T3','T4', 'T5', 'T6', 'T7','T8', 'T9', 'T10', 'T11','T12', 'T13', 'T14', 'T15'}
 
 DEFAULT_ERROR_GCODE = """
 {% if 'heaters' in printer %}
@@ -58,7 +59,7 @@ class VirtualSD:
             desc=self.cmd_SDCARD_SET_CHANNEL_help)
         self.gcode.register_command(
             "SDCARD_ENABLE_FFM", self.cmd_SDCARD_ENABLE_FFM,
-            desc=self.cmd_SDCARD_ENABLE_FFM_help)
+            desc=self.cmd_SDCARD_ENABLE_FFM_help)   
     def handle_shutdown(self):
         if self.work_timer is not None:
             self.must_pause_work = True
@@ -309,7 +310,7 @@ class VirtualSD:
                 #self.reactor.pause(self.reactor.monotonic() + .005)
             if line.startswith("T") and self.enable_ffm:
                 cmd = line.split(';', 1)[0].strip()
-                if cmd[1:].isdigit():
+                if cmd in VALID_GCODE_T:
                     self.print_channel = int(cmd[1:])
                     if self.print_channel != self.load_channel:
                         self.gcode.run_script("M400")
