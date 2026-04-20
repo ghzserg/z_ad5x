@@ -820,8 +820,7 @@ class zmod_color:
                 config = json.load(file)
 
                 config["FFMInfo"]["channel"] = zslot
-                if not self.display:
-                    self.zmod_ifs.set_cur_port(zslot)
+                self.zmod_ifs.set_cur_port(zslot)
 
                 with open(FFCONFIG, 'w', encoding='utf-8') as file:
                     json_string = json.dumps(config, indent='\t')
