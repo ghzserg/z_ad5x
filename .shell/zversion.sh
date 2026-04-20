@@ -55,3 +55,4 @@ if [ "${VER_FF}" != "${VER_MOD}" ]; then
         echo 'https://wiki.zmod.link/ru/Setup/'
     fi
 fi
+/opt/config/mod/.shell/ip.sh
