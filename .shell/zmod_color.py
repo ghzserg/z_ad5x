@@ -614,7 +614,8 @@ class zmod_color:
         self.query_adc = self.printer.lookup_object('query_adc')
         self.virtual_sd = self.printer.lookup_object('virtual_sdcard')
 
-        self.color_limit = self.zmod_ifs.color_limit
+        if self.zmod_ifs:
+            self.color_limit = self.zmod_ifs.color_limit
 
     def update_color_limit(self, new_limit):
         # Do not call this directly. Call zmod_ifs.update_color_limit instead and let it call this.
