@@ -119,6 +119,8 @@ class zmod_tenz:
         self.getlang()
         max_attempts = 10
         attempt = 0
+        with self.temp_lock:
+            start_temp = abs(self.temp)
         while attempt < max_attempts:
             attempt += 1
             self.cmd_H1(gcmd)  # Вызов команды H1 для сброса веса
@@ -128,18 +130,18 @@ class zmod_tenz:
                 gcmd.respond_info(f"N {attempt}. Weight: {cur_temp}")
             else:
                 gcmd.respond_info(f"N {attempt}. Вес: {cur_temp}")
-            if abs(cur_temp) < 100:
+            if abs(cur_temp) < 100 and ( start_temp == 0 or start_temp != abs(cur_temp) ):
                 if self.language != 'ru':
-                    gcmd.respond_info(f"Cell Tare: OK. Weight: {cur_temp}")
+                    gcmd.respond_info(f"Cell Tare: OK. Weight: {start_temp}->{cur_temp}")
                 else:
-                    gcmd.respond_info(f"Сброс тензодатчка: ОК. Вес: {cur_temp}")
+                    gcmd.respond_info(f"Сброс тензодатчка: ОК. Вес: {start_temp}->{cur_temp}")
                 return
             self.reactor.pause(self.reactor.monotonic() + 0.5)
 
         if self.language != 'ru':
-            error_msg = f"Cell Tare: Error. Weight: {cur_temp} https://github.com/ghzserg/zmod/wiki/FAQ_en"
+            error_msg = f"Cell Tare: Error. Weight: {start_temp}->{cur_temp} https://github.com/ghzserg/zmod/wiki/FAQ_en"
         else:
-            error_msg = f"Сброс тензодатчка: Ошибка. Вес: {cur_temp} https://github.com/ghzserg/zmod/wiki/FAQ"
+            error_msg = f"Сброс тензодатчка: Ошибка. Вес: {start_temp}->{cur_temp} https://github.com/ghzserg/zmod/wiki/FAQ"
         raise gcmd.error(error_msg)
 
     def cmd_H1(self, gcmd):
