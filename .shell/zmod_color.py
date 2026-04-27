@@ -1208,6 +1208,14 @@ class zmod_color:
                 for line in auto_selection_output_text:
                     gcmd.respond_raw(line)
             elif silent == 1:
+                gcmd.respond_raw(f"// {fname}")
+                gcmd.respond_raw(f"// {leveling_text}")
+                gcmd.respond_raw("// IFS ON // SAVE_ZMOD_DATA SILENT=1")
+                if self.lang == 'ru':
+                    gcmd.respond_raw("Скрыть выбор цвета, печатать с IFS")
+                else:
+                    gcmd.respond_raw("Hide color selection, print with IFS")
+
                 if auto_assign > 1:
                     # Success bit flag is ignored
                     # The rest is AND'd with the auto assign result, if this is non-zero, print is aborted
@@ -1217,13 +1225,6 @@ class zmod_color:
                             gcmd.respond_raw(line)
                         raise gcmd.error(self._t('error_auto_assign_result', pass_check))
 
-                gcmd.respond_raw(f"// {fname}")
-                gcmd.respond_raw(f"// {leveling_text}")
-                gcmd.respond_raw("// IFS ON // SAVE_ZMOD_DATA SILENT=1")
-                if self.lang == 'ru':
-                    gcmd.respond_raw("Скрыть выбор цвета, печатать с IFS")
-                else:
-                    gcmd.respond_raw("Hide color selection, print with IFS")
                 for tool_idx, tool_val in enumerate(tools):
                     for slot_info in result:
                         if int(slot_info['ID']) != tool_val:
