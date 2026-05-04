@@ -7,30 +7,32 @@ if ! [ $# -eq 1 ]; then echo "Use $0 on|off|test"; exit 1; fi
 
 wifi_off()
 {
+    echo "Test wifi_off"
     if  grep -q "wifi = 1" /opt/config/mod_data/variables.cfg && \
         grep -q '"wifiHotspotStatus" : false' "$FFCONFIG" && \
         grep -q '"isManual" : false' "$FFCONFIG" && \
         grep -q '"isUdhcpc" : true' "$FFCONFIG" && \
         grep -q '"ethernetStatus" : false' "$FFCONFIG" && \
         grep -q "disabled=1" ${WPA_CONFIG}; then
-
-        killall firmwareExe
-        grep -q '"wifiStationStatus" : true' "$FFCONFIG" && sed -i 's/"wifiStationStatus" : true/"wifiStationStatus" : false/' "$FFCONFIG"
+            echo "Z-Mod disabled wifiStationStatus on native screen"
+            killall firmwareExe
+            grep -q '"wifiStationStatus" : true' "$FFCONFIG" && sed -i 's/"wifiStationStatus" : true/"wifiStationStatus" : false/' "$FFCONFIG"
     fi
     return 0
 }
 
 wifi_on()
 {
+    echo "Test wifi_on"
     if  grep -q "wifi = 1" /opt/config/mod_data/variables.cfg && \
         grep -q '"wifiHotspotStatus" : false' "$FFCONFIG" && \
         grep -q '"isManual" : false' "$FFCONFIG" && \
         grep -q '"isUdhcpc" : true' "$FFCONFIG" && \
         grep -q '"ethernetStatus" : false' "$FFCONFIG" && \
         grep -q "disabled=1" ${WPA_CONFIG}; then
-
-        killall firmwareExe
-        grep -q '"wifiStationStatus" : false' "$FFCONFIG" && sed -i 's/"wifiStationStatus" : false/"wifiStationStatus" : true/' "$FFCONFIG"
+            echo "Z-Mod enabled wifiStationStatus on native screen"
+            killall firmwareExe
+            grep -q '"wifiStationStatus" : false' "$FFCONFIG" && sed -i 's/"wifiStationStatus" : false/"wifiStationStatus" : true/' "$FFCONFIG"
     fi
     return 0
 }
