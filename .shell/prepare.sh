@@ -134,6 +134,7 @@ start_prepare()
     else
         mkdir -p ${MOD}/opt/PROGRAM/
         mount --bind /opt/PROGRAM/ ${MOD}/opt/PROGRAM/
+        touch ${MOD}/etc/wpa_supplicant.conf
         mount --bind /etc/wpa_supplicant.conf ${MOD}/etc/wpa_supplicant.conf
     fi
 
