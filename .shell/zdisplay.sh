@@ -84,4 +84,4 @@ mv ${MOD_CONF}/mod_data/log/display_off.3.log ${MOD_CONF}/mod_data/log/display_o
 mv ${MOD_CONF}/mod_data/log/display_off.2.log ${MOD_CONF}/mod_data/log/display_off.3.log 2>/dev/null
 mv ${MOD_CONF}/mod_data/log/display_off.1.log ${MOD_CONF}/mod_data/log/display_off.2.log 2>/dev/null
 mv ${MOD_CONF}/mod_data/log/display_off.log ${MOD_CONF}/mod_data/log/display_off.1.log 2>/dev/null
-display_off &>${MOD_CONF}/mod_data/log/display_off.log
+display_off "$1" &>${MOD_CONF}/mod_data/log/display_off.log
