@@ -44,11 +44,11 @@ start() {
         sed -i 's/Weight/Вес/' /opt/config/mod_data/guppyconfig.json
     fi
 
-    mv /opt/config/mod_data/log/guppyscreen.4.log /opt/config/mod_data/log/guppyscreen.5.log
-    mv /opt/config/mod_data/log/guppyscreen.3.log /opt/config/mod_data/log/guppyscreen.4.log
-    mv /opt/config/mod_data/log/guppyscreen.2.log /opt/config/mod_data/log/guppyscreen.3.log
-    mv /opt/config/mod_data/log/guppyscreen.1.log /opt/config/mod_data/log/guppyscreen.2.log
-    mv /opt/config/mod_data/log/guppyscreen.log /opt/config/mod_data/log/guppyscreen.1.log
+    mv /opt/config/mod_data/log/guppyscreen.4.log /opt/config/mod_data/log/guppyscreen.5.log 2>/dev/null
+    mv /opt/config/mod_data/log/guppyscreen.3.log /opt/config/mod_data/log/guppyscreen.4.log 2>/dev/null
+    mv /opt/config/mod_data/log/guppyscreen.2.log /opt/config/mod_data/log/guppyscreen.3.log 2>/dev/null
+    mv /opt/config/mod_data/log/guppyscreen.1.log /opt/config/mod_data/log/guppyscreen.2.log 2>/dev/null
+    mv /opt/config/mod_data/log/guppyscreen.log /opt/config/mod_data/log/guppyscreen.1.log 2>/dev/null
 
     killall guppyscreen
     [ ${AD5X} -eq 0 ] && backlight 60

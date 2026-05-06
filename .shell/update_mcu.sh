@@ -41,11 +41,11 @@ update_mcu_mainboard()
 
 update_mainboard()
 {
-    mv ${CONFIG_DIR}/mod_data/log/update_mcu_mainboard.4.log ${CONFIG_DIR}/mod_data/log/update_mcu_mainboard.5.log
-    mv ${CONFIG_DIR}/mod_data/log/update_mcu_mainboard.3.log ${CONFIG_DIR}/mod_data/log/update_mcu_mainboard.4.log
-    mv ${CONFIG_DIR}/mod_data/log/update_mcu_mainboard.2.log ${CONFIG_DIR}/mod_data/log/update_mcu_mainboard.3.log
-    mv ${CONFIG_DIR}/mod_data/log/update_mcu_mainboard.1.log ${CONFIG_DIR}/mod_data/log/update_mcu_mainboard.2.log
-    mv ${CONFIG_DIR}/mod_data/log/update_mcu_mainboard.log ${CONFIG_DIR}/mod_data/log/update_mcu_mainboard.1.log
+    mv ${CONFIG_DIR}/mod_data/log/update_mcu_mainboard.4.log ${CONFIG_DIR}/mod_data/log/update_mcu_mainboard.5.log 2>/dev/null
+    mv ${CONFIG_DIR}/mod_data/log/update_mcu_mainboard.3.log ${CONFIG_DIR}/mod_data/log/update_mcu_mainboard.4.log 2>/dev/null
+    mv ${CONFIG_DIR}/mod_data/log/update_mcu_mainboard.2.log ${CONFIG_DIR}/mod_data/log/update_mcu_mainboard.3.log 2>/dev/null
+    mv ${CONFIG_DIR}/mod_data/log/update_mcu_mainboard.1.log ${CONFIG_DIR}/mod_data/log/update_mcu_mainboard.2.log 2>/dev/null
+    mv ${CONFIG_DIR}/mod_data/log/update_mcu_mainboard.log ${CONFIG_DIR}/mod_data/log/update_mcu_mainboard.1.log 2>/dev/null
 
     update_mcu_mainboard &>${CONFIG_DIR}/mod_data/log/update_mcu_mainboard.log
 }
@@ -64,11 +64,11 @@ update_mcu_eboard()
 
 update_eboard()
 {
-    mv ${CONFIG_DIR}/mod_data/log/update_mcu_eboard.4.log ${CONFIG_DIR}/mod_data/log/update_mcu_eboard.5.log
-    mv ${CONFIG_DIR}/mod_data/log/update_mcu_eboard.3.log ${CONFIG_DIR}/mod_data/log/update_mcu_eboard.4.log
-    mv ${CONFIG_DIR}/mod_data/log/update_mcu_eboard.2.log ${CONFIG_DIR}/mod_data/log/update_mcu_eboard.3.log
-    mv ${CONFIG_DIR}/mod_data/log/update_mcu_eboard.1.log ${CONFIG_DIR}/mod_data/log/update_mcu_eboard.2.log
-    mv ${CONFIG_DIR}/mod_data/log/update_mcu_eboard.log ${CONFIG_DIR}/mod_data/log/update_mcu_eboard.1.log
+    mv ${CONFIG_DIR}/mod_data/log/update_mcu_eboard.4.log ${CONFIG_DIR}/mod_data/log/update_mcu_eboard.5.log 2>/dev/null
+    mv ${CONFIG_DIR}/mod_data/log/update_mcu_eboard.3.log ${CONFIG_DIR}/mod_data/log/update_mcu_eboard.4.log 2>/dev/null
+    mv ${CONFIG_DIR}/mod_data/log/update_mcu_eboard.2.log ${CONFIG_DIR}/mod_data/log/update_mcu_eboard.3.log 2>/dev/null
+    mv ${CONFIG_DIR}/mod_data/log/update_mcu_eboard.1.log ${CONFIG_DIR}/mod_data/log/update_mcu_eboard.2.log 2>/dev/null
+    mv ${CONFIG_DIR}/mod_data/log/update_mcu_eboard.log ${CONFIG_DIR}/mod_data/log/update_mcu_eboard.1.log 2>/dev/null
 
     update_mcu_eboard &>${CONFIG_DIR}/mod_data/log/update_mcu_eboard.log
 }
@@ -87,11 +87,11 @@ update_mcu_ifs()
 
 update_ifs()
 {
-    mv ${CONFIG_DIR}/mod_data/log/update_mcu_ifs.4.log ${CONFIG_DIR}/mod_data/log/update_mcu_ifs.5.log
-    mv ${CONFIG_DIR}/mod_data/log/update_mcu_ifs.3.log ${CONFIG_DIR}/mod_data/log/update_mcu_ifs.4.log
-    mv ${CONFIG_DIR}/mod_data/log/update_mcu_ifs.2.log ${CONFIG_DIR}/mod_data/log/update_mcu_ifs.3.log
-    mv ${CONFIG_DIR}/mod_data/log/update_mcu_ifs.1.log ${CONFIG_DIR}/mod_data/log/update_mcu_ifs.2.log
-    mv ${CONFIG_DIR}/mod_data/log/update_mcu_ifs.log ${CONFIG_DIR}/mod_data/log/update_mcu_ifs.1.log
+    mv ${CONFIG_DIR}/mod_data/log/update_mcu_ifs.4.log ${CONFIG_DIR}/mod_data/log/update_mcu_ifs.5.log 2>/dev/null
+    mv ${CONFIG_DIR}/mod_data/log/update_mcu_ifs.3.log ${CONFIG_DIR}/mod_data/log/update_mcu_ifs.4.log 2>/dev/null
+    mv ${CONFIG_DIR}/mod_data/log/update_mcu_ifs.2.log ${CONFIG_DIR}/mod_data/log/update_mcu_ifs.3.log 2>/dev/null
+    mv ${CONFIG_DIR}/mod_data/log/update_mcu_ifs.1.log ${CONFIG_DIR}/mod_data/log/update_mcu_ifs.2.log 2>/dev/null
+    mv ${CONFIG_DIR}/mod_data/log/update_mcu_ifs.log ${CONFIG_DIR}/mod_data/log/update_mcu_ifs.1.log 2>/dev/null
 
     update_mcu_ifs &>${CONFIG_DIR}/mod_data/log/update_mcu_ifs.log
 }

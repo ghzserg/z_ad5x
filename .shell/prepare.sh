@@ -134,6 +134,7 @@ start_prepare()
     else
         mkdir -p ${MOD}/opt/PROGRAM/
         mount --bind /opt/PROGRAM/ ${MOD}/opt/PROGRAM/
+        mount --bind /etc/wpa_supplicant.conf ${MOD}/etc/wpa_supplicant.conf
     fi
 
     mkdir -p ${MOD}${KLIPPER_DIR}
@@ -173,9 +174,9 @@ fi
 
 while ! mount |grep /dev/mmcblk0p7; do sleep 10; done
 
-mv ${MOD_CONF}/mod_data/log/zmod.4.log ${MOD_CONF}/mod_data/log/zmod.5.log
-mv ${MOD_CONF}/mod_data/log/zmod.3.log ${MOD_CONF}/mod_data/log/zmod.4.log
-mv ${MOD_CONF}/mod_data/log/zmod.2.log ${MOD_CONF}/mod_data/log/zmod.3.log
-mv ${MOD_CONF}/mod_data/log/zmod.1.log ${MOD_CONF}/mod_data/log/zmod.2.log
-mv ${MOD_CONF}/mod_data/log/zmod.log ${MOD_CONF}/mod_data/log/zmod.1.log
+mv ${MOD_CONF}/mod_data/log/zmod.4.log ${MOD_CONF}/mod_data/log/zmod.5.log 2>/dev/null
+mv ${MOD_CONF}/mod_data/log/zmod.3.log ${MOD_CONF}/mod_data/log/zmod.4.log 2>/dev/null
+mv ${MOD_CONF}/mod_data/log/zmod.2.log ${MOD_CONF}/mod_data/log/zmod.3.log 2>/dev/null
+mv ${MOD_CONF}/mod_data/log/zmod.1.log ${MOD_CONF}/mod_data/log/zmod.2.log 2>/dev/null
+mv ${MOD_CONF}/mod_data/log/zmod.log ${MOD_CONF}/mod_data/log/zmod.1.log 2>/dev/null
 start_prepare &>${MOD_CONF}/mod_data/log/zmod.log
