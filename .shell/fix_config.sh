@@ -896,11 +896,11 @@ stepper: stepper_x, stepper_y, stepper_z
 
 mkdir -p ${MOD_CONF}/mod_data/log/
 
-mv ${MOD_CONF}/mod_data/log/fix_config.4.log ${MOD_CONF}/mod_data/log/fix_config.5.log
-mv ${MOD_CONF}/mod_data/log/fix_config.3.log ${MOD_CONF}/mod_data/log/fix_config.4.log
-mv ${MOD_CONF}/mod_data/log/fix_config.2.log ${MOD_CONF}/mod_data/log/fix_config.3.log
-mv ${MOD_CONF}/mod_data/log/fix_config.1.log ${MOD_CONF}/mod_data/log/fix_config.2.log
-mv ${MOD_CONF}/mod_data/log/fix_config.log   ${MOD_CONF}/mod_data/log/fix_config.1.log
+mv ${MOD_CONF}/mod_data/log/fix_config.4.log ${MOD_CONF}/mod_data/log/fix_config.5.log 2>/dev/null
+mv ${MOD_CONF}/mod_data/log/fix_config.3.log ${MOD_CONF}/mod_data/log/fix_config.4.log 2>/dev/null
+mv ${MOD_CONF}/mod_data/log/fix_config.2.log ${MOD_CONF}/mod_data/log/fix_config.3.log 2>/dev/null
+mv ${MOD_CONF}/mod_data/log/fix_config.1.log ${MOD_CONF}/mod_data/log/fix_config.2.log 2>/dev/null
+mv ${MOD_CONF}/mod_data/log/fix_config.log   ${MOD_CONF}/mod_data/log/fix_config.1.log 2>/dev/null
 
 if [ -f ${MOD_CONF}/mod/SKIP_ZMOD ] || [ -f ${MOD_CONF}/mod/REMOVE ] || [ -f ${MOD_CONF}/mod/FULL_REMOVE ]; then
     restore_base &>${MOD_CONF}/mod_data/log/fix_config.log

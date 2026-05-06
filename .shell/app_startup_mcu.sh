@@ -54,10 +54,10 @@ app_startup_mcu()
     fi
 }
 
-mv ${CONFIG_DIR}/mod_data/log/app_startup_mcu.4.log ${CONFIG_DIR}/mod_data/log/app_startup_mcu.5.log
-mv ${CONFIG_DIR}/mod_data/log/app_startup_mcu.3.log ${CONFIG_DIR}/mod_data/log/app_startup_mcu.4.log
-mv ${CONFIG_DIR}/mod_data/log/app_startup_mcu.2.log ${CONFIG_DIR}/mod_data/log/app_startup_mcu.3.log
-mv ${CONFIG_DIR}/mod_data/log/app_startup_mcu.1.log ${CONFIG_DIR}/mod_data/log/app_startup_mcu.2.log
-mv ${CONFIG_DIR}/mod_data/log/app_startup_mcu.log ${CONFIG_DIR}/mod_data/log/app_startup_mcu.1.log
+mv ${CONFIG_DIR}/mod_data/log/app_startup_mcu.4.log ${CONFIG_DIR}/mod_data/log/app_startup_mcu.5.log 2>/dev/null
+mv ${CONFIG_DIR}/mod_data/log/app_startup_mcu.3.log ${CONFIG_DIR}/mod_data/log/app_startup_mcu.4.log 2>/dev/null
+mv ${CONFIG_DIR}/mod_data/log/app_startup_mcu.2.log ${CONFIG_DIR}/mod_data/log/app_startup_mcu.3.log 2>/dev/null
+mv ${CONFIG_DIR}/mod_data/log/app_startup_mcu.1.log ${CONFIG_DIR}/mod_data/log/app_startup_mcu.2.log 2>/dev/null
+mv ${CONFIG_DIR}/mod_data/log/app_startup_mcu.log ${CONFIG_DIR}/mod_data/log/app_startup_mcu.1.log 2>/dev/null
 
 app_startup_mcu &>${CONFIG_DIR}/mod_data/log/app_startup_mcu.log
