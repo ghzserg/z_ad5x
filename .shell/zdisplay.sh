@@ -17,6 +17,8 @@ native_wifi_off()
             echo "Z-Mod disabled wifiStationStatus on native screen"
             killall firmwareExe
             grep -q '"wifiStationStatus" : true' "$FFCONFIG" && sed -i 's/"wifiStationStatus" : true/"wifiStationStatus" : false/' "$FFCONFIG"
+            sync
+            /opt/config/mod/.shell/zremote.sh reboot
     fi
     return 0
 }
