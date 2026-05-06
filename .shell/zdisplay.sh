@@ -14,13 +14,15 @@ native_wifi_off()
         grep -q '"isUdhcpc" : true' "$FFCONFIG" && \
         grep -q '"ethernetStatus" : false' "$FFCONFIG" && \
         grep -q "disabled=1" ${WPA_CONFIG}; then
-            echo "Z-Mod disabled wifiStationStatus on native screen"
             killall firmwareExe
-            grep -q '"wifiStationStatus" : true' "$FFCONFIG" && sed -i 's/"wifiStationStatus" : true/"wifiStationStatus" : false/' "$FFCONFIG"
-            echo _REBOOT >/tmp/printer
-            sync
-            sleep 5
-            /opt/config/mod/.shell/zremote.sh reboot
+            if grep -q '"wifiStationStatus" : true' "$FFCONFIG"; then
+                echo "Z-Mod disabled wifiStationStatus on native screen"
+                sed -i 's/"wifiStationStatus" : true/"wifiStationStatus" : false/' "$FFCONFIG"
+                echo _REBOOT >/tmp/printer
+                sync
+                sleep 5
+                /opt/config/mod/.shell/zremote.sh reboot
+            fi
     fi
     return 0
 }
