@@ -138,7 +138,7 @@ prepare_chroot()
         sed -i 's/ghzserg/prestonbrown/' /srv/helixscreen/release_info.json
     fi
 
-    check_link /root/klipper-env/klippy /opt/config/base/klipper/klippy
+    [ ${AD5M} -eq 1 ] && check_link /root/klipper-env/klippy /opt/config/base/klipper/klippy
     if [ -f /opt/config/base/klipper/klippy/klippy.py ]; then
         check_link ${MOD_CONF}/base/klipper/klippy/extras/gcode_shell_command.py ${MOD_CONF}/mod/.shell/gcode_shell_command.py
         check_link ${MOD_CONF}/base/klipper/klippy/extras/zmod.py ${MOD_CONF}/mod/.shell/zmod.py
