@@ -223,9 +223,9 @@ fix_config()
     echo "START fix_config"
     date
     echo 15 > /proc/sys/vm/swappiness
-    /usr/data/config/mod/.shell/serial/serial_start.sh
 
     if [ ${AD5X} -eq 1 ]; then
+        /usr/data/config/mod/.shell/serial/serial_start.sh
         if [ -L /etc/dropbear \
              -a "$(readlink /etc/dropbear)" = "/var/run/dropbear" ]
         then
@@ -786,11 +786,16 @@ stepper: stepper_x, stepper_y, stepper_z
     fi
 
     if grep -q "klipper13 = 1" ${MOD_CONF}/mod_data/variables.cfg; then
-        grep -q '^\[include ./mod/klipper13.cfg\]' ${PRINTER_CFG} || sed -i '/\[include printer\.base\.cfg\]/a [include ./mod/klipper13.cfg]' ${PRINTER_CFG} && NEED_REBOOT=1
+        if ! grep -q '^\[include ./mod/klipper13.cfg\]' ${PRINTER_CFG}; then
+            NEED_REBOOT=1
+            sed -i '/\[include printer\.base\.cfg\]/a [include ./mod/klipper13.cfg]' ${PRINTER_CFG}
+        fi
     else
-        grep -q '^\[include ./mod/klipper13.cfg\]' ${PRINTER_CFG} && sed -i '/^\[include \.\/mod\/klipper13\.cfg\]$/d' ${PRINTER_CFG} && NEED_REBOOT=1
+        if grep -q '^\[include ./mod/klipper13.cfg\]' ${PRINTER_CFG}; then
+            NEED_REBOOT=1
+            sed -i '/^\[include \.\/mod\/klipper13\.cfg\]$/d' ${PRINTER_CFG}
+        fi
     fi
-
 
     if [ ${AD5M} -eq 1 ]; then
         if ! { head -n 2 ${PRINTER_CFG} | tail -n 1 | grep -qE '^\[include \.\/mod\/klipper1[13]\.cfg\]$'; }; then
