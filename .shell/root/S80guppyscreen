@@ -11,7 +11,7 @@ NICENESS=10
 start() {
     source /opt/config/mod/.shell/0.sh
     xzcat /opt/config/mod/.shell/screen_off.raw.xz > /dev/fb0
-    [ ${AD5X} -eq 0 ] && backlight 0
+    [ ${AD5M} -eq 1 ] && backlight 0
 
     TSNAME="Touchscreen"
     EVENT=event0
@@ -51,7 +51,7 @@ start() {
     mv /opt/config/mod_data/log/guppyscreen.log /opt/config/mod_data/log/guppyscreen.1.log 2>/dev/null
 
     killall guppyscreen
-    [ ${AD5X} -eq 0 ] && backlight 60
+    [ ${AD5M} -eq 1 ] && backlight 60
 
     if [ "${ZLANG}" == "ja" ] || [ "${ZLANG}" == "ko" ] || [ "${ZLANG}" == "zh" ]; then
         export LANG="en_US.utf8"

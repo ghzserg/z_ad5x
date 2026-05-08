@@ -20,6 +20,7 @@ if [ ${AD5X} -eq 1 ]; then
     export LD_LIBRARY_PATH=/usr/prog/libffi-3.4.4/lib:$LD_LIBRARY_PATH
 
     python3.8 /opt/config/mod/.shell/root/audio/audio -x midi -m "/opt/config/mod_data/midi/$1" &
-else
+fi
+if [ ${AD5M} -eq 1 ]; then
     /opt/config/mod/.shell/root/audio/audio midi -m "/opt/config/mod_data/midi/$1" &
 fi

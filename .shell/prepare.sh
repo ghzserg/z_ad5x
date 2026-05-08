@@ -20,7 +20,7 @@ remove_base()
     [ -f ${MOD_CONF}/mod/FULL_REMOVE ] && rm -rf ${MOD_CONF}/mod_data/
     sync
 
-    if [ ${AD5X} -eq 0 ]; then
+    if [ ${AD5M} -eq 1 ]; then
         rm /etc/init.d/S00fix
         rm /etc/init.d/S99moon
         rm /etc/init.d/S98camera
@@ -47,7 +47,8 @@ remove_base()
         rm -f /usr/bin/audio.py /usr/bin/audio /usr/lib/python3.7/site-packages/audio.py /usr/bin/audio_midi.sh ${KLIPPER_DIR}/klippy/extras/gcode_shell_command.py
         rm -rf /usr/lib/python3.7/site-packages/mido/
         rm -f /etc/init.d/prepare.sh
-    else
+    fi
+    if [ ${AD5X} -eq 1 ]; then
         rm -f /usr/data/zmod_install.log
         sed -i '/fix_config.sh/d' /usr/prog/app_startup.sh
         sed -i '/prepare.sh/d' /usr/prog/app_startup.sh
@@ -66,7 +67,7 @@ remove_base()
 start_moon()
 {
     SWAP="/root/swap"
-    if grep -q "use_swap = 2" ${MOD_CONF}/mod_data/variables.cfg && [ ${AD5X} -eq 0 ]; then
+    if grep -q "use_swap = 2" ${MOD_CONF}/mod_data/variables.cfg && [ ${AD5M} -eq 1 ]; then
         for i in `seq 1 6`; do mount |grep /media && break; echo $i; sleep 10; done;
 
         if mount |grep /media; then
@@ -87,11 +88,11 @@ start_moon()
     grep -q '^MACHINE=Adventurer5MPro$' /opt/auto_run.sh && MACHINE=Adventurer5MPro
     grep -q '^MACHINE=Adventurer5M$' /opt/auto_run.sh && MACHINE=Adventurer5M
     grep -q "^MACHINE=AD5X" /usr/prog/app_startup.sh && MACHINE=AD5X
-    [ ${AD5X} -eq 0 ] && VER=$(cat /root/version)
+    [ ${AD5M} -eq 1 ] && VER=$(cat /root/version)
     [ ${AD5X} -eq 1 ] && VER=$(find /usr/prog/PROGRAM/software/ -type d | sed 's|/usr/prog/PROGRAM/software/||' | grep .)
 
     # Запуск камеры
-    #[ ${AD5X} -eq 0 ] && ${MOD_CONF}/mod/.shell/S99camera init
+    #[ ${AD5M} -eq 1 ] && ${MOD_CONF}/mod/.shell/S99camera init
 
     chroot ${MOD} /opt/config/mod/.shell/root/start.sh "$SWAP" "$VER" "$MACHINE" &
 
@@ -108,7 +109,7 @@ start_moon()
 
 start_prepare()
 {
-    if [ ${AD5X} -eq 0 ] && ! [ -L /etc/init.d/S00fix ]; then ln -s ${MOD_CONF}/mod/.shell/fix_config.sh /etc/init.d/S00fix; fi
+    if [ ${AD5M} -eq 1 ] && ! [ -L /etc/init.d/S00fix ]; then ln -s ${MOD_CONF}/mod/.shell/fix_config.sh /etc/init.d/S00fix; fi
     echo "System start" >${MOD_CONF}/mod_data/log/ssh.log
 
     mount -t proc /proc ${MOD}/proc
@@ -131,7 +132,8 @@ start_prepare()
 
         mkdir -p ${MOD}${LOG_FILES}
         mount --bind ${LOG_FILES}/ ${MOD}${LOG_FILES}/
-    else
+    fi
+    if [ ${AD5M} -eq 1 ]; then
         mkdir -p ${MOD}/opt/PROGRAM/
         mount --bind /opt/PROGRAM/ ${MOD}/opt/PROGRAM/
         touch ${MOD}/etc/wpa_supplicant.conf
@@ -149,7 +151,7 @@ start_prepare()
     mkdir -p ${MOD}/root/printer_data/comms
     mkdir -p ${MOD}/root/printer_data/certs
 
-    [ ${AD5X} -eq 0 ] && cat /etc/localtime >/tmp/localtime
+    [ ${AD5M} -eq 1 ] && cat /etc/localtime >/tmp/localtime
     cp ${TS_LIB}/pointercal /tmp/pointercal
     cp ${TS_LIB}/ts.conf /tmp/ts.conf
 

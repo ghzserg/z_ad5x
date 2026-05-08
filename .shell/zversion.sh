@@ -4,7 +4,8 @@
 source /opt/config/mod/.shell/0.sh
 
 VER_FF=$(cat /opt/config/mod/version.txt 2>/dev/null| cut  -d "." -f 1,2)
-[ ${AD5X} -eq 0 ] && VER_FF_FULL=$(cat /opt/config/mod/version_5m.txt 2>/dev/null) || VER_FF_FULL=$(cat /opt/config/mod/version_5x.txt 2>/dev/null)
+if [ ${AD5M} -eq 1 ]; then VER_FF_FULL=$(cat /opt/config/mod/version_5m.txt 2>/dev/null); fi
+if [ ${AD5X} -eq 1 ]; then VER_FF_FULL=$(cat /opt/config/mod/version_5x.txt 2>/dev/null); fi
 
 if [ -f /opt/config/base/klipper/klippy/.version ]; then
     KLIPPER_VER=$(cat /opt/config/base/klipper/klippy/.version)
@@ -35,7 +36,7 @@ else
 fi
 
 [ ${ZLANG} != 'ru' ] && echo "Enabled Plugins: $plugins" || echo "Активные плагины: $plugins"
-if ! grep -q "extra_plugins.moonraker.conf" ${MOD_CONF}/mod_data/extra_plugins.moonraker.conf && [ ${AD5X} -eq 1 ]; then
+if ! grep -q "extra_plugins.moonraker.conf" ${MOD_CONF}/mod_data/extra_plugins.moonraker.conf; then
     [ ${ZLANG} != 'ru' ] && echo "To enable the repository of third-party plugins not developed by Z-Mod author, run the ENABLE_EXTRA_PLUGINS command." || echo "Чтобы включить репозиторий внешних плагинов, не разрабатываемых автором Z-Mod, выполните команду ENABLE_EXTRA_PLUGINS."
 fi
 

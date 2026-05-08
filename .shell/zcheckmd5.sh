@@ -34,7 +34,8 @@ fi
 if [ ${AD5X} -eq 1 ]; then
     STOCK="stock5x"
     export LD_LIBRARY_PATH=/usr/prog/curl-7.55.1-https/lib:$LD_LIBRARY_PATH
-else
+fi
+if [ ${AD5M} -eq 1 ]; then
     STOCK="stock"
 fi
 
@@ -85,11 +86,11 @@ fi
 
 echo "/"
 cd /
-[ ${AD5X} -eq 0 ] && FF_VERSION=$(cat /root/version 2>/dev/null)
+[ ${AD5M} -eq 1 ] && FF_VERSION=$(cat /root/version 2>/dev/null)
 [ ${AD5X} -eq 1 ] && FF_VERSION=$(find /usr/prog/PROGRAM/software/ -type d 2>/dev/null | sed 's|/usr/prog/PROGRAM/software/||' | grep . 2>/dev/null)
 MIN_VERSION="3.1.3"
 MIN_VERSION_X="1.0.7"
-if [ ${AD5X} -eq 0 ] && ! [ -f /ZMOD ] && [ "${FF_VERSION//./}" -lt "${MIN_VERSION//./}" ]; then
+if [ ${AD5M} -eq 1 ] && ! [ -f /ZMOD ] && [ "${FF_VERSION//./}" -lt "${MIN_VERSION//./}" ]; then
     sed '/\/nim\//d' ${DIR}/md5sum.list >${DIR}/md5sum_nim.list
     md5sum -c ${DIR}/md5sum_nim.list 2>/dev/null | grep -v -e "OK$" | tee /opt/config/mod_data/bad.list
     rm -f ${DIR}/md5sum_nim.list
@@ -117,7 +118,7 @@ if [ "$cnt" -ne 0 ]; then
 fi
 rm -f /opt/config/mod_data/bad.list
 
-if [ ${AD5X} -eq 0 ] && ! [ -f /ZMOD ] && [ "${FF_VERSION//./}" -lt "${MIN_VERSION//./}" ]; then
+if [ ${AD5M} -eq 1 ] && ! [ -f /ZMOD ] && [ "${FF_VERSION//./}" -lt "${MIN_VERSION//./}" ]; then
     sed '/\/nim\//d' ${DIR}/list.link >${DIR}/md5sum_nim.list
     chmod +x ${DIR}/md5sum_nim.list
     ${DIR}/md5sum_nim.list 2>/dev/null
@@ -148,7 +149,7 @@ else
     check_link ${MOD_CONF}/mod/base.cfg translate/${ZLANG}/base.cfg &>/dev/null
     check_link ${MOD_CONF}/mod/client.cfg translate/${ZLANG}/client.cfg &>/dev/null
     check_link ${MOD_CONF}/mod/base_klipper13.cfg translate/${ZLANG}/base_klipper13.cfg &>/dev/null
-    if [ ${AD5X} -eq 0 ]; then
+    if [ ${AD5M} -eq 1 ]; then
         check_link ${MOD_CONF}/mod/klipper13.cfg translate/${ZLANG}/ff5m_klipper13.cfg &>/dev/null
         check_link ${MOD_CONF}/mod/base_klipper11.cfg translate/${ZLANG}/base_klipper11.cfg &>/dev/null
         grep -q 'Adventurer5MPro' /etc/os-release && check_link ${MOD_CONF}/mod/klipper11.cfg translate/${ZLANG}/klipper11_pro.cfg &>/dev/null || check_link ${MOD_CONF}/mod/klipper11.cfg translate/${ZLANG}/klipper11.cfg &>/dev/null
@@ -157,7 +158,8 @@ else
         check_link ${MOD_CONF}/mod/mod.cfg translate/${ZLANG}/mod.cfg &>/dev/null
         check_link ${MOD_CONF}/mod/ff5m_config_native.cfg translate/${ZLANG}/ff5m_config_native.cfg &>/dev/null
         check_link ${MOD_CONF}/mod/ff5m_config_off.cfg translate/${ZLANG}/ff5m_config_off.cfg &>/dev/null
-    else
+    fi
+    if [ ${AD5X} -eq 1 ]; then
         check_link ${MOD_CONF}/mod/klipper13.cfg translate/${ZLANG}/ad5x_klipper13.cfg &>/dev/null
         check_link ${MOD_CONF}/mod/display_off.cfg translate/${ZLANG}/ad5x_display_off.cfg &>/dev/null
         check_link ${MOD_CONF}/mod/ad5x.cfg translate/${ZLANG}/ad5x.cfg &>/dev/null
