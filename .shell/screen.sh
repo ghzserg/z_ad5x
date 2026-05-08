@@ -13,7 +13,8 @@ OUT_FILE="/opt/config/mod_data/screen.jpg"
 WIDTH=800
 HEIGHT=480
 
-[ ${AD5X} -eq 0 ] && FFMPEG="/opt/ffmpeg-4.0.2/bin/ffmpeg" || FFMPEG="/usr/prog/ffmpeg-4.0.2/bin/ffmpeg"
+if [ ${AD5M} -eq 1 ]; then FFMPEG="/opt/ffmpeg-4.0.2/bin/ffmpeg"; fi
+if [ ${AD5X} -eq 1 ]; then FFMPEG="/usr/prog/ffmpeg-4.0.2/bin/ffmpeg"; fi
 export LD_LIBRARY_PATH="/usr/prog/ffmpeg-4.0.2/lib:/usr/prog/x264/lib:/opt/ffmpeg-4.0.2/lib:/opt/x264/lib"
 
 "$FFMPEG" -f rawvideo -pix_fmt bgra \

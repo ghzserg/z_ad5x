@@ -12,7 +12,7 @@ start_moonraker() {
 }
 
 start_klipper() {
-    if [ ${AD5X} -eq 0 ]; then
+    if [ ${AD5M} -eq 1 ]; then
         if grep -q "klipper13 = 1" /opt/config/mod_data/variables.cfg; then
             /opt/config/mod/.shell/root/S60klipper start
         fi
@@ -102,7 +102,7 @@ check_link()
 prepare_chroot()
 {
     echo ZMOD >/ZMOD
-    [ ${AD5X} -eq 0 ] && mv /tmp/localtime /etc/localtime
+    [ ${AD5M} -eq 1 ] && mv /tmp/localtime /etc/localtime
 
     if [ ${AD5X} -eq 1 ]; then
         [ -f /opt/config/mod_data/filament.json ] || echo "{}" >/opt/config/mod_data/filament.json
@@ -128,9 +128,10 @@ prepare_chroot()
 
     [ -d /srv/helixscreen/ ] || mkdir -p /srv/helixscreen/
     if ! [ -f /srv/helixscreen/release_info.json ]; then
-        if [ ${AD5X} -eq 0 ]; then
+        if [ ${AD5M} -eq 1 ]; then
             echo '{"project_name":"helixscreen","project_owner":"prestonbrown","version":"v0.0.1","asset_name":"helixscreen-ad5m.zip"}' >/srv/helixscreen/release_info.json
-        else
+        fi
+        if [ ${AD5X} -eq 1 ]; then
             echo '{"project_name":"helixscreen","project_owner":"prestonbrown","version":"v0.0.1","asset_name":"helixscreen-ad5x.zip"}' >/srv/helixscreen/release_info.json
         fi
     else
@@ -143,12 +144,13 @@ prepare_chroot()
         check_link ${MOD_CONF}/base/klipper/klippy/extras/zmod.py ${MOD_CONF}/mod/.shell/zmod.py
         check_link ${MOD_CONF}/base/klipper/klippy/extras/ens160.py ${MOD_CONF}/mod/.shell/ens160.py
 
-        if [ ${AD5X} -eq 0 ]; then
+        if [ ${AD5M} -eq 1 ]; then
             check_link /opt/config/base/klipper/klippy/chelper/c_helper.so /opt/config/base/klipper/mcu/ff5m/c_helper.so
             check_link ${MOD_CONF}/base/klipper/klippy/extras/ens160.py ${MOD_CONF}/mod/.shell/ens160.py
             #check_link ${MOD_CONF}/base/klipper/klippy/extras/flashforge_loadcell.py ${MOD_CONF}/mod/.shell/flashforge_loadcell.py
             [ -L ${MOD_CONF}/base/klipper/klippy/extras/flashforge_loadcell.py ] && rm -f ${MOD_CONF}/base/klipper/klippy/extras/flashforge_loadcell.py
-        else
+        fi
+        if [ ${AD5X} -eq 1 ]; then
             check_link ${MOD_CONF}/base/klipper/klippy/chelper/c_helper.so ${MOD_CONF}/base/klipper/mcu/ad5x/c_helper.so
             check_link ${MOD_CONF}/base/klipper/klippy/extras/zmod_color.py ${MOD_CONF}/mod/.shell/zmod_color.py
             check_link ${MOD_CONF}/base/klipper/klippy/extras/zmod_ifs_motion_sensor.py ${MOD_CONF}/mod/.shell/zmod_ifs_motion_sensor.py
@@ -169,7 +171,9 @@ prepare_chroot()
 
     [ -L /usr/lib/python3.12/site-packages/mido ] || ln -s /opt/config/mod/.shell/root/mido/ /usr/lib/python3.12/site-packages/
     [ -L /usr/lib/python3.12/site-packages/mido-1.3.3.dist-info ] || ln -s /opt/config/mod/.shell/root/mido-1.3.3.dist-info/ /usr/lib/python3.12/site-packages/
-    [ ${AD5X} -eq 0 ] && [ -L /root/klipper-env/lib/python3.12/site-packages/numpy ] || ln -s /usr/lib/python3.12/site-packages/numpy /root/klipper-env/lib/python3.12/site-packages/
+    if [ ${AD5M} -eq 1 ]; then
+        [ -L /root/klipper-env/lib/python3.12/site-packages/numpy ] || ln -s /usr/lib/python3.12/site-packages/numpy /root/klipper-env/lib/python3.12/site-packages/
+    fi
 
     if ! [ -L /bin/sudo ]; then
         rm -f /bin/sudo
@@ -207,10 +211,10 @@ prepare_chroot()
     grep -q "zmod.link ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJSFHaPS7Ms0PPIEE+E7T0eOZcCP4HZtUv7JJmCDDd9l" /.ssh/known_hosts || echo "zmod.link ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJSFHaPS7Ms0PPIEE+E7T0eOZcCP4HZtUv7JJmCDDd9l" >>/.ssh/known_hosts
 
     rm -rf /root/moonraker-env/lib/python3.12/site-packages/uvloop*  || echo "uvloop уже убит"
-    if [ ${AD5X} -eq 0 ]; then
+    if [ ${AD5M} -eq 1 ]; then
         rm -rf /root/moonraker-env/lib/python3.12/site-packages/msgspec* || echo "msgspec уже убит"
-
-    else
+    fi
+    if [ ${AD5X} -eq 1 ]; then
         sed -i '/127.0.0.1 /d' /.ssh/known_hosts
         sed -i '/127.0.0.1 /d' /root/.ssh/known_hosts
     fi
@@ -229,7 +233,7 @@ name: {printer_name}
 
 ${MOD_CONF}/mod/.shell/znice.sh
 
-if [ ${AD5X} -eq 0 ]; then
+if [ ${AD5M} -eq 1 ]; then
     SWAP="$1"
     echo "SWAP=$SWAP"
 
@@ -268,7 +272,8 @@ grep -q VERSION_CODENAME /etc/os-release || echo "VERSION_CODENAME=\"${VER}\"" >
 grep -q "VERSION_CODENAME=\"${VER}\"" /etc/os-release || sed -i "s|VERSION_CODENAME=.*|VERSION_CODENAME=\"${VER}\"|" /etc/os-release
 
 V1=$(cat /etc/os-release|grep PRETTY_NAME| cut  -d '"' -f2| awk '{print $1" "$2}')
-[ ${AD5X} -eq 0 ] && V2=$(cat /opt/config/mod/version_5m.txt) || V2=$(cat /opt/config/mod/version_5x.txt)
+[ ${AD5M} -eq 1 ] && V2=$(cat /opt/config/mod/version_5m.txt)
+[ ${AD5X} -eq 1 ] && V2=$(cat /opt/config/mod/version_5x.txt)
 
 grep -q PRETTY_NAME /etc/os-release || echo "VERSION_CODENAME=\"${V1} -> ${V2}\"" >>/etc/os-release
 grep -q "PRETTY_NAME=\"${V1} -> ${V2}\"" /etc/os-release || sed -i "s|PRETTY_NAME=.*|PRETTY_NAME=\"${V1} -> ${V2}\"|" /etc/os-release

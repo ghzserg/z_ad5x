@@ -14,7 +14,8 @@ CONTROL_DIR=${PROGRAM_DIR}control/
 cd ${CONTROL_DIR}
 if [ ${AD5X} -eq 1 ]; then
     CONTROL_VERSION=`ls -d [0-9]*/ | sort -Vr | head -n 1`
-else
+fi
+if [ ${AD5M} -eq 1 ]; then
     CONTROL_VERSION=`ls -d [0-9]*/ | sort -t '.' -k1,1n -k2,2n -k3,3n -r | head -n 1`
 fi
 CONTRIL_FLAG=${CONTROL_DIR}${CONTROL_VERSION}Update

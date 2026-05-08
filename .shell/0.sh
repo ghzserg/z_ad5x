@@ -7,6 +7,7 @@ REMOUNT_MOD=${DATA}/lost+found
 UMOUNT_MOD=${DATA}/.mod
 MOD=${UMOUNT_MOD}/.zmod
 AD5X=0
+AD5M=1
 KEY_TYPE="ed25519"
 KLIPPER_DIR="/opt/klipper"
 TS_LIB="/opt/tslib-1.12/etc"

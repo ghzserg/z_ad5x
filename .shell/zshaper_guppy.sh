@@ -8,9 +8,10 @@ unset LD_PRELOAD
 if [ -f /ZMOD ]; then
     /opt/config/mod/.shell/root/zshaper_guppy.sh $@
 else
-    if [ ${AD5X} -eq 0 ]; then
+    if [ ${AD5M} -eq 1 ]; then
         chroot ${MOD} /opt/config/mod/.shell/root/zshaper_guppy.sh $@
-    else
+    fi
+    if [ ${AD5X} -eq 1 ]; then
         export PATH=$PATH:/usr/prog/Python-3.8.2/bin
         export LD_LIBRARY_PATH=/usr/prog/Python-3.8.2/lib:$LD_LIBRARY_PATH
         export LD_LIBRARY_PATH=/usr/prog/openssl-1.0.2d/lib:$LD_LIBRARY_PATH

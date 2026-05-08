@@ -50,16 +50,12 @@ restore_base()
     grep -q '^\[include ./mod/switch_sensor_display_off.cfg' ${MOD_CONF}/printer.cfg && sed -i '/switch_sensor_display_off.cfg/d' ${MOD_CONF}/printer.cfg
     grep -q '^\[include ./mod/display_off.cfg' ${MOD_CONF}/printer.cfg && sed -i '/display_off.cfg/d' ${MOD_CONF}/printer.cfg
 
-    #logo
-    if [ ${AD5X} -eq 0 ]; then
+    if [ ${AD5M} -eq 1 ]; then
+        #logo
         mount /dev/mmcblk0p1 /lost+found
         [ -f /lost+found/boot.bmp ] && cp /lost+found/boot.bmp /lost+found/bootlogo.bmp && rm -f /lost+found/boot.bmp
         umount /lost+found
-    else
-        [ -f /usr/prog/logo.jpeg ] && rm -f /usr/prog/logo.jpeg
-    fi
 
-    if [ ${AD5X} -eq 0 ]; then
         china_razbl api.cloud.flashforge.com
         china_razbl api.fdmcloud.flashforge.com
         china_razbl cloud.sz3dp.com
@@ -70,27 +66,28 @@ restore_base()
         china_razbl update.sz3dp.com
         china_razbl cloud.sz3dp.com
         china_razbl polar3d.com
-    else
-        sed -i '\|mount --bind /bin/echo /usr/bin/cmd_pwm|d' /usr/prog/app_startup.sh
-        sed -i '\|/usr/data/config/mod/.shell/app_startup_mcu.sh|d' /usr/prog/app_startup.sh
-    fi
 
-    grep -q _output_callback_gcode ${KLIPPER_DIR}/klippy/webhooks.py && cp ${MOD_CONF}/mod/.shell/webhooks.py.orig ${KLIPPER_DIR}/klippy/webhooks.py
-    grep -q ZLOAD_VARIABLE ${KLIPPER_DIR}/klippy/extras/save_variables.py && cp ${MOD_CONF}/mod/.shell/save_variables.py.orig ${KLIPPER_DIR}/klippy/extras/save_variables.py
-    if [ ${AD5X} -eq 0 ]; then
         grep -q zmod ${KLIPPER_DIR}/klippy/extras/spi_temperature.py && cp ${MOD_CONF}/mod/.shell/spi_temperature.py.orig ${KLIPPER_DIR}/klippy/extras/spi_temperature.py
         grep -q zmod /opt/klipper/start.sh && cp ${MOD_CONF}/mod/.shell/start.sh.orig /opt/klipper/start.sh
-    else
-        grep -q zmod ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py && cp ${MOD_CONF}/mod/.shell/virtual_sdcard.py.orig ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py
     fi
+    if [ ${AD5X} -eq 1 ]; then
+        [ -f /usr/prog/logo.jpeg ] && rm -f /usr/prog/logo.jpeg
+        sed -i '\|mount --bind /bin/echo /usr/bin/cmd_pwm|d' /usr/prog/app_startup.sh
+        sed -i '\|/usr/data/config/mod/.shell/app_startup_mcu.sh|d' /usr/prog/app_startup.sh
+
+        grep -q zmod ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py && cp ${MOD_CONF}/mod/.shell/virtual_sdcard.py.orig ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py
+
+        rm -f ${KLIPPER_DIR}/klippy/extras/zmod_color.py
+        rm -f ${KLIPPER_DIR}/klippy/extras/zmod_tenz.py
+        rm -f ${KLIPPER_DIR}/klippy/extras/zmod_ifs.py
+        rm -f ${KLIPPER_DIR}/klippy/extras/zmod_ifs_switch_sensor.py
+        rm -f ${KLIPPER_DIR}/klippy/extras/zmod_ifs_motion_sensor.py
+    fi
+    grep -q _output_callback_gcode ${KLIPPER_DIR}/klippy/webhooks.py && cp ${MOD_CONF}/mod/.shell/webhooks.py.orig ${KLIPPER_DIR}/klippy/webhooks.py
+    grep -q ZLOAD_VARIABLE ${KLIPPER_DIR}/klippy/extras/save_variables.py && cp ${MOD_CONF}/mod/.shell/save_variables.py.orig ${KLIPPER_DIR}/klippy/extras/save_variables.py
     grep -q receive_time ${KLIPPER_DIR}/klippy/extras/buttons.py && cp ${MOD_CONF}/mod/.shell/buttons.py.orig ${KLIPPER_DIR}/klippy/extras/buttons.py
     rm -f ${KLIPPER_DIR}/klippy/extras/zmod.py
     rm -f ${KLIPPER_DIR}/klippy/extras/ens160.py
-    [ ${AD5X} -eq 1 ] && rm -f ${KLIPPER_DIR}/klippy/extras/zmod_color.py
-    [ ${AD5X} -eq 1 ] && rm -f ${KLIPPER_DIR}/klippy/extras/zmod_tenz.py
-    [ ${AD5X} -eq 1 ] && rm -f ${KLIPPER_DIR}/klippy/extras/zmod_ifs.py
-    [ ${AD5X} -eq 1 ] && rm -f ${KLIPPER_DIR}/klippy/extras/zmod_ifs_switch_sensor.py
-    [ ${AD5X} -eq 1 ] && rm -f ${KLIPPER_DIR}/klippy/extras/zmod_ifs_motion_sensor.py
 
     rm -f /etc/profile.d/path.sh
 
@@ -118,48 +115,47 @@ restore_base()
     fi
 
     # Возвращаем fan_generic internal_fan
-    if [ ${AD5X} -eq 0 ] && ! grep -q '^\[fan_generic internal_fan' ${MOD_CONF}/printer.base.cfg
-        then
+    if [ ${AD5M} -eq 1 ]; then
+        if ! grep -q '^\[fan_generic internal_fan' ${MOD_CONF}/printer.base.cfg; then
             echo "
 [fan_generic internal_fan]
 pin:PB8
 " >>${MOD_CONF}/printer.base.cfg
-    fi
+        fi
 
-    # Возвращаем fan_generic external_fan
-    if [ ${AD5X} -eq 0 ] && ! grep -q '^\[fan_generic external_fan' ${MOD_CONF}/printer.base.cfg
-        then
+        # Возвращаем fan_generic external_fan
+        if ! grep -q '^\[fan_generic external_fan' ${MOD_CONF}/printer.base.cfg; then
             echo "
 [fan_generic external_fan]
 pin:PB6
 " >>${MOD_CONF}/printer.base.cfg
+        fi
     fi
 
     # Возвращаем fan_generic pcb_fan
-    [ ${AD5X} -eq 1 ] && PIN="PA5" || PIN="PB7"
-    if ! grep -q '^\[fan_generic pcb_fan' ${MOD_CONF}/printer.base.cfg
-        then
-            echo "
+    if [ ${AD5X} -eq 1 ]; then PIN="PA5"; fi
+    if [ ${AD5M} -eq 1 ]; then PIN="PB7"; fi
+    if ! grep -q '^\[fan_generic pcb_fan' ${MOD_CONF}/printer.base.cfg; then
+        echo "
 [fan_generic pcb_fan]
 pin:${PIN}
 " >>${MOD_CONF}/printer.base.cfg
     fi
 
-    # Возвращаем gcode_button check_level_pin
-    if [ ${AD5X} -eq 0 ] && ! grep -q '^\[gcode_button check_level_pin' ${MOD_CONF}/printer.base.cfg
-        then
+    if [ ${AD5M} -eq 1 ]; then
+        # Возвращаем gcode_button check_level_pin
+        if ! grep -q '^\[gcode_button check_level_pin' ${MOD_CONF}/printer.base.cfg; then
             echo '
 [gcode_button check_level_pin]
 pin: !PE0
 press_gcode:
     M105
 ' >>${MOD_CONF}/printer.base.cfg
-    fi
+        fi
 
-    if [ ${AD5X} -eq 0 ] && grep -q "motion_sensor = 1" ${MOD_CONF}/mod_data/variables.cfg; then
-        # Возвращаем filament_motion_sensor e0_sensor
-        if ! grep -q '^\[filament_motion_sensor e0_sensor' ${MOD_CONF}/printer.base.cfg
-            then
+        if grep -q "motion_sensor = 1" ${MOD_CONF}/mod_data/variables.cfg; then
+            # Возвращаем filament_motion_sensor e0_sensor
+            if ! grep -q '^\[filament_motion_sensor e0_sensor' ${MOD_CONF}/printer.base.cfg; then
                 echo '
 [filament_motion_sensor e0_sensor]
 detection_length: 8
@@ -169,11 +165,10 @@ pause_on_runout: True
 runout_gcode:
   RESPOND TYPE=command MSG="!! Кончился или остановился филамент"
 ' >>${MOD_CONF}/printer.base.cfg
-        fi
-    else
-        # Возвращаем filament_switch_sensor e0_sensor
-        if [ ${AD5X} -eq 0 ] && ! grep -q '^\[filament_switch_sensor e0_sensor' ${MOD_CONF}/printer.base.cfg
-            then
+            fi
+        else
+            # Возвращаем filament_switch_sensor e0_sensor
+            if ! grep -q '^\[filament_switch_sensor e0_sensor' ${MOD_CONF}/printer.base.cfg; then
                 echo '
 [filament_switch_sensor e0_sensor]
 pause_on_runout: False
@@ -181,12 +176,12 @@ switch_pin: !PB14
 event_delay: 1.0
 
 ' >>${MOD_CONF}/printer.base.cfg
-        fi
-    fi
+            fi
+        fi # end motion_sensor
 
-    # Возвращаем weightValue
-    if [ ${AD5X} -eq 0 ] && ! grep -q '^\[temperature_sensor weightValue' ${MOD_CONF}/printer.base.cfg; then
-        echo '[temperature_sensor weightValue]
+        # Возвращаем weightValue
+        if ! grep -q '^\[temperature_sensor weightValue' ${MOD_CONF}/printer.base.cfg; then
+            echo '[temperature_sensor weightValue]
 sensor_type: MAX31856
 sensor_pin: PD5
 #spi_bus: spi4
@@ -199,10 +194,10 @@ max_temp: 2048
 gcode_id: W
 
 ' >>${MOD_CONF}/printer.base.cfg
-    fi
+        fi
 
-    # Возвращаем tvocValue
-    if [ ${AD5X} -eq 0 ] && ! grep -q '^\[temperature_sensor tvocValue' ${MOD_CONF}/printer.base.cfg; then
+        # Возвращаем tvocValue
+        if ! grep -q '^\[temperature_sensor tvocValue' ${MOD_CONF}/printer.base.cfg; then
         echo '[temperature_sensor tvocValue]
 sensor_type: MAX31865
 sensor_pin: PD4
@@ -217,7 +212,8 @@ max_temp: 2048
 gcode_id: V
 
 ' >>${MOD_CONF}/printer.base.cfg
-    fi
+        fi
+    fi # End AD5M
 
     grep -q '^minimum_cruise_ratio' ${MOD_CONF}/printer.base.cfg && sed -i 's|^minimum_cruise_ratio.*|max_accel_to_decel:5000|' ${MOD_CONF}/printer.base.cfg
 }
@@ -243,7 +239,8 @@ fix_config()
     fi
 
     fstrim ${DATA} -v
-    [ ${AD5X} -eq 0 ] && fstrim / -v || fstrim /usr/prog -v
+    if [ ${AD5M} -eq 1 ]; then fstrim / -v; fi
+    if [ ${AD5X} -eq 1 ]; then fstrim /usr/prog -v; fi
 
     [ -f /etc/profile.d/path.sh ] || echo "export PATH=\"$PATH:/opt/bin/:/opt/sbin/\"" >/etc/profile.d/path.sh
 
@@ -267,7 +264,25 @@ fix_config()
         current_logo=$(md5sum /usr/prog/logo.jpeg| awk '{print $1}')
         mod_data_logo=$(md5sum ${MOD_CONF}/mod_data/logo/logo.jpeg | awk '{print $1}')
         [ "${current_logo}" != "${mod_data_logo}" ] && cp ${MOD_CONF}/mod_data/logo/logo.jpeg /usr/prog/logo.jpeg
-    else
+
+        # Color
+        [ -f ${MOD_CONF}/mod_data/color.json ] && rm -f ${MOD_CONF}/mod_data/color.json
+
+        mkdir -p ${MOD_CONF}/mod_data/color/
+        for lang in ru en de fr it es pt zh ja ko cs tr; do
+          [ -f "${MOD_CONF}/mod_data/color/${lang}.json" ] || cp "${MOD_CONF}/mod/.shell/color/${lang}.json" "${MOD_CONF}/mod_data/color/"
+        done
+
+        md5=$(md5sum ${MOD_CONF}/mod_data/cmd_pwm 2>/dev/null |awk '{print $1}')
+        if [ "$md5" != "bb0a72766632c11bd83ae68a8da94688" ]; then
+            umount /usr/bin/cmd_pwm
+            cp /usr/bin/cmd_pwm ${MOD_CONF}/mod_data/cmd_pwm
+            mount --bind /bin/echo /usr/bin/cmd_pwm
+        fi
+        grep -q "mount --bind /bin/echo /usr/bin/cmd_pwm" /usr/prog/app_startup.sh || sed -i '\#mount /usr/prog/etc /etc#a\mount --bind /bin/echo /usr/bin/cmd_pwm' /usr/prog/app_startup.sh
+        grep -q "/usr/data/config/mod/.shell/app_startup_mcu.sh" /usr/prog/app_startup.sh || sed -i '\#mount --bind /bin/echo /usr/bin/cmd_pwm#a\/usr/data/config/mod/.shell/app_startup_mcu.sh' /usr/prog/app_startup.sh
+    fi
+    if [ ${AD5M} -eq 1 ]; then
         if ! [ -f ${MOD_CONF}/mod_data/logo/bootlogo.bmp ]; then
             mkdir -p ${MOD_CONF}/mod_data/logo/
             cp ${MOD_CONF}/mod/.shell/logo/bootlogo.bmp ${MOD_CONF}/mod_data/logo/
@@ -289,25 +304,6 @@ fix_config()
         umount /lost+found
     fi
 
-    if [ ${AD5X} -eq 1 ]; then
-        # Color
-        [ -f ${MOD_CONF}/mod_data/color.json ] && rm -f ${MOD_CONF}/mod_data/color.json
-
-        mkdir -p ${MOD_CONF}/mod_data/color/
-        for lang in ru en de fr it es pt zh ja ko cs tr; do
-          [ -f "${MOD_CONF}/mod_data/color/${lang}.json" ] || cp "${MOD_CONF}/mod/.shell/color/${lang}.json" "${MOD_CONF}/mod_data/color/"
-        done
-
-        md5=$(md5sum ${MOD_CONF}/mod_data/cmd_pwm 2>/dev/null |awk '{print $1}')
-        if [ "$md5" != "bb0a72766632c11bd83ae68a8da94688" ]; then
-            umount /usr/bin/cmd_pwm
-            cp /usr/bin/cmd_pwm ${MOD_CONF}/mod_data/cmd_pwm
-            mount --bind /bin/echo /usr/bin/cmd_pwm
-        fi
-        grep -q "mount --bind /bin/echo /usr/bin/cmd_pwm" /usr/prog/app_startup.sh || sed -i '\#mount /usr/prog/etc /etc#a\mount --bind /bin/echo /usr/bin/cmd_pwm' /usr/prog/app_startup.sh
-        grep -q "/usr/data/config/mod/.shell/app_startup_mcu.sh" /usr/prog/app_startup.sh || sed -i '\#mount --bind /bin/echo /usr/bin/cmd_pwm#a\/usr/data/config/mod/.shell/app_startup_mcu.sh' /usr/prog/app_startup.sh
-    fi
-
     echo "[zmod]
     language: ${ZLANG}" >${MOD_CONF}/mod_data/lang.cfg
 
@@ -318,7 +314,7 @@ fix_config()
     [ -f ${MOD_CONF}/.theme/custom.css ] || cp -a ${MOD_CONF}/mod/.shell/.theme ${MOD_CONF}/mod_data/
     check_link ${MOD_CONF}/.theme mod_data/.theme
 
-    if [ ${AD5X} -eq 0 ]; then
+    if [ ${AD5M} -eq 1 ]; then
         check_link ${MOD_CONF}/mod/klipper13.cfg translate/${ZLANG}/ff5m_klipper13.cfg
         check_link ${MOD_CONF}/mod/base_klipper11.cfg translate/${ZLANG}/base_klipper11.cfg
         grep -q '^MACHINE=Adventurer5MPro$' /opt/auto_run.sh && check_link ${MOD_CONF}/mod/klipper11.cfg translate/${ZLANG}/klipper11_pro.cfg || check_link ${MOD_CONF}/mod/klipper11.cfg translate/${ZLANG}/klipper11.cfg
@@ -327,19 +323,14 @@ fix_config()
         check_link ${MOD_CONF}/mod/mod.cfg translate/${ZLANG}/mod.cfg
         check_link ${MOD_CONF}/mod/ff5m_config_native.cfg translate/${ZLANG}/ff5m_config_native.cfg
         check_link ${MOD_CONF}/mod/ff5m_config_off.cfg translate/${ZLANG}/ff5m_config_off.cfg
-    else
+    fi
+    if [ ${AD5X} -eq 1 ]; then
         check_link ${MOD_CONF}/mod/klipper13.cfg translate/${ZLANG}/ad5x_klipper13.cfg
         check_link ${MOD_CONF}/mod/display_off.cfg translate/${ZLANG}/ad5x_display_off.cfg
         check_link ${MOD_CONF}/mod/ad5x.cfg translate/${ZLANG}/ad5x.cfg
         check_link ${MOD_CONF}/mod/ad5x_config_native.cfg translate/${ZLANG}/ad5x_config_native.cfg
         check_link ${MOD_CONF}/mod/ad5x_config_off.cfg translate/${ZLANG}/ad5x_config_off.cfg
-    fi
-    check_link ${MOD_CONF}/mod/base_mod.cfg translate/${ZLANG}/base_mod.cfg
-    check_link ${MOD_CONF}/mod/base_display_off.cfg translate/${ZLANG}/base_display_off.cfg
-    check_link ${MOD_CONF}/mod/motion_sensor.cfg translate/${ZLANG}/motion_sensor.cfg
-    check_link ${MOD_CONF}/mod/switch_sensor_display_off.cfg translate/${ZLANG}/switch_sensor_display_off.cfg
 
-    if [ ${AD5X} -eq 1 ]; then
         # В Версии 1.0.7 перенесли конфиг в /usr/prog/config/
         [ -d /usr/prog/config/mod ] && rm -rf /usr/prog/config/mod
         [ -d /usr/prog/config/mod_data ] && rm -rf /usr/prog/config/mod_data
@@ -348,6 +339,10 @@ fix_config()
         [ -f /usr/prog/config/PowerOff ] && check_link ${MOD_CONF}/PowerOff /usr/prog/config/PowerOff
         [ -f /usr/prog/config/fileSlotId.json ] && check_link ${MOD_CONF}/fileSlotId.json /usr/prog/config/fileSlotId.json
     fi
+    check_link ${MOD_CONF}/mod/base_mod.cfg translate/${ZLANG}/base_mod.cfg
+    check_link ${MOD_CONF}/mod/base_display_off.cfg translate/${ZLANG}/base_display_off.cfg
+    check_link ${MOD_CONF}/mod/motion_sensor.cfg translate/${ZLANG}/motion_sensor.cfg
+    check_link ${MOD_CONF}/mod/switch_sensor_display_off.cfg translate/${ZLANG}/switch_sensor_display_off.cfg
 
     if ! [ -f ${MOD_CONF}/mod_data/user.moonraker.conf ]; then
         echo "#Enter user config here
@@ -361,7 +356,7 @@ cors_domains:
     fi
 
     # Защита от самонадеянных, кто выклчюает SWAP при 128 мегабайтах оперативной памяти
-    if [ ${AD5X} -eq 0 ] && grep -q "use_swap = 0" ${MOD_CONF}/mod_data/variables.cfg; then
+    if [ ${AD5M} -eq 1 ] && grep -q "use_swap = 0" ${MOD_CONF}/mod_data/variables.cfg; then
         MEM=$(cat /proc/meminfo | grep MemTotal| awk '{print $2}')
         MEM=$(($MEM/1024))
         [ "$MEM" -le 128 ] && sed -i "s/use_swap = 0/use_swap = 1/" ${MOD_CONF}/mod_data/variables.cfg
@@ -369,7 +364,7 @@ cors_domains:
 
     [ -f ${MOD_CONF}/mod_data/nozzle.cfg ] || echo "">${MOD_CONF}/mod_data/nozzle.cfg
 
-    if [ ${AD5X} -eq 0 ]; then
+    if [ ${AD5M} -eq 1 ]; then
         [ -f /etc/init.d/S50sshd ] && rm -f /etc/init.d/S50sshd
         [ -f /etc/init.d/S55date ] && rm -f /etc/init.d/S55date
         [ -f /bin/dropbearmulti ] && rm -f /bin/dropbearmulti
@@ -426,7 +421,7 @@ unset LD_PRELOAD
 
     # Rem стукач
     if grep -q "china_cloud = 0" ${MOD_CONF}/mod_data/variables.cfg; then
-        if [ ${AD5X} -eq 0 ]; then
+        if [ ${AD5M} -eq 1 ]; then
             china_block api.cloud.flashforge.com
             china_block api.fdmcloud.flashforge.com
             china_block cloud.sz3dp.com
@@ -437,12 +432,12 @@ unset LD_PRELOAD
             china_block update.sz3dp.com
             china_block cloud.sz3dp.com
             china_block polar3d.com
-        else
+        fi
+        if [ ${AD5X} -eq 1 ]; then
             mount --bind /usr/data/config/mod/.shell/hosts /etc/hosts
-
         fi
     else
-        if [ ${AD5X} -eq 0 ]; then
+        if [ ${AD5M} -eq 1 ]; then
             china_razbl api.cloud.flashforge.com
             china_razbl api.fdmcloud.flashforge.com
             china_razbl cloud.sz3dp.com
@@ -458,23 +453,24 @@ unset LD_PRELOAD
 
     grep -q "zmod 1.1" ${KLIPPER_DIR}/klippy/webhooks.py || cp ${MOD_CONF}/mod/.shell/webhooks.py ${KLIPPER_DIR}/klippy/webhooks.py
     grep -q ZLOAD_VARIABLE ${KLIPPER_DIR}/klippy/extras/save_variables.py || cp ${MOD_CONF}/mod/.shell/save_variables.py ${KLIPPER_DIR}/klippy/extras/save_variables.py
-    if [ ${AD5X} -eq 0 ]; then
+    if [ ${AD5M} -eq 1 ]; then
         grep -q "Zcontrol 1.25" ${KLIPPER_DIR}/klippy/extras/spi_temperature.py || cp ${MOD_CONF}/mod/.shell/spi_temperature.py ${KLIPPER_DIR}/klippy/extras/spi_temperature.py
         grep -q "zmod 1.0" /opt/klipper/start.sh || cp ${MOD_CONF}/mod/.shell/start.sh /opt/klipper/start.sh
-    else
+    fi
+    if [ ${AD5X} -eq 1 ]; then
         grep -q "zmod 1.12" ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py || cp ${MOD_CONF}/mod/.shell/virtual_sdcard.py ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py
+        check_link ${KLIPPER_DIR}/klippy/extras/zmod_color.py ${MOD_CONF}/mod/.shell/zmod_color.py
+        check_link ${KLIPPER_DIR}/klippy/extras/zmod_tenz.py ${MOD_CONF}/mod/.shell/zmod_tenz.py
+        check_link ${KLIPPER_DIR}/klippy/extras/zmod_ifs.py ${MOD_CONF}/mod/.shell/zmod_ifs.py
+        check_link ${KLIPPER_DIR}/klippy/extras/zmod_ifs_switch_sensor.py ${MOD_CONF}/mod/.shell/zmod_ifs_switch_sensor.py
+        check_link ${KLIPPER_DIR}/klippy/extras/zmod_ifs_motion_sensor.py ${MOD_CONF}/mod/.shell/zmod_ifs_motion_sensor.py
+        check_link /opt/config/rw /usr/prog/config/
     fi
 
     check_link ${KLIPPER_DIR}/klippy/extras/zmod.py ${MOD_CONF}/mod/.shell/zmod.py
     check_link ${KLIPPER_DIR}/klippy/extras/ens160.py ${MOD_CONF}/mod/.shell/ens160.py
-    [ ${AD5X} -eq 1 ] && check_link ${KLIPPER_DIR}/klippy/extras/zmod_color.py ${MOD_CONF}/mod/.shell/zmod_color.py
-    [ ${AD5X} -eq 1 ] && check_link ${KLIPPER_DIR}/klippy/extras/zmod_tenz.py ${MOD_CONF}/mod/.shell/zmod_tenz.py
-    [ ${AD5X} -eq 1 ] && check_link ${KLIPPER_DIR}/klippy/extras/zmod_ifs.py ${MOD_CONF}/mod/.shell/zmod_ifs.py
-    [ ${AD5X} -eq 1 ] && check_link ${KLIPPER_DIR}/klippy/extras/zmod_ifs_switch_sensor.py ${MOD_CONF}/mod/.shell/zmod_ifs_switch_sensor.py
-    [ ${AD5X} -eq 1 ] && check_link ${KLIPPER_DIR}/klippy/extras/zmod_ifs_motion_sensor.py ${MOD_CONF}/mod/.shell/zmod_ifs_motion_sensor.py
-    [ ${AD5X} -eq 1 ] && check_link /opt/config/rw /usr/prog/config/
 
-    if [ ${AD5X} -eq 0 ]; then
+    if [ ${AD5M} -eq 1 ]; then
         # Fix possible ordering issue if a callback blocks in button handler#6440
         grep -q receive_time ${KLIPPER_DIR}/klippy/extras/buttons.py || cp /opt/config/mod/.shell/buttons.py ${KLIPPER_DIR}/klippy/extras/buttons.py
     fi
@@ -530,29 +526,26 @@ unset LD_PRELOAD
     # Восстанавливаем настройки
     if grep -q "display_off = 1" ${MOD_CONF}/mod_data/variables.cfg; then
         grep -q '^\[include ./mod_data/mod.cfg\]' ${PRINTER_CFG} && sed -i 's|\[include ./mod/mod.cfg\]|\[include ./mod/display_off.cfg\]|' ${PRINTER_CFG} && NEED_REBOOT=1
-    fi
-
-    if grep -q "display_off = 0" ${MOD_CONF}/mod_data/variables.cfg; then
+    else
         grep -q '^\[include ./mod/display_off.cfg\]' ${PRINTER_CFG} && sed -i 's|\[include ./mod/display_off.cfg\]|\[include ./mod/mod.cfg\]|' ${PRINTER_CFG} && NEED_REBOOT=1
     fi
 
-    if ! grep -q '^\[heater_bed' ${PRINTER_CFG}
-        then
-            NEED_REBOOT=1
-            cd ${MOD_CONF}
+    if ! grep -q '^\[heater_bed' ${PRINTER_CFG}; then
+        NEED_REBOOT=1
+        cd ${MOD_CONF}
 
-            # Copy and remove from printer.base.cfg
-            if grep -q '^\[heater_bed' ${PRINTER_BASE}; then
-                sed -e '/^\[heater_bed/,/^\[/d' ${PRINTER_BASE} >printer.base.tmp
-                diff -u ${PRINTER_BASE} printer.base.tmp | grep -v "printer.base.cfg" |grep "^-" | cut -b 2- >heater_bed.txt
-                sed -i '$d' heater_bed.txt
-                num=$(wc -l heater_bed.txt|cut  -d " " -f1)
-                num=$(($num-1))
-                sed -e "/^\[heater_bed/,+${num}d;" ${PRINTER_BASE} >printer.base.tmp
-                cat printer.base.tmp >${PRINTER_BASE}
-                rm -f printer.base.tmp
-            else
-                [ ${AD5X} -eq 0 ] && echo "[heater_bed]
+        # Copy and remove from printer.base.cfg
+        if grep -q '^\[heater_bed' ${PRINTER_BASE}; then
+            sed -e '/^\[heater_bed/,/^\[/d' ${PRINTER_BASE} >printer.base.tmp
+            diff -u ${PRINTER_BASE} printer.base.tmp | grep -v "printer.base.cfg" |grep "^-" | cut -b 2- >heater_bed.txt
+            sed -i '$d' heater_bed.txt
+            num=$(wc -l heater_bed.txt|cut  -d " " -f1)
+            num=$(($num-1))
+            sed -e "/^\[heater_bed/,+${num}d;" ${PRINTER_BASE} >printer.base.tmp
+            cat printer.base.tmp >${PRINTER_BASE}
+            rm -f printer.base.tmp
+        else
+            [ ${AD5M} -eq 1 ] && echo "[heater_bed]
 heater_pin: PB9
 sensor_type: Generic 3950
 sensor_pin: PC3
@@ -698,9 +691,9 @@ max_temp: 130
         rm -f heater_bed.txt printer.base.tmp
     fi
 
-    # Возвращаем gcode_button check_level_pin
-    if [ ${AD5X} -eq 0 ] && ! grep -q '^\[gcode_button check_level_pin' ${PRINTER_BASE}
-        then
+    if [ ${AD5M} -eq 1 ]; then
+        # Возвращаем gcode_button check_level_pin
+        if ! grep -q '^\[gcode_button check_level_pin' ${PRINTER_BASE}; then
             NEED_REBOOT=1
             cd ${MOD_CONF}
 
@@ -710,11 +703,10 @@ pin: !PE0
 press_gcode:
     M105
 ' >>${PRINTER_BASE}
-    fi
+        fi
 
-    # Удаляем filament_switch_sensor e0_sensor
-    if [ ${AD5X} -eq 0 ] && grep -q '^\[filament_switch_sensor e0_sensor' ${PRINTER_BASE}
-        then
+        # Удаляем filament_switch_sensor e0_sensor
+        if grep -q '^\[filament_switch_sensor e0_sensor' ${PRINTER_BASE}; then
             NEED_REBOOT=1
             cd ${MOD_CONF}
 
@@ -729,11 +721,10 @@ press_gcode:
             sed -e "/^\[filament_switch_sensor e0_sensor/,+${num}d;" ${PRINTER_BASE} >printer.base.tmp
             cat printer.base.tmp >${PRINTER_BASE}
             rm -f heater_bed.txt printer.base.tmp
-    fi
+        fi
 
-    # Удаляем filament_motion_sensor e0_sensor
-    if [ ${AD5X} -eq 0 ] && grep -q '^\[filament_motion_sensor e0_sensor' ${PRINTER_BASE}
-        then
+        # Удаляем filament_motion_sensor e0_sensor
+        if grep -q '^\[filament_motion_sensor e0_sensor' ${PRINTER_BASE}; then
             NEED_REBOOT=1
             cd ${MOD_CONF}
 
@@ -748,10 +739,12 @@ press_gcode:
             sed -e "/^\[filament_motion_sensor e0_sensor/,+${num}d;" ${PRINTER_BASE} >printer.base.tmp
             cat printer.base.tmp >${PRINTER_BASE}
             rm -f heater_bed.txt printer.base.tmp
+        fi
     fi
 
     # Добавляем controller_fan driver_fan
-    [ ${AD5X} -eq 1 ] && PIN="PA5" || PIN="PB7"
+    if [ ${AD5X} -eq 1 ]; then PIN="PA5"; fi
+    if [ ${AD5M} -eq 1 ]; then PIN="PB7"; fi
     if grep -q '^\[controller_fan driver_fan' ${PRINTER_BASE}; then
         if ! grep -A1 '^\[controller_fan driver_fan' ${PRINTER_BASE} | grep -q "pin:${PIN}"; then
             # Удаляем controller_fan driver_fan
@@ -799,7 +792,7 @@ stepper: stepper_x, stepper_y, stepper_z
     fi
 
 
-    if [ ${AD5X} -eq 0 ]; then
+    if [ ${AD5M} -eq 1 ]; then
         if ! { head -n 2 ${PRINTER_CFG} | tail -n 1 | grep -qE '^\[include \.\/mod\/klipper1[13]\.cfg\]$'; }; then
             sed -i '\|\[include \./mod/klipper11\.cfg\]|d' "${PRINTER_CFG}"
             sed -i '\|\[include \./mod/klipper13\.cfg\]|d' "${PRINTER_CFG}"
@@ -869,26 +862,27 @@ stepper: stepper_x, stepper_y, stepper_z
         mv ${MOD_CONF}/mod_data/user.moonraker.conf.tmp ${MOD_CONF}/mod_data/user.moonraker.conf
     fi
 
-    if [ ${NEED_REBOOT} -eq 1 ]
-        then
+    if [ ${NEED_REBOOT} -eq 1 ]; then
+        if [ ${AD5M} -eq 1 ]; then
             echo "Kill firmwareExe"
             sync
-            [ ${AD5X} -eq 0 ] && killall firmwareExe
+            killall firmwareExe
             sync
-            sync
-            diff -u ${PRINTER_BASE_ORIG} ${PRINTER_BASE}
-            diff -u ${PRINTER_CFG_ORIG} ${PRINTER_CFG}
-            cat ${PRINTER_BASE} >${PRINTER_BASE_ORIG}
-            sync
-            cat ${PRINTER_CFG} >${PRINTER_CFG_ORIG}
-            sync
-        else
-            diff -u ${PRINTER_BASE_ORIG} ${PRINTER_BASE}
-            diff -u ${PRINTER_CFG_ORIG} ${PRINTER_CFG}
+        fi
+        sync
+        diff -u ${PRINTER_BASE_ORIG} ${PRINTER_BASE}
+        diff -u ${PRINTER_CFG_ORIG} ${PRINTER_CFG}
+        cat ${PRINTER_BASE} >${PRINTER_BASE_ORIG}
+        sync
+        cat ${PRINTER_CFG} >${PRINTER_CFG_ORIG}
+        sync
+    else
+        diff -u ${PRINTER_BASE_ORIG} ${PRINTER_BASE}
+        diff -u ${PRINTER_CFG_ORIG} ${PRINTER_CFG}
     fi
     echo "END fix_config"
 
-    if [ "$1" == "start" ] && [ ${AD5X} -eq 0 ]; then
+    if [ "$1" == "start" ] && [ ${AD5M} -eq 1 ]; then
         ${MOD_CONF}/mod/.shell/app_startup_mcu.sh
     fi
     sync
