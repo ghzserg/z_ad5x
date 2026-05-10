@@ -9,6 +9,7 @@ PID_FILE=/run/guppyscreen.pid
 NICENESS=10
 
 start() {
+    set -x
     source /opt/config/mod/.shell/0.sh
     xzcat /opt/config/mod/.shell/screen_off.raw.xz > /dev/fb0
     [ ${AD5M} -eq 1 ] && backlight 0
@@ -20,7 +21,7 @@ start() {
             for name in `cat $file`; do
                 echo $name
             done
-            if [ "$name" == $TSNAME ];then
+            if [ "$name" == $TSNAME ]; then
                EVENT=event$i
                break;
             fi
