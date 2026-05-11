@@ -256,6 +256,7 @@ fi
 
 rm -f /root/guppyscreen/guppyconfig.json
 ln -s /opt/config/mod_data/guppyconfig.json /root/guppyscreen/guppyconfig.json
+[ -s /opt/config/mod_data/guppyconfig.json ] || rm -f /opt/config/mod_data/guppyconfig.json
 
 if [ "$3" == "Adventurer5M" ]; then
     [ -f /opt/config/mod_data/guppyconfig.json ] || cp /opt/config/mod/guppyconfig_${ZLANG}.json /opt/config/mod_data/guppyconfig.json
