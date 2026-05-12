@@ -355,7 +355,7 @@ cors_domains:
 " >${MOD_CONF}/mod_data/user.moonraker.conf;
     fi
 
-    # Защита от самонадеянных, кто выклчюает SWAP при 128 мегабайтах оперативной памяти
+    # Защита от самонадеянных, кто выключает SWAP при 128 мегабайтах оперативной памяти
     if [ ${AD5M} -eq 1 ] && grep -q "use_swap = 0" ${MOD_CONF}/mod_data/variables.cfg; then
         MEM=$(cat /proc/meminfo | grep MemTotal| awk '{print $2}')
         MEM=$(($MEM/1024))
