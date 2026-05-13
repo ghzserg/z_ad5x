@@ -139,9 +139,9 @@ class zmod_tenz:
             self.reactor.pause(self.reactor.monotonic() + 0.5)
 
         if self.language != 'ru':
-            error_msg = f"Cell Tare: Error. Weight: {start_temp}->{cur_temp} https://github.com/ghzserg/zmod/wiki/FAQ_en"
+            error_msg = f"Cell Tare: Error. Weight: {start_temp}->{cur_temp} https://wiki.zmod.link/FAQ/"
         else:
-            error_msg = f"Сброс тензодатчка: Ошибка. Вес: {start_temp}->{cur_temp} https://github.com/ghzserg/zmod/wiki/FAQ"
+            error_msg = f"Сброс тензодатчка: Ошибка. Вес: {start_temp}->{cur_temp} https://wiki.zmod.link/ru/FAQ/"
         raise gcmd.error(error_msg)
 
     def cmd_H1(self, gcmd):
@@ -177,18 +177,18 @@ class zmod_tenz:
             )
         else:
             shutdown_msg = (
-                f"Nozzle hit bed or part detachment. Weight {int(cur_temp)}>{self.max_temp}. Z={int(self.z)}. FIRMWARE_RESTART. https://github.com/ghzserg/zmod/wiki/Global_en#nozzle_control"
+                f"Nozzle hit bed or part detachment. Weight {int(cur_temp)}>{self.max_temp}. Z={int(self.z)}. FIRMWARE_RESTART. https://wiki.zmod.link/Global/#nozzle_control"
                 if self.language != 'ru'
-                else f"Удар сопла о стол или отрыв детали. Вес {int(cur_temp)}>{self.max_temp}. Z={int(self.z)}. FIRMWARE_RESTART. https://github.com/ghzserg/zmod/wiki/Global_ru#nozzle_control"
+                else f"Удар сопла о стол или отрыв детали. Вес {int(cur_temp)}>{self.max_temp}. Z={int(self.z)}. FIRMWARE_RESTART. https://wiki.zmod.link/ru/Global/#nozzle_control"
             )
             self.stop_thread = True
             self.printer.invoke_async_shutdown(shutdown_msg, shutdown_msg)
 
     def _async_zcontrol_action(self, cur_temp):
         url = (
-            "https://github.com/ghzserg/zmod/wiki/Global_en#nozzle_control"
+            "https://wiki.zmod.link/Global/#nozzle_control"
             if self.language != 'ru'
-            else "https://github.com/ghzserg/zmod/wiki/Global_ru#nozzle_control"
+            else "https://wiki.zmod.link/ru/Global/#nozzle_control"
         )
         msg = (
             f"!! Nozzle hit bed or part detachment. Weight {int(cur_temp)}>{self.max_temp}. Z={int(self.z)}. PAUSE."
