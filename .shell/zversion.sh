@@ -58,8 +58,10 @@ if [ "${VER_FF}" != "${VER_MOD}" ]; then
 fi
 /opt/config/mod/.shell/ip.sh
 
-pid_klippper=$(ps | grep klippy.py | grep -v grep| awk '{print $1}')
-echo -1000 >/proc/${pid_klippper}/oom_score_adj 2>/dev/null
+if [ "$AD5M" -eq 1 ]; then
+    pid_klippper=$(ps | grep klippy.py | grep -v grep| awk '{print $1}')
+    echo -1000 >/proc/${pid_klippper}/oom_score_adj 2>/dev/null
 
-pid_firmwareExe=$(ps | grep firmwareExe | grep -v grep| awk '{print $1}')
-[ -f /proc/${pid_firmwareExe}/oom_score_adj ] && echo +500 >/proc/${pid_firmwareExe}/oom_score_adj 2>/dev/null
+    pid_firmwareExe=$(ps | grep firmwareExe | grep -v grep| awk '{print $1}')
+    [ -f /proc/${pid_firmwareExe}/oom_score_adj ] && echo +500 >/proc/${pid_firmwareExe}/oom_score_adj 2>/dev/null
+fi
