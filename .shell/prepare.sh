@@ -88,8 +88,8 @@ start_moon()
     grep -q '^MACHINE=Adventurer5MPro$' /opt/auto_run.sh && MACHINE=Adventurer5MPro
     grep -q '^MACHINE=Adventurer5M$' /opt/auto_run.sh && MACHINE=Adventurer5M
     grep -q "^MACHINE=AD5X" /usr/prog/app_startup.sh && MACHINE=AD5X
-    [ ${AD5M} -eq 1 ] && VER=$(cat /root/version)
-    [ ${AD5X} -eq 1 ] && VER=$(find /usr/prog/PROGRAM/software/ -type d | sed 's|/usr/prog/PROGRAM/software/||' | grep .)
+    [ ${AD5M} -eq 1 ] && VER=$(find /opt/PROGRAM/software/ -type d | sed 's|/opt/PROGRAM/software/||' | grep -v "/" | grep .) && echo "$VER" >/root/version
+    [ ${AD5X} -eq 1 ] && VER=$(find /usr/prog/PROGRAM/software/ -type d | sed 's|/usr/prog/PROGRAM/software/||' | grep -v "/" | grep .)
 
     # Запуск камеры
     #[ ${AD5M} -eq 1 ] && ${MOD_CONF}/mod/.shell/S99camera init
