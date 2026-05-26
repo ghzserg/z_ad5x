@@ -893,7 +893,7 @@ class zmod_color:
 
         return allowed_tool_count
 
-    def rgb_to_lab(r, g, b):
+    def rgb_to_lab(self, r, g, b):
         """sRGB (0-255) → CIE LAB (D65)"""
         r, g, b = r / 255.0, g / 255.0, b / 255.0
         # sRGB to linear
@@ -913,7 +913,7 @@ class zmod_color:
         b = 200 * (f(y) - f(z))
         return l, a, b
 
-    def delta_e76(l1, a1, b1, l2, a2, b2):
+    def delta_e76(self, l1, a1, b1, l2, a2, b2):
         """Перцептуальное расстояние ΔE76"""
         return ((l1 - l2) ** 2 + (a1 - a2) ** 2 + (b1 - b2) ** 2) ** 0.5
 
@@ -1050,13 +1050,13 @@ class zmod_color:
                     fc_r = int(file_color[1][1:3], 16)
                     fc_g = int(file_color[1][3:5], 16)
                     fc_b = int(file_color[1][5:7], 16)
-                    fl, fa, fb = rgb_to_lab(fc_r, fc_g, fc_b)
+                    fl, fa, fb = self.rgb_to_lab(fc_r, fc_g, fc_b)
 
                     for slot in candidates:
                         if slot['red'] < 0 or slot['green'] < 0 or slot['blue'] < 0:
                             continue
-                        sl, sa, sb = rgb_to_lab(slot['red'], slot['green'], slot['blue'])
-                        this_color_difference = delta_e76(fl, fa, fb, sl, sa, sb)
+                        sl, sa, sb = self.rgb_to_lab(slot['red'], slot['green'], slot['blue'])
+                        this_color_difference = self.delta_e76(fl, fa, fb, sl, sa, sb)
 
 #                    file_color_red = int(file_color[1][1:3], 16)
 #                    file_color_green = int(file_color[1][3:5], 16)
