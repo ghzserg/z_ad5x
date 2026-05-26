@@ -569,7 +569,8 @@ AUTO_ASSIGN_COLOR_FAILURE =     1 << 2 # At least one color could not be matched
 AUTO_ASSIGN_COLOR_WEAK =        1 << 3 # At least one matched color is only a "weak" match
 AUTO_ASSIGN_DUPLICATE =         1 << 4 # Two (or more) colors are matched to the same slot
 
-AUTO_ASSIGN_WEAK_COLOR_CUTOFF = (63 ** 2) * 3 # If the squares of each components difference added together, exceed this, it's considered a weak match
+#AUTO_ASSIGN_WEAK_COLOR_CUTOFF = (63 ** 2) * 3 # If the squares of each components difference added together, exceed this, it's considered a weak match
+AUTO_ASSIGN_WEAK_COLOR_CUTOFF =  15.0
 
 class zmod_color:
     def __init__(self, config):
@@ -892,6 +893,30 @@ class zmod_color:
 
         return allowed_tool_count
 
+    def rgb_to_lab(r, g, b):
+        """sRGB (0-255) → CIE LAB (D65)"""
+        r, g, b = r / 255.0, g / 255.0, b / 255.0
+        # sRGB to linear
+        r = ((r + 0.055) / 1.055) ** 2.4 if r > 0.04045 else r / 12.92
+        g = ((g + 0.055) / 1.055) ** 2.4 if g > 0.04045 else g / 12.92
+        b = ((b + 0.055) / 1.055) ** 2.4 if b > 0.04045 else b / 12.92
+        # Linear RGB → XYZ (D65)
+        x = r * 0.4124564 + g * 0.3575761 + b * 0.1804375
+        y = r * 0.2126729 + g * 0.7151522 + b * 0.0721750
+        z = r * 0.0193339 + g * 0.1191920 + b * 0.9503041
+        # Normalize to D65 white point
+        x, y, z = x / 0.95047, y / 1.00000, z / 1.08883
+        # XYZ → LAB
+        def f(t): return t ** (1/3) if t > 0.008856 else (7.787 * t) + 16/116
+        l = 116 * f(y) - 16
+        a = 500 * (f(x) - f(y))
+        b = 200 * (f(y) - f(z))
+        return l, a, b
+
+    def delta_e76(l1, a1, b1, l2, a2, b2):
+        """Перцептуальное расстояние ΔE76"""
+        return ((l1 - l2) ** 2 + (a1 - a2) ** 2 + (b1 - b2) ** 2) ** 0.5
+
     def get_used_colors(self, gcmd):
         # Returns list of tuples. (tool ID, color, material)
 
@@ -1021,18 +1046,30 @@ class zmod_color:
                     closest_slot = None
                     closest_slot_difference = float('inf')
 
-                    file_color_red = int(file_color[1][1:3], 16)
-                    file_color_green = int(file_color[1][3:5], 16)
-                    file_color_blue = int(file_color[1][5:7], 16)
+                    # Преобразуем цвет файла в LAB один раз
+                    fc_r = int(file_color[1][1:3], 16)
+                    fc_g = int(file_color[1][3:5], 16)
+                    fc_b = int(file_color[1][5:7], 16)
+                    fl, fa, fb = rgb_to_lab(fc_r, fc_g, fc_b)
+
                     for slot in candidates:
                         if slot['red'] < 0 or slot['green'] < 0 or slot['blue'] < 0:
                             continue
+                        sl, sa, sb = rgb_to_lab(slot['red'], slot['green'], slot['blue'])
+                        this_color_difference = delta_e76(fl, fa, fb, sl, sa, sb)
 
-                        this_color_difference = (
-                            (file_color_red - slot['red']) ** 2 +
-                            (file_color_green - slot['green']) ** 2 +
-                            (file_color_blue - slot['blue']) ** 2
-                        )
+#                    file_color_red = int(file_color[1][1:3], 16)
+#                    file_color_green = int(file_color[1][3:5], 16)
+#                    file_color_blue = int(file_color[1][5:7], 16)
+#                    for slot in candidates:
+#                        if slot['red'] < 0 or slot['green'] < 0 or slot['blue'] < 0:
+#                            continue
+#
+#                        this_color_difference = (
+#                            (file_color_red - slot['red']) ** 2 +
+#                            (file_color_green - slot['green']) ** 2 +
+#                            (file_color_blue - slot['blue']) ** 2
+#                        )
 
                         if this_color_difference < closest_slot_difference:
                             closest_slot = slot
