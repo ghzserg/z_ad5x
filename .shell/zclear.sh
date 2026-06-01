@@ -8,13 +8,13 @@ if  [ "$1" == 1 ]; then
     rm -rf ${LOG_FILES}/*
     rm -rf /opt/config/mod_data/log/*
     rm -rf ${UPDATE_DIR}/*
-    find /opt/config/ -name '*.pyc' -delete
-    find /opt/config/ -name '*.tar' -delete
-    find /opt/config/ -name '*.zip' -delete
-    find /opt/config/ -name '*.tar.gz' -delete
-    find /opt/config/ -name '*.tgz' -delete
-    find ${DATA_GCODES}/timelapse -type f -name '*.mp4' -delete
-    find ${DATA_GCODES}/timelapse -type f -name '*.jpg' -delete
+    find /opt/config/ -name '*.pyc' -exec rm {};
+    find /opt/config/ -name '*.tar' -exec rm {};
+    find /opt/config/ -name '*.zip' -exec rm {};
+    find /opt/config/ -name '*.tar.gz' -exec rm {};
+    find /opt/config/ -name '*.tgz' -exec rm {};
+    find ${DATA_GCODES}/timelapse -type f -name '*.mp4' -exec rm {};
+    find ${DATA_GCODES}/timelapse -type f -name '*.jpg' -exec rm {};
     sync
 fi
 
