@@ -15,6 +15,28 @@ else if [ -f /usr/data/config/mod/.shell/0.sh ]; then
 fi
 fi
 
+# Активация мода для AD5X
+enable_zmod_ad5x()
+{
+    grep -q '/usr/data/config/mod/.shell/fix_config.sh start' /usr/prog/klipper/start.sh || sed -i '2 i\/usr/data/config/mod/.shell/fix_config.sh start' /usr/prog/klipper/start.sh
+
+    grep -q "mount --bind /bin/echo /usr/bin/cmd_pwm" /usr/prog/app_startup.sh || sed -i '\#mount /usr/prog/etc /etc#a\mount --bind /bin/echo /usr/bin/cmd_pwm' /usr/prog/app_startup.sh
+
+    if ! grep -q prepare.sh /usr/prog/app_startup.sh; then
+        echo "Aktivate Z-Mod"
+
+        cat /usr/prog/app_startup.sh >/tmp/startup.sh
+
+        awk '{ print }
+        END {
+          if (NR > 0 && $0 !~ /\/usr\/data\/config\/mod\/\.shell\/prepare\.sh/) {
+            print "/usr/data/config/mod/.shell/prepare.sh"
+          }
+        }' /tmp/startup.sh >/usr/prog/app_startup.sh
+        sync
+    fi
+}
+
 # Разблокировка
 china_razbl()
 {
@@ -885,6 +907,9 @@ stepper: stepper_x, stepper_y, stepper_z
         diff -u ${PRINTER_BASE_ORIG} ${PRINTER_BASE}
         diff -u ${PRINTER_CFG_ORIG} ${PRINTER_CFG}
     fi
+
+    [ ${AD5X} -eq 1 ] && enable_zmod_ad5x
+
     echo "END fix_config"
 
     if [ "$1" == "start" ] && [ ${AD5M} -eq 1 ]; then
