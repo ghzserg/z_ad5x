@@ -358,7 +358,7 @@ class zmod_tenz:
                 if self.language != 'ru':
                     status_msg = "Weight: %d; Z: %d  Control is configured but inactive." % (self.max_temp, int(self.z))
                 else:
-                    status_msg = "Вес: %d; Z: %d  Контроль настроен и не активен." % (self.max_temp, int(self.z))
+                    status_msg = "Вес: %d; Z: %d  Контроль настроен и не активен. Будет активен при печати." % (self.max_temp, int(self.z))
             gcmd.respond_info(status_msg)
 
             if self.zcommand == 0:
