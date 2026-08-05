@@ -157,7 +157,7 @@ prepare_chroot()
             check_link ${MOD_CONF}/base/klipper/klippy/extras/zmod_ifs_switch_sensor.py ${MOD_CONF}/mod/.shell/zmod_ifs_switch_sensor.py
             check_link ${MOD_CONF}/base/klipper/klippy/extras/zmod_ifs.py ${MOD_CONF}/mod/.shell/zmod_ifs.py
             check_link ${MOD_CONF}/base/klipper/klippy/extras/zmod_tenz.py ${MOD_CONF}/mod/.shell/zmod_tenz.py
-            check_link ${MOD_CONF}/base/klipper/klippy/extras/virtual_sdcard.py ${MOD_CONF}/mod/.shell/virtual_sdcard.py
+            check_link ${MOD_CONF}/base/klipper/klippy/extras/virtual_sdcard.py ${MOD_CONF}/mod/.shell/virtual_sdcard_13.py
         fi
     fi
 
@@ -305,7 +305,11 @@ if ! [ -f /root/printer_data/config/base/klipper/klippy/klippy.py ]; then
 else
     CUR_DIR=$(pwd)
     cd /root/printer_data/config/base/klipper
-    git update-index --skip-worktree klippy/extras/virtual_sdcard.py
+    if [ ${AD5X} -eq 1 ]; then
+        git update-index --skip-worktree klippy/extras/virtual_sdcard.py
+    else
+        git update-index --no-skip-worktree klippy/extras/virtual_sdcard.py
+    fi
     cd ${CUR_DIR}
 fi
 
