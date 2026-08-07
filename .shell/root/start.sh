@@ -157,7 +157,11 @@ prepare_chroot()
             check_link ${MOD_CONF}/base/klipper/klippy/extras/zmod_ifs_switch_sensor.py ${MOD_CONF}/mod/.shell/zmod_ifs_switch_sensor.py
             check_link ${MOD_CONF}/base/klipper/klippy/extras/zmod_ifs.py ${MOD_CONF}/mod/.shell/zmod_ifs.py
             check_link ${MOD_CONF}/base/klipper/klippy/extras/zmod_tenz.py ${MOD_CONF}/mod/.shell/zmod_tenz.py
-            check_link ${MOD_CONF}/base/klipper/klippy/extras/virtual_sdcard.py ${MOD_CONF}/mod/.shell/virtual_sdcard_13.py
+            if [ -f ${MOD_CONF}/base/klipper/klippy/extras/aio_executor.py ]; then
+                check_link ${MOD_CONF}/base/klipper/klippy/extras/virtual_sdcard.py ${MOD_CONF}/mod/.shell/virtual_sdcard_13.py
+            else
+                check_link ${MOD_CONF}/base/klipper/klippy/extras/virtual_sdcard.py ${MOD_CONF}/mod/.shell/virtual_sdcard.py
+            fi
         fi
     fi
 
