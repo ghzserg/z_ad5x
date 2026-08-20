@@ -3,11 +3,10 @@
 
 DATA=/usr/data
 DATA_GCODES=/usr/data/gcodes
-REMOUNT_MOD=${DATA}/lost+found
-UMOUNT_MOD=${DATA}/.mod
-MOD=${UMOUNT_MOD}/.zmod
+MOD=${DATA}/.mod/.zmod
 AD5M=0
 AD5X=1
+C5PRO=0
 KEY_TYPE="ecdsa"
 KLIPPER_DIR="/usr/prog/klipper"
 TS_LIB="/usr/prog/tslib-1.12/etc"

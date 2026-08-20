@@ -19,8 +19,8 @@ if  [ "$1" == 1 ]; then
 fi
 
 if  [ "$2" == 1 ]; then
-    find ${DATA_GCODES}/ -type f -not -regex "${REMOUNT_MOD}/.*" -not -regex "${DATA}/\.mod/.*" -not -regex "${LOG_FILES}/.*" -exec rm {} \;
+    find ${DATA_GCODES}/ -type f -not -regex "${DATA}/\.mod/.*" -not -regex "${LOG_FILES}/.*" -exec rm {} \;
     sync
-    find ${DATA_GCODES}/ -type d -not -regex "${DATA}/\.mod.*"  -not -regex "${REMOUNT_MOD}.*" -not -path "${DATA}/" -not -path "${LOG_FILES}/" -exec rm -r {} \;
+    find ${DATA_GCODES}/ -type d -not -regex "${DATA}/\.mod.*"  -not -path "${DATA}/" -not -path "${LOG_FILES}/" -exec rm -r {} \;
     sync
 fi

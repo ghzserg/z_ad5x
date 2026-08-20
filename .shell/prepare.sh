@@ -15,7 +15,7 @@ fi
 
 remove_base()
 {
-    rm -rf ${UMOUNT_MOD}
+    rm -rf ${DATA}/.mod
 
     [ -f ${MOD_CONF}/mod/FULL_REMOVE ] && rm -rf ${MOD_CONF}/mod_data/
     sync
