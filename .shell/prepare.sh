@@ -156,6 +156,7 @@ start_prepare()
     cp ${TS_LIB}/ts.conf /tmp/ts.conf
 
     start_moon
+    /opt/config/mod/.shell/klipper_policy.sh
 }
 
 cnt=$(find ${PROGRAM_DIR}control/ -name Update | wc -l)
