@@ -8,7 +8,7 @@ RETRY_COUNT=0
 
 set_klipper_policy() {
     while [ "$RETRY_COUNT" -le "$MAX_RETRIES" ]; do
-        PID=$(ps | grep klippy.py | grep -v grep | awk '{print $1}' | head -n 1)
+        PID=$(ps w | grep klippy.py | grep -v grep | awk '{print $1}' | head -n 1)
 
         if [ -n "$PID" ]; then
             echo "Process found, PID: $PID"
