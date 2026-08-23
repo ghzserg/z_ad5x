@@ -179,7 +179,7 @@ class zmod_tenz:
         except Exception as e:
             z_pos = 0
         if self.zcommand == 1 or (self.zcommand == 2 and z_pos >= self.z):
-            self.reactor.register_callback(
+            self.reactor.register_async_callback(
                 lambda e: self._async_zcontrol_action(cur_temp)
             )
         else:
@@ -220,16 +220,15 @@ class zmod_tenz:
             logging.error("Failed to convert value to float: %s", matches[-1])
             return -200.0
 
-    def _push_temp_to_klipper(self, mcu, measured_time, cur_temp):
-
+    def _push_temp_to_klipper(self, mcu, cur_temp):
         with self.temp_lock:
             self.temp = cur_temp
 
-        self.reactor.register_callback(
-            lambda e, mt=measured_time, ct=cur_temp: self._callback(
-                mcu.estimated_print_time(mt), ct
-            )
-        )
+        def callback(eventtime):
+            print_time = mcu.estimated_print_time(eventtime)
+            self._callback(print_time, cur_temp)
+
+        self.reactor.register_async_callback(callback)
 
     def _sensor_reader(self):
         mcu = self.printer.lookup_object('mcu')
@@ -252,7 +251,7 @@ class zmod_tenz:
                     response = self.ser.readline().decode('utf-8', errors='ignore').strip()
                     if not response and command_id == -1:
 
-                        self._push_temp_to_klipper(mcu, self.reactor.monotonic(), -200.0)
+                        self._push_temp_to_klipper(mcu, -200.0)
                         continue
 
                     if not response:
@@ -267,7 +266,7 @@ class zmod_tenz:
                         if cur_temp > 5120:
                             cur_temp = 1
 
-                        self._push_temp_to_klipper(mcu, self.reactor.monotonic(), cur_temp)
+                        self._push_temp_to_klipper(mcu, cur_temp)
 
                         if (self.max_temp != 2048 and
                             self.zcontrol == 1 and
@@ -283,13 +282,13 @@ class zmod_tenz:
                 logging.warning("Serial communication error: %s", e)
                 self._respond_info(f"cell_tare: Serial error: {str(e)}")
 
-                self._push_temp_to_klipper(mcu, self.reactor.monotonic(), -200.0)
+                self._push_temp_to_klipper(mcu, -200.0)
 
             except Exception as e:
                 logging.exception("Sensor thread error: %s", e)
                 self._respond_info(f"cell_tare: Error data")
 
-                self._push_temp_to_klipper(mcu, self.reactor.monotonic(), -200.0)
+                self._push_temp_to_klipper(mcu, -200.0)
 
             finally:
                 if self.ser is not None and self.ser.is_open:
