@@ -1,4 +1,4 @@
-# (C) 2025 ghzserg https://github.com/ghzserg/zmod/
+# (C) 2025-2026 ghzserg https://github.com/ghzserg/zmod/
 # (C) 2025 @FishingSoulFT
 # (C) 2024-2025 VoronKor https://github.com/VoronKor/tensistor_board_adm5
 import serial
@@ -32,6 +32,7 @@ class zmod_tenz:
 
         self.stop_thread = False  # Флаг для остановки потока
         self.sensor_thread = threading.Thread(target=self._sensor_reader)
+        self.ser = None
         self.sensor_thread.daemon = True  # Поток завершится при выходе из программы
         self.sensor_thread.start()
 
@@ -73,6 +74,12 @@ class zmod_tenz:
 
     def close(self):
         self.stop_thread = True
+        if self.ser is not None and self.ser.is_open:
+            try:
+                self.ser.close()
+            except Exception:
+                pass
+
         if self.sensor_thread.is_alive():
             self.sensor_thread.join(timeout=2.0)
 
@@ -134,14 +141,14 @@ class zmod_tenz:
                 if self.language != 'ru':
                     gcmd.respond_info(f"Cell Tare: OK. Weight: {start_temp}->{cur_temp}")
                 else:
-                    gcmd.respond_info(f"Сброс тензодатчка: ОК. Вес: {start_temp}->{cur_temp}")
+                    gcmd.respond_info(f"Сброс тензодатчика: ОК. Вес: {start_temp}->{cur_temp}")
                 return
             self.reactor.pause(self.reactor.monotonic() + 0.5)
 
         if self.language != 'ru':
             error_msg = f"Cell Tare: Error. Weight: {start_temp}->{cur_temp} https://wiki.zmod.link/FAQ/"
         else:
-            error_msg = f"Сброс тензодатчка: Ошибка. Вес: {start_temp}->{cur_temp} https://wiki.zmod.link/ru/FAQ/"
+            error_msg = f"Сброс тензодатчика: Ошибка. Вес: {start_temp}->{cur_temp} https://wiki.zmod.link/ru/FAQ/"
         raise gcmd.error(error_msg)
 
     def cmd_H1(self, gcmd):
@@ -213,14 +220,24 @@ class zmod_tenz:
             logging.error("Failed to convert value to float: %s", matches[-1])
             return -200.0
 
+    def _push_temp_to_klipper(self, mcu, measured_time, cur_temp):
+
+        with self.temp_lock:
+            self.temp = cur_temp
+
+        self.reactor.register_callback(
+            lambda e, mt=measured_time, ct=cur_temp: self._callback(
+                mcu.estimated_print_time(mt), ct
+            )
+        )
+
     def _sensor_reader(self):
         mcu = self.printer.lookup_object('mcu')
-        ser = None
         while not self.stop_thread:
             try:
-                ser = serial.Serial(port, baudrate, timeout=1)
+                self.ser = serial.Serial(port, baudrate, timeout=1)
                 while not self.stop_thread:
-                    ser.reset_input_buffer()
+                    self.ser.reset_input_buffer()
                     current_command = self.get_command()
                     command_id = -1
                     if '#' in current_command:
@@ -229,15 +246,13 @@ class zmod_tenz:
                     else:
                         command = current_command
 
-                    ser.write(command.encode() + b'\n')
+                    self.ser.write(command.encode() + b'\n')
                     time.sleep(0.05)
 
-                    response = ser.readline().decode('utf-8', errors='ignore').strip()
+                    response = self.ser.readline().decode('utf-8', errors='ignore').strip()
                     if not response and command_id == -1:
-                        with self.temp_lock:
-                            self.temp = -200.0
-                        measured_time = self.reactor.monotonic()
-                        self._callback(mcu.estimated_print_time(measured_time), -200.0)
+
+                        self._push_temp_to_klipper(mcu, self.reactor.monotonic(), -200.0)
                         continue
 
                     if not response:
@@ -251,10 +266,9 @@ class zmod_tenz:
                         cur_temp = self.extract_last_value_before_g(response)
                         if cur_temp > 5120:
                             cur_temp = 1
-                        measured_time = self.reactor.monotonic()
-                        with self.temp_lock:
-                            self.temp = cur_temp
-                        self._callback(mcu.estimated_print_time(measured_time), cur_temp)
+
+                        self._push_temp_to_klipper(mcu, self.reactor.monotonic(), cur_temp)
+
                         if (self.max_temp != 2048 and
                             self.zcontrol == 1 and
                             cur_temp > self.max_temp):
@@ -268,22 +282,21 @@ class zmod_tenz:
             except serial.SerialException as e:
                 logging.warning("Serial communication error: %s", e)
                 self._respond_info(f"cell_tare: Serial error: {str(e)}")
-                with self.temp_lock:
-                    self.temp = -200
-                measured_time = self.reactor.monotonic()
-                self._callback(mcu.estimated_print_time(measured_time), -200)
+
+                self._push_temp_to_klipper(mcu, self.reactor.monotonic(), -200.0)
+
             except Exception as e:
                 logging.exception("Sensor thread error: %s", e)
                 self._respond_info(f"cell_tare: Error data")
-                with self.temp_lock:
-                    self.temp = -200
-                measured_time = self.reactor.monotonic()
-                self._callback(mcu.estimated_print_time(measured_time), -200)
+
+                self._push_temp_to_klipper(mcu, self.reactor.monotonic(), -200.0)
+
             finally:
-                if ser is not None and ser.is_open:
+                if self.ser is not None and self.ser.is_open:
                     try:
-                        ser.close()
+                        self.ser.close()
                         logging.info(f"{port} closed")
+                        self.ser = None
                     except Exception as e:
                         logging.warning("Error closing serial port: %s", e)
                 time.sleep(0.5)
@@ -334,6 +347,7 @@ class zmod_tenz:
     def cmd_ZCONTROL_AUTO(self, gcmd):
         if self.max_temp != 2048 and self.zcommand != 2:
             status_msg = f"{'ZCONTROL_ON' if self.zcontrol == 1 else 'ZCONTROL_OFF'}. {self.max_temp}. AUTO"
+            gcmd.respond_info(status_msg)
         self.zcommand = 2
 
     def cmd_ZCONTROL_Z(self, gcmd):
@@ -366,12 +380,12 @@ class zmod_tenz:
                     action_msg = "Klipper is disabled when triggered. // ZCONTROL_ABORT"
                 else:
                     action_msg = "При сработке отключается Klipper. // ZCONTROL_ABORT"
-            if self.zcommand == 1:
+            elif self.zcommand == 1:
                 if self.language != 'ru':
                     action_msg = "PAUSE is triggered when activated. // ZCONTROL_PAUSE"
                 else:
                     action_msg = "При сработке вызывается PAUSE. // ZCONTROL_PAUSE"
-            if self.zcommand == 2:
+            elif self.zcommand == 2:
                 if self.language != 'ru':
                     action_msg = "ABORT(z<%d) or PAUSE(z>=%d) is triggered when activated. // ZCONTROL_AUTO" % (int(self.z), int(self.z))
                 else:

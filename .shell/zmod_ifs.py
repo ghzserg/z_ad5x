@@ -48,10 +48,10 @@ DEFAULT_FILAMENT_SETTINGS = {
                                             #   когда смена прутка уже прошла и сопло едет дальше печатать)
     "filament_extruder_speed": 300,         # Скорость работы экструдера (скорость вращения экструдера, 300 мм/м = 5 мм/c)
     "filament_ifs_speed": 1200,             # Скорость IFS (скорость IFS без экструдера, 1200 мм/м = 20 мм/c)
-    "filament_tube_length": 1000,           # Длина полной загрузки/выгрузки филамента (длинна тефлоновой трубки от IFS до головы, полезно дял тех у кого не стоковые трубки)
+    "filament_tube_length": 1000,           # Длина полной загрузки/выгрузки филамента (длинна тефлоновой трубки от IFS до головы, полезно для тех у кого не стоковые трубки)
     "filament_drop_length": 90,             # Длина сброса в какашник (дистанция прутка который будет выдавлен в какашник, то есть дистанция прочистки сопла
-                                            #   от преведущего филамената и смешения цветов, полезно когда не используется башня для сброса смешанных цветов)
-    "filament_drop_length_add": 90,         # Дополнительная длина сброса в какашник при смене типа филамента (смена разных материаалов, к примеру PETG на композитный PETG)
+                                            #   от предыдущего филамената и смешения цветов, полезно когда не используется башня для сброса смешанных цветов)
+    "filament_drop_length_add": 90,         # Дополнительная длина сброса в какашник при смене типа филамента (смена разных материалов, к примеру PETG на композитный PETG)
     "nozzle_cleaning_length": 60,           # Длина прочистки сопла (дистанция на сколько вытаскивать пруток из экструдера
                                             #   (то есть на сколько милиметров доставать пруток из фидера, когда текущая катушка больше не используется)
     "filament_unload_into_tube": 70,        # Сколько филамента извлекать из модуля 4 в 1, когда экструдер уже не помогает
@@ -59,7 +59,7 @@ DEFAULT_FILAMENT_SETTINGS = {
 
     "filament_autoinsert_empty_length": 600,# Сколько мм затягивать при автоматической вставке прутка, если экструдер пустой
     "filament_autoinsert_full_length": 550, # Сколько мм затягивать при автоматической вставке прутка, если экструдер был занят
-    "filament_autoinsert_ret_length": 90,   # Сколько мм втягивать обратно, если сработал эдатчик экструдера (срабатывает только на пустом экструдере)
+    "filament_autoinsert_ret_length": 90,   # Сколько мм втягивать обратно, если сработал датчик экструдера (срабатывает только на пустом экструдере)
     "filament_autoinsert_speed": 1200       # Скорость вставки прутка
 }
 
@@ -140,7 +140,7 @@ class zmod_ifs:
         self.gcode.register_command('IFS_MOTION', self.cmd_IFS_MOTION)                  # Проверить, остановился или кончился филамент
         self.gcode.register_command('IFS_GET_COMAND', self.cmd_IFS_GET_COMMAND)         # Сообщить текущую команду
 
-        # Внутренние конманды начинаются с IFS
+        # Внутренние команды начинаются с IFS
         self.gcode.register_command('IFS_PRINT_DEFAULTS', self.cmd_IFS_PRINT_DEFAULTS)
         self.gcode.register_command('IFS_AUTOINSERT', self.cmd_IFS_AUTOINSERT, desc=self.cmd_IFS_AUTOINSERT_help)
         self.gcode.register_command('IFS_STATUS', self.cmd_IFS_STATUS, desc=self.cmd_IFS_STATUS_help)
@@ -1249,7 +1249,7 @@ class zmod_ifs:
                 self._respond_info(f"IFS: sensor error: Serial communication error: {str(e)}")
             except Exception as e:
                 logging.exception("IFS: Error data")
-                self._error(f"IFS: sensor error: Error data: {str(e)}")
+                self._respond_info(f"IFS: sensor error: Error data: {str(e)}")
             finally:
                 if ser and hasattr(ser, 'is_open') and ser.is_open:
                     try:
