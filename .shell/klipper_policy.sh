@@ -1,5 +1,6 @@
 #!/bin/sh
 # (C) 2026 ghzserg https://github.com/ghzserg/zmod
+exit 0
 
 . /opt/config/mod/.shell/0.sh
 
@@ -17,6 +18,17 @@ set_klipper_policy() {
             chrt -p "$PID"
 
             chrt -f -p 50 "$PID" && echo "Successfully updated scheduling policy:"
+
+            if [ -d "/proc/$PID/task" ]; then
+                echo "Updating scheduling policy for all child threads..."
+                for tid_dir in /proc/$PID/task/*; do
+                    TID=$(basename "$tid_dir")
+
+                    if [ "$TID" != "$PID" ]; then
+                        chrt -f -p 50 "$TID" 2>/dev/null && echo " -> Updated policy for Thread ID: $TID"
+                    fi
+                done
+            fi
 
             chrt -p "$PID"
             exit 0
