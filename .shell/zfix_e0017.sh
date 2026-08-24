@@ -18,15 +18,14 @@ clear_klipper()
     reboot
 }
 
-if [ "$1" == "0" ]
-    then
-        grep -q "LOOKAHEAD_FLUSH_TIME = 0.5" $F && exit 0
-        sed -i 's|^LOOKAHEAD_FLUSH_TIME.*|LOOKAHEAD_FLUSH_TIME = 0.5|' $F
-        sync
-    else
-        grep -q "LOOKAHEAD_FLUSH_TIME = 0.150" $F && exit 0
-        sed -i 's|^LOOKAHEAD_FLUSH_TIME.*|LOOKAHEAD_FLUSH_TIME = 0.150|' $F
-        sync
+if [ "$1" == "0" ]; then
+    grep -q "LOOKAHEAD_FLUSH_TIME = 0.5" $F && exit 0
+    sed -i 's|^LOOKAHEAD_FLUSH_TIME.*|LOOKAHEAD_FLUSH_TIME = 0.5|' $F
+    sync
+else
+    grep -q "LOOKAHEAD_FLUSH_TIME = 0.150" $F && exit 0
+    sed -i 's|^LOOKAHEAD_FLUSH_TIME.*|LOOKAHEAD_FLUSH_TIME = 0.150|' $F
+    sync
 fi
 
 clear_klipper
