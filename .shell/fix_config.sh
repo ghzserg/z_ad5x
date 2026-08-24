@@ -282,6 +282,11 @@ fix_config()
         if ! [ -f ${MOD_CONF}/mod_data/logo/logo.jpeg ]; then
             mkdir -p ${MOD_CONF}/mod_data/logo/
             cp ${MOD_CONF}/mod/.shell/logo/logo.jpeg ${MOD_CONF}/mod_data/logo/
+        else
+            logo_cur=$(md5sum ${MOD_CONF}/mod_data/logo/logo.jpeg| awk '{print $1}')
+            if [ "$logo_cur" == "d03570f4f638bb0333fa747a9661c7ff" ]; then
+                cp ${MOD_CONF}/mod/.shell/logo/logo.jpeg ${MOD_CONF}/mod_data/logo/
+            fi
         fi
         current_logo=$(md5sum /usr/prog/logo.jpeg| awk '{print $1}')
         mod_data_logo=$(md5sum ${MOD_CONF}/mod_data/logo/logo.jpeg | awk '{print $1}')
@@ -305,9 +310,15 @@ fix_config()
         grep -q "/usr/data/config/mod/.shell/app_startup_mcu.sh" /usr/prog/app_startup.sh || sed -i '\#mount --bind /bin/echo /usr/bin/cmd_pwm#a\/usr/data/config/mod/.shell/app_startup_mcu.sh' /usr/prog/app_startup.sh
     fi
     if [ ${AD5M} -eq 1 ]; then
+
         if ! [ -f ${MOD_CONF}/mod_data/logo/bootlogo.bmp ]; then
             mkdir -p ${MOD_CONF}/mod_data/logo/
             cp ${MOD_CONF}/mod/.shell/logo/bootlogo.bmp ${MOD_CONF}/mod_data/logo/
+        else
+            logo_cur=$(md5sum ${MOD_CONF}/mod_data/logo/bootlogo.bmp| awk '{print $1}')
+            if [ "$logo_cur" == "d237114952a89448d13b8051c4f3dd93" ]; then
+                cp ${MOD_CONF}/mod/.shell/logo/bootlogo.bmp ${MOD_CONF}/mod_data/logo/
+            fi
         fi
 
         mount /dev/mmcblk0p1 /lost+found
