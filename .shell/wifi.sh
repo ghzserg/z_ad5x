@@ -18,6 +18,8 @@ if [ -f /ZMOD ]; then
     exit
 fi
 
+if [ ${C5PRO} -eq 1 ]; then exit; fi
+
 wifi_fix()
 {
     INTERFACE=wlan0

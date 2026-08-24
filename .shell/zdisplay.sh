@@ -29,6 +29,7 @@ native_wifi_off()
 
 native_wifi_on()
 {
+    if [ ${C5PRO} -eq 1 ]; then exit; fi
     echo "Test native_wifi_on"
     if  grep -q "wifi = 1" /opt/config/mod_data/variables.cfg && \
         grep -q '"wifiHotspotStatus" : false' "$FFCONFIG" && \
@@ -45,6 +46,7 @@ native_wifi_on()
 
 display_off()
 {
+    if [ ${C5PRO} -eq 1 ]; then exit; fi
     set -x
     if [ $1 = "test" ] && grep -q display_off.cfg /opt/config/printer.cfg; then
         killall firmwareExe helix-watchdog helix-screen helix-splash
