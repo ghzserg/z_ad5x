@@ -1,6 +1,7 @@
 #!/bin/sh
 # (C) 2024-2026 ghzserg https://github.com/ghzserg/zmod
 
+VER_FULL="/opt/config/mod/version_5x.txt"
 DATA=/usr/data
 DATA_GCODES=/usr/data/gcodes
 MOD=${DATA}/.mod/.zmod
