@@ -34,8 +34,13 @@ if [ "$ip" == "" ]; then
     ip=$(ip addr | grep inet | grep eth0 | awk -F" " '{print $2}'| sed -e 's/\/.*$//')
 fi
 
-serialNumber=$(cat ${FFCONFIG} | grep "printerSerialNumber"| cut  -d ":" -f2| awk '{print $1}' | sed 's|[",]||g')
-checkCode=$(cat ${FFCONFIG} | grep "lanCode"| cut  -d ":" -f2| awk '{print $1}' | sed 's|[",]||g')
+if [ ${AD5X} -eq 1 ] || [ ${AD5M} -eq 1 ]; then
+    serialNumber=$(cat ${FFCONFIG} | grep "printerSerialNumber"| cut  -d ":" -f2| awk '{print $1}' | sed 's|[",]||g')
+    checkCode=$(cat ${FFCONFIG} | grep "lanCode"| cut  -d ":" -f2| awk '{print $1}' | sed 's|[",]||g')
+else
+    serialNumber=$(cat ${FFCONFIG}/general.json | grep "serialNumber"| cut  -d ":" -f2| awk '{print $1}' | sed 's|[",]||g')
+    checkCode=$(cat ${FFCONFIG}/network.json | grep "lanModeCode"| cut  -d ":" -f2| awk '{print $1}' | sed 's|[",]||g')
+fi
 
 if [ "$1" == "CLOSE" ]; then
     ${CCURL} -m 60 -s \
