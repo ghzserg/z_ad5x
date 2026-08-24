@@ -284,7 +284,7 @@ fix_config()
             cp ${MOD_CONF}/mod/.shell/logo/logo.jpeg ${MOD_CONF}/mod_data/logo/
         else
             logo_cur=$(md5sum ${MOD_CONF}/mod_data/logo/logo.jpeg| awk '{print $1}')
-            if [ "$logo_cur" != "d03570f4f638bb0333fa747a9661c7ff" ]; then
+            if [ "$logo_cur" == "d03570f4f638bb0333fa747a9661c7ff" ]; then
                 cp ${MOD_CONF}/mod/.shell/logo/logo.jpeg ${MOD_CONF}/mod_data/logo/
             fi
         fi
@@ -316,7 +316,7 @@ fix_config()
             cp ${MOD_CONF}/mod/.shell/logo/bootlogo.bmp ${MOD_CONF}/mod_data/logo/
         else
             logo_cur=$(md5sum ${MOD_CONF}/mod_data/logo/bootlogo.bmp| awk '{print $1}')
-            if [ "$logo_cur" != "d237114952a89448d13b8051c4f3dd93" ]; then
+            if [ "$logo_cur" == "d237114952a89448d13b8051c4f3dd93" ]; then
                 cp ${MOD_CONF}/mod/.shell/logo/bootlogo.bmp ${MOD_CONF}/mod_data/logo/
             fi
         fi
