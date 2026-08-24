@@ -4,8 +4,7 @@
 source /opt/config/mod/.shell/0.sh
 
 VER_FF=$(cat /opt/config/mod/version.txt 2>/dev/null| cut  -d "." -f 1,2)
-if [ ${AD5M} -eq 1 ]; then VER_FF_FULL=$(cat /opt/config/mod/version_5m.txt 2>/dev/null); fi
-if [ ${AD5X} -eq 1 ]; then VER_FF_FULL=$(cat /opt/config/mod/version_5x.txt 2>/dev/null); fi
+VER_FF_FULL=$(cat ${VER_FULL} 2>/dev/null)
 
 if [ -f /opt/config/base/klipper/klippy/.version ]; then
     KLIPPER_VER=$(cat /opt/config/base/klipper/klippy/.version)

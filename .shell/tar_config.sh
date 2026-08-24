@@ -16,12 +16,7 @@ if [ ${AD5M} -eq 1 ]; then
 fi
 gzip /opt/config/mod_data/config.tar
 
-if [ ${AD5X} -eq 1 ]; then
-    VER=$(cat /opt/config/mod/version_5x.txt)
-fi
-if [ ${AD5M} -eq 1 ]; then
-    VER=$(cat /opt/config/mod/version_5m.txt)
-fi
+VER=$(cat ${VER_FULL})
 
 mv /opt/config/mod_data/config.tar.gz /opt/config/mod_data/config_${VER}.tar.gz
 echo "config_${VER}.tar.gz"
