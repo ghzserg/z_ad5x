@@ -180,6 +180,22 @@ class zmod_ifs:
     def get_ifs_status(self):
         return self.ifs
 
+    # Статус для Moonraker (objects/status): те же ключи, что выводит
+    # IFS_STATUS, чтобы внешние клиенты могли подписаться вместо опроса
+    # макроса. webhooks вызывает get_status без перехвата исключений —
+    # падать здесь нельзя.
+    def get_status(self, eventtime):
+        status = {
+            'available': self.ifs,
+            'color_limit': self.color_limit
+        }
+        ifs_data = getattr(self, 'ifs_data', None)
+        if ifs_data is not None:
+            values = ifs_data.get_values()
+            values['Ports'] = list(values['Ports'])
+            status.update(values)
+        return status
+
     def update_color_limit(self, new_limit):
         if not self.zmod_color.get_display():
             self.color_limit = new_limit
@@ -1273,7 +1289,7 @@ class IfsData:
         self.stall_state = 0    # Движение по любому порту RAW
         self.State = 0          # Состояние IFS
         self.NeedInsert = False # Нужно ли вставлять пруток
-        self.LastResponseRaw = '' # Raw output of last F13 command
+        self.lastResponseRaw = '' # Raw output of last F13 command
 
     def update_color_limit(self, new_limit):
         if new_limit > self.color_limit:
