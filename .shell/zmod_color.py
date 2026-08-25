@@ -638,6 +638,61 @@ class zmod_color:
     def get_display(self):
         return self.display
 
+    # Статус для Moonraker (objects/status): те же данные, что выводит
+    # GET_ZCOLOR SILENT=1 (Extruder/IFS/слоты), без опроса макроса. Слоты
+    # читаются из Adventurer5M.json, как в get_printer_data_detail() —
+    # HTTP-запрос здесь недопустим: get_status дергается каждые 0.25с и не
+    # может блокировать основной поток сетью. Файл кэшируется по mtime.
+    def get_status(self, eventtime):
+        status = {
+            'ifs': self.ifs,
+            'display': self.display,
+            'color_limit': self.color_limit,
+            'valid_types': list(self.valid_types),
+            'extruder_sensor': False,
+            'slots': []
+        }
+        zmod_ifs = getattr(self, 'zmod_ifs', None)
+        if getattr(self, 'query_adc', None) is not None:
+            try:
+                status['extruder_sensor'] = self.get_extruder_sensor()
+            except Exception:
+                pass
+        ffm_info = self._read_ffm_info_cached()
+        if ffm_info is not None:
+            try:
+                status['channel'] = int(ffm_info.get("channel", 0))
+                color_mapping = getattr(self, 'COLOR_MAPPING', {})
+                for i in range(1, self.color_limit + 1):
+                    hex_color = ffm_info.get(f"ffmColor{i}", "")
+                    hex_color = hex_color.replace("#", "").upper()
+                    status['slots'].append({
+                        'ID': str(i),
+                        'Material': ffm_info.get(f"ffmType{i}", "?").upper(),
+                        'Color': color_mapping.get(hex_color.lower(), hex_color),
+                        'HEX': hex_color,
+                        'hasFilament': bool(zmod_ifs.get_port(i)) if zmod_ifs is not None else False
+                    })
+            except Exception:
+                pass
+        return status
+
+    # Кэш FFMInfo из Adventurer5M.json: перечитываем только при изменении mtime,
+    # чтобы подписка на статус не парсила файл каждые 0.25с.
+    def _read_ffm_info_cached(self):
+        try:
+            mtime = os.stat(FFCONFIG).st_mtime
+        except OSError:
+            return None
+        if getattr(self, '_ffm_info_mtime', None) != mtime:
+            try:
+                with open(FFCONFIG, 'r') as file:
+                    self._ffm_info = json.load(file)["FFMInfo"]
+            except Exception:
+                self._ffm_info = None
+            self._ffm_info_mtime = mtime
+        return getattr(self, '_ffm_info', None)
+
     def get_printer_ip(self):
         interfaces = ['wlan0', 'eth0']
         for iface in interfaces:
