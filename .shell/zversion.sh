@@ -1,13 +1,13 @@
 #!/bin/sh
 # (C) 2024-2026 ghzserg https://github.com/ghzserg/zmod
 
-source /opt/config/mod/.shell/0.sh
+source /usr/data/zmod/zmod/.shell/0.sh
 
-VER_FF=$(cat /opt/config/mod/version.txt 2>/dev/null| cut  -d "." -f 1,2)
+VER_FF=$(cat /usr/data/zmod/zmod/version.txt 2>/dev/null| cut  -d "." -f 1,2)
 VER_FF_FULL=$(cat ${VER_FULL} 2>/dev/null)
 
-if [ -f /opt/config/base/klipper/klippy/.version ]; then
-    KLIPPER_VER=$(cat /opt/config/base/klipper/klippy/.version)
+if [ -f /usr/data/zmod/klipper/klippy/.version ]; then
+    KLIPPER_VER=$(cat /usr/data/zmod/klipper/klippy/.version)
     echo "_CHECK_VERSION VER=${KLIPPER_VER}" >/tmp/printer
 fi
 
@@ -15,14 +15,10 @@ VER_MOD="0.0"
 if [ -f "/root/printer_data/version.txt" ]; then
     VER_MOD=$(cat /root/printer_data/version.txt 2>/dev/null| cut  -d "." -f 1,2)
     VER_MOD_FULL=$(cat /root/printer_data/version.txt 2>/dev/null| cut  -d "." -f 1,2,3)
-else if [ -f "/root/printer_data/scripts/version.txt" ]; then
-    VER_MOD=$(cat /root/printer_data/scripts/version.txt 2>/dev/null| cut  -d "." -f 1,2)
-    VER_MOD_FULL=$(cat /root/printer_data/version.txt 2>/dev/null| cut  -d "." -f 1,2,3)
 else if [ -f "/usr/data/.mod/.zmod/root/printer_data/version.txt" ]; then
     VER_MOD=$(cat /usr/data/.mod/.zmod/root/printer_data/version.txt 2>/dev/null| cut  -d "." -f 1,2)
     VER_MOD_FULL=$(cat /usr/data/.mod/.zmod/root/printer_data/version.txt 2>/dev/null| cut  -d "." -f 1,2,3)
     fi
-fi
 fi
 
 [ ${ZLANG} != 'ru' ] && echo "Installed from USB: ${VER_MOD_FULL}. Update from Fluidd/Mainsail: ${VER_FF_FULL}" || echo "Установлено с флешки: ${VER_MOD_FULL}. Обновление с Fluidd/Mainsaill: ${VER_FF_FULL}"
@@ -55,7 +51,7 @@ if [ "${VER_FF}" != "${VER_MOD}" ]; then
         echo 'https://wiki.zmod.link/ru/Setup/'
     fi
 fi
-/opt/config/mod/.shell/ip.sh
+/usr/data/zmod/zmod/.shell/ip.sh
 
 if [ "$AD5M" -eq 1 ]; then
     pid_klippper=$(ps | grep klippy.py | grep -v grep| awk '{print $1}')

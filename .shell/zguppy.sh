@@ -1,21 +1,21 @@
 #!/bin/sh
 # (C) 2024-2026 ghzserg https://github.com/ghzserg/zmod
 
-source /opt/config/mod/.shell/0.sh
+source /usr/data/zmod/zmod/.shell/0.sh
 
 unset LD_PRELOAD
 
 up()
 {
     umount /media 2>/dev/null
-    echo '/opt/config/mod/.shell/automount.sh' > /proc/sys/kernel/hotplug
+    echo '/usr/data/zmod/zmod/.shell/automount.sh' > /proc/sys/kernel/hotplug
     if [ -f /ZMOD ]; then
         /etc/init.d/S80guppyscreen start
     else
         chroot ${MOD} /etc/init.d/S80guppyscreen start &
         sleep 15
     fi
-    echo '/opt/config/mod/.shell/automount.sh' > /proc/sys/kernel/hotplug
+    echo '/usr/data/zmod/zmod/.shell/automount.sh' > /proc/sys/kernel/hotplug
     umount /media 2>/dev/null
 }
 

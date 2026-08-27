@@ -19,7 +19,7 @@ PID_FILE=/run/klipper.pid
 
 start() {
     mkdir -p $(dirname $KLIPPER_LOG) # make sure the log directory exists
-#    /opt/config/mod/.shell/root/mcu/boot_eboard_mcu
+#    /usr/data/zmod/zmod/.shell/root/mcu/boot_eboard_mcu
 #    start-stop-daemon -S -b -m -p $PID_FILE -N $KLIPPER_NICENESS --exec $PYTHON -- $KLIPPER $KLIPPER_CONF -l $KLIPPER_LOG -a $KLIPPER_UDS
     start-stop-daemon -S -b -m -p $PID_FILE --exec $PYTHON -- $KLIPPER $KLIPPER_CONF -l $KLIPPER_LOG -a $KLIPPER_UDS
 }

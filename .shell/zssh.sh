@@ -4,11 +4,11 @@
 # SSH for Telegram Bot
 #
 
-source /opt/config/mod/.shell/0.sh
+source /usr/data/zmod/zmod/.shell/0.sh
 
-/opt/config/mod/.shell/znice.sh
+/usr/data/zmod/zmod/.shell/znice.sh
 
-/opt/config/mod/.shell/zversion.sh
+/usr/data/zmod/zmod/.shell/zversion.sh
 
 if [ $# -ne 8 ]; then echo "Используйте (START|STOP|RESTART|RELOAD) SSH_SERVER SSH_PORT SSH_USER VIDEO_PORT MOON_PORT REMOTE_RUN RESTART|NOTRESTART"; exit 1; fi
 
@@ -21,8 +21,8 @@ SSH_PUB=$( cat /opt/config/mod_data/ssh.pub.txt )
 
 START='off'
 if [ $1 = "START" ]; then START='on'; fi;
-if [ $1 = "RESTART" ]; then /opt/config/mod/.shell/S98zssh restart; exit; fi
-if [ $1 = "RELOAD" ];  then /opt/config/mod/.shell/S98zssh reload;  exit; fi
+if [ $1 = "RESTART" ]; then /usr/data/zmod/zmod/.shell/S98zssh restart; exit; fi
+if [ $1 = "RELOAD" ];  then /usr/data/zmod/zmod/.shell/S98zssh reload;  exit; fi
 
 if ! [ -f "/opt/config/mod_data/ssh.conf" ] || [ ${START} = 'on' ]
  then
@@ -66,4 +66,4 @@ else
     sed -i 's|START=.*|START=off|' /opt/config/mod_data/ssh.conf
 fi
 
-[ $8 = "RESTART" ] && /opt/config/mod/.shell/S98zssh restart
+[ $8 = "RESTART" ] && /usr/data/zmod/zmod/.shell/S98zssh restart

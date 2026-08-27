@@ -23,8 +23,8 @@ else
 fi
 fi
 
-FIRMWARE_Head_M3="${CONFIG_DIR}/base/klipper/mcu/${PLATFORM}/Eboard.hex"
-FIRMWARE_Board_M3="${CONFIG_DIR}/base/klipper/mcu/${PLATFORM}/Mainboard.bin"
+FIRMWARE_Head_M3="/usr/data/zmod/klipper/mcu/${PLATFORM}/Eboard.hex"
+FIRMWARE_Board_M3="/usr/data/zmod/klipper/mcu/${PLATFORM}/Mainboard.bin"
 
 cat $WORK_DIR/mcu.img > /dev/fb0
 
@@ -106,7 +106,7 @@ if [ "$1" == "mainboard" ]; then
     if [ "${CHECH_ARCH}" == "armv7l" ]; then
         update_mainboard
     fi
-    ${CONFIG_DIR}/mod/.shell/root/audio/audio_midi.sh For_Elise.mid
+    /usr/data/zmod/zmod/.shell/root/audio/audio_midi.sh For_Elise.mid
     sync
     sleep 5
     poweroff
@@ -117,7 +117,7 @@ else
     fi
 
     update_eboard
-    ${CONFIG_DIR}/mod/.shell/root/audio/audio_midi.sh For_Elise.mid
+    /usr/data/zmod/zmod/.shell/root/audio/audio_midi.sh For_Elise.mid
     sync
 fi
 

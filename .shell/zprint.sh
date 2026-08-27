@@ -4,7 +4,7 @@
 # "printerSerialNumber"
 # Adventurer5M.json
 
-source /opt/config/mod/.shell/0.sh
+source /usr/data/zmod/zmod/.shell/0.sh
 
 if [ $# -ne 2 ]; then
     [ ${ZLANG} != 'ru' ] && echo "Use $0 PRINT|CLOSE FILE" || echo "Используйте $0 PRINT|CLOSE FILE"

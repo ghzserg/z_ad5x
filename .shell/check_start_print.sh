@@ -10,7 +10,7 @@ elif [ ! -f "${FILE_NAME}" ]; then
     exit 2
 fi
 
-source /opt/config/mod/.shell/0.sh
+source /usr/data/zmod/zmod/.shell/0.sh
 
 if ! awk '
     /^END_PRINT/   { end_found = 1 }

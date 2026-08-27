@@ -6,22 +6,23 @@ set -x
 unset LD_LIBRARY_PATH
 unset LD_PRELOAD
 
-if [ -f /opt/config/mod/.shell/0.sh ]; then
-    source /opt/config/mod/.shell/0.sh
-    mkdir -p /opt/config/base/klipper/ /opt/config/base/moonraker/
-else if [ -f /usr/data/config/mod/.shell/0.sh ]; then
-    source /usr/data/config/mod/.shell/0.sh
-    mkdir -p /usr/data/config/base/klipper/ /usr/data/config/base/moonraker/
-fi
-fi
+check_link()
+{
+    a=$(readlink "$1" 2>/dev/null)
+    if [ "$a" != "$2" ]; then
+        /bin/echo -n "$1 - Incorrect link ($a!=$2): "
+        rm -f "$1" 2>/dev/null
+        ln -s "$2" "$1" 2>/dev/null && echo "Исправлено"  || echo "Ошибка исправления"
+    fi
+}
 
 # Активация мода для AD5X
 enable_zmod_ad5x()
 {
-    grep -q '/usr/data/config/mod/.shell/fix_config.sh start' /usr/prog/klipper/start.sh || sed -i '2 i\/usr/data/config/mod/.shell/fix_config.sh start' /usr/prog/klipper/start.sh
-
+    grep -q '/usr/data/zmod/zmod/.shell/fix_config.sh start' /usr/prog/klipper/start.sh || sed -i '2 i\/usr/data/zmod/zmod/.shell/fix_config.sh start' /usr/prog/klipper/start.sh
     grep -q "mount --bind /bin/echo /usr/bin/cmd_pwm" /usr/prog/app_startup.sh || sed -i '\#mount /usr/prog/etc /etc#a\mount --bind /bin/echo /usr/bin/cmd_pwm' /usr/prog/app_startup.sh
 
+    # Активируем мод
     if ! grep -q prepare.sh /usr/prog/app_startup.sh; then
         echo "Aktivate Z-Mod"
 
@@ -29,13 +30,70 @@ enable_zmod_ad5x()
 
         awk '{ print }
         END {
-          if (NR > 0 && $0 !~ /\/usr\/data\/config\/mod\/\.shell\/prepare\.sh/) {
-            print "/usr/data/config/mod/.shell/prepare.sh"
+          if (NR > 0 && $0 !~ /\/usr\/data\/zmod\/zmod\/\.shell\/prepare\.sh/) {
+            print "/usr/data/zmod/zmod/.shell/prepare.sh"
           }
         }' /tmp/startup.sh >/usr/prog/app_startup.sh
         sync
     fi
 }
+
+enable_zmod_ad5m()
+{
+    check_link /bin/dropbearkey /usr/data/zmod/zmod/.shell/eabi/dropbear
+    check_link /bin/dropbear /usr/data/zmod/zmod/.shell/eabi/dropbear
+    check_link /bin/dbclient /usr/data/zmod/zmod/.shell/eabi/dropbear
+    check_link /bin/scp /usr/data/zmod/zmod/.shell/eabi/dropbear
+    check_link /bin/ssh /usr/data/zmod/zmod/.shell/eabi/dropbear
+
+    check_link /etc/init.d/S00fix /usr/data/zmod/zmod/.shell/fix_config.sh
+    check_link /etc/init.d/S60dropbear /usr/data/zmod/zmod/.shell/S60dropbear
+    check_link /etc/init.d/S98zssh /usr/data/zmod/zmod/.shell/S98zssh
+    check_link /etc/init.d/S99camera /usr/data/zmod/zmod/.shell/S99camera
+    check_link /etc/init.d/S99moon /usr/data/zmod/zmod/.shell/S99moon
+    check_link /etc/init.d/K99moon /usr/data/zmod/zmod/.shell/S99moon
+    check_link /etc/init.d/prepare.sh /usr/data/zmod/zmod/.shell/prepare.sh
+}
+
+# Если у нас еще принтер не перешел на новые каталоги
+if ! [ -f /usr/data/zmod/zmod/.shell/0.sh ]; then
+    if [ -f /opt/config/mod/.shell/0.sh ]; then
+        source /opt/config/mod/.shell/0.sh
+    else if [ -f /usr/data/config/mod/.shell/0.sh ]; then
+        source /usr/data/config/mod/.shell/0.sh
+    fi
+    fi
+    mkdir -p /usr/data/zmod/
+    if [ ${AD5M} -eq 1 ]; then
+        mv /opt/config/base/klipper/ /usr/data/zmod/
+        mv /opt/config/base/moonraker/ /usr/data/zmod/
+
+        enable_zmod_ad5m
+        sync
+
+        mv /opt/config/mod/ /usr/data/zmod/zmod/
+        sync && sleep 10 && reboot
+        exit 0
+    fi
+    if [ ${AD5X} -eq 1 ]; then
+        mv /usr/data/config/base/klipper/ /usr/data/zmod/
+        mv /usr/data/config/base/moonraker/ /usr/data/zmod/
+
+        # Удаляем старую ссылку
+        grep -q '/usr/data/config/mod/.shell/fix_config.sh start' /usr/prog/klipper/start.sh && sed -i '/fix_config.sh/d' /usr/prog/klipper/start.sh
+        grep -q '/usr/data/config/mod/.shell/app_startup_mcu.sh' /usr/prog/app_startup.sh && sed -i '/app_startup_mcu.sh/d' /usr/prog/app_startup.sh
+        grep -q '/usr/data/config/mod/.shell/prepare.sh' /usr/prog/app_startup.sh && sed -i '/prepare.sh/d' /usr/prog/app_startup.sh
+
+        enable_zmod_ad5x
+        sync
+        mv /usr/data/config/mod/ /usr/data/zmod/zmod/ 
+        sync && sleep 10 && reboot
+        exit 0
+    fi
+fi
+
+source /usr/data/zmod/zmod/.shell/0.sh
+mkdir -p /usr/data/zmod/klipper/ /usr/data/zmod/moonraker/ ${MOD_CONF}/mod
 
 # Разблокировка
 china_razbl()
@@ -49,15 +107,6 @@ china_block()
     grep -q "$1" /etc/hosts || sed -i "2 i\127.0.0.1 $1" /etc/hosts
 }
 
-check_link()
-{
-    a=$(readlink "$1" 2>/dev/null)
-    if [ "$a" != "$2" ]; then
-        /bin/echo -n "$1 - Incorrect link ($a!=$2): "
-        rm -f "$1" 2>/dev/null
-        ln -s "$2" "$1" 2>/dev/null && echo "Исправлено"  || echo "Ошибка исправления"
-    fi
-}
 
 restore_base()
 {
@@ -89,15 +138,15 @@ restore_base()
         china_razbl cloud.sz3dp.com
         china_razbl polar3d.com
 
-        grep -q zmod ${KLIPPER_DIR}/klippy/extras/spi_temperature.py && cp ${MOD_CONF}/mod/.shell/spi_temperature.py.orig ${KLIPPER_DIR}/klippy/extras/spi_temperature.py
-        grep -q zmod /opt/klipper/start.sh && cp ${MOD_CONF}/mod/.shell/start.sh.orig /opt/klipper/start.sh
+        grep -q zmod ${KLIPPER_DIR}/klippy/extras/spi_temperature.py && cp /usr/data/zmod/zmod/.shell/spi_temperature.py.orig ${KLIPPER_DIR}/klippy/extras/spi_temperature.py
+        grep -q zmod /opt/klipper/start.sh && cp /usr/data/zmod/zmod/.shell/start.sh.orig /opt/klipper/start.sh
     fi
     if [ ${AD5X} -eq 1 ]; then
         [ -f /usr/prog/logo.jpeg ] && rm -f /usr/prog/logo.jpeg
         sed -i '\|mount --bind /bin/echo /usr/bin/cmd_pwm|d' /usr/prog/app_startup.sh
-        sed -i '\|/usr/data/config/mod/.shell/app_startup_mcu.sh|d' /usr/prog/app_startup.sh
+        sed -i '\|/usr/data/zmod/zmod/.shell/app_startup_mcu.sh|d' /usr/prog/app_startup.sh
 
-        grep -q zmod ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py && cp ${MOD_CONF}/mod/.shell/virtual_sdcard.py.orig ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py
+        grep -q zmod ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py && cp /usr/data/zmod/zmod/.shell/virtual_sdcard.py.orig ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py
 
         rm -f ${KLIPPER_DIR}/klippy/extras/zmod_color.py
         rm -f ${KLIPPER_DIR}/klippy/extras/zmod_tenz.py
@@ -105,9 +154,9 @@ restore_base()
         rm -f ${KLIPPER_DIR}/klippy/extras/zmod_ifs_switch_sensor.py
         rm -f ${KLIPPER_DIR}/klippy/extras/zmod_ifs_motion_sensor.py
     fi
-    grep -q _output_callback_gcode ${KLIPPER_DIR}/klippy/webhooks.py && cp ${MOD_CONF}/mod/.shell/webhooks.py.orig ${KLIPPER_DIR}/klippy/webhooks.py
-    grep -q ZLOAD_VARIABLE ${KLIPPER_DIR}/klippy/extras/save_variables.py && cp ${MOD_CONF}/mod/.shell/save_variables.py.orig ${KLIPPER_DIR}/klippy/extras/save_variables.py
-    grep -q receive_time ${KLIPPER_DIR}/klippy/extras/buttons.py && cp ${MOD_CONF}/mod/.shell/buttons.py.orig ${KLIPPER_DIR}/klippy/extras/buttons.py
+    grep -q _output_callback_gcode ${KLIPPER_DIR}/klippy/webhooks.py && cp /usr/data/zmod/zmod/.shell/webhooks.py.orig ${KLIPPER_DIR}/klippy/webhooks.py
+    grep -q ZLOAD_VARIABLE ${KLIPPER_DIR}/klippy/extras/save_variables.py && cp /usr/data/zmod/zmod/.shell/save_variables.py.orig ${KLIPPER_DIR}/klippy/extras/save_variables.py
+    grep -q receive_time ${KLIPPER_DIR}/klippy/extras/buttons.py && cp /usr/data/zmod/zmod/.shell/buttons.py.orig ${KLIPPER_DIR}/klippy/extras/buttons.py
     rm -f ${KLIPPER_DIR}/klippy/extras/zmod.py
     rm -f ${KLIPPER_DIR}/klippy/extras/ens160.py
 
@@ -247,7 +296,7 @@ fix_config()
     echo 15 > /proc/sys/vm/swappiness
 
     if [ ${AD5X} -eq 1 ]; then
-        /usr/data/config/mod/.shell/serial/serial_start.sh
+        /usr/data/zmod/zmod/.shell/serial/serial_start.sh
         if [ -L /etc/dropbear \
              -a "$(readlink /etc/dropbear)" = "/var/run/dropbear" ]
         then
@@ -281,11 +330,11 @@ fix_config()
     if [ ${AD5X} -eq 1 ]; then
         if ! [ -f ${MOD_CONF}/mod_data/logo/logo.jpeg ]; then
             mkdir -p ${MOD_CONF}/mod_data/logo/
-            cp ${MOD_CONF}/mod/.shell/logo/logo.jpeg ${MOD_CONF}/mod_data/logo/
+            cp /usr/data/zmod/zmod/.shell/logo/logo.jpeg ${MOD_CONF}/mod_data/logo/
         else
             logo_cur=$(md5sum ${MOD_CONF}/mod_data/logo/logo.jpeg| awk '{print $1}')
             if [ "$logo_cur" == "d03570f4f638bb0333fa747a9661c7ff" ]; then
-                cp ${MOD_CONF}/mod/.shell/logo/logo.jpeg ${MOD_CONF}/mod_data/logo/
+                cp /usr/data/zmod/zmod/.shell/logo/logo.jpeg ${MOD_CONF}/mod_data/logo/
             fi
         fi
         current_logo=$(md5sum /usr/prog/logo.jpeg| awk '{print $1}')
@@ -297,7 +346,7 @@ fix_config()
 
         mkdir -p ${MOD_CONF}/mod_data/color/
         for lang in ru en de fr it es pt zh ja ko cs tr; do
-          [ -f "${MOD_CONF}/mod_data/color/${lang}.json" ] || cp "${MOD_CONF}/mod/.shell/color/${lang}.json" "${MOD_CONF}/mod_data/color/"
+          [ -f "${MOD_CONF}/mod_data/color/${lang}.json" ] || cp "/usr/data/zmod/zmod/.shell/color/${lang}.json" "${MOD_CONF}/mod_data/color/"
         done
 
         md5=$(md5sum ${MOD_CONF}/mod_data/cmd_pwm 2>/dev/null |awk '{print $1}')
@@ -307,17 +356,17 @@ fix_config()
             mount --bind /bin/echo /usr/bin/cmd_pwm
         fi
         grep -q "mount --bind /bin/echo /usr/bin/cmd_pwm" /usr/prog/app_startup.sh || sed -i '\#mount /usr/prog/etc /etc#a\mount --bind /bin/echo /usr/bin/cmd_pwm' /usr/prog/app_startup.sh
-        grep -q "/usr/data/config/mod/.shell/app_startup_mcu.sh" /usr/prog/app_startup.sh || sed -i '\#mount --bind /bin/echo /usr/bin/cmd_pwm#a\/usr/data/config/mod/.shell/app_startup_mcu.sh' /usr/prog/app_startup.sh
+        grep -q "/usr/data/zmod/zmod/.shell/app_startup_mcu.sh" /usr/prog/app_startup.sh || sed -i '\#mount --bind /bin/echo /usr/bin/cmd_pwm#a\/usr/data/zmod/zmod/.shell/app_startup_mcu.sh' /usr/prog/app_startup.sh
     fi
     if [ ${AD5M} -eq 1 ]; then
 
         if ! [ -f ${MOD_CONF}/mod_data/logo/bootlogo.bmp ]; then
             mkdir -p ${MOD_CONF}/mod_data/logo/
-            cp ${MOD_CONF}/mod/.shell/logo/bootlogo.bmp ${MOD_CONF}/mod_data/logo/
+            cp /usr/data/zmod/zmod/.shell/logo/bootlogo.bmp ${MOD_CONF}/mod_data/logo/
         else
             logo_cur=$(md5sum ${MOD_CONF}/mod_data/logo/bootlogo.bmp| awk '{print $1}')
             if [ "$logo_cur" == "d237114952a89448d13b8051c4f3dd93" ]; then
-                cp ${MOD_CONF}/mod/.shell/logo/bootlogo.bmp ${MOD_CONF}/mod_data/logo/
+                cp /usr/data/zmod/zmod/.shell/logo/bootlogo.bmp ${MOD_CONF}/mod_data/logo/
             fi
         fi
 
@@ -340,29 +389,35 @@ fix_config()
     echo "[zmod]
     language: ${ZLANG}" >${MOD_CONF}/mod_data/lang.cfg
 
-    check_link ${MOD_CONF}/mod/base.cfg translate/${ZLANG}/base.cfg
-    check_link ${MOD_CONF}/mod/client.cfg translate/${ZLANG}/client.cfg
-    check_link ${MOD_CONF}/mod/base_klipper13.cfg translate/${ZLANG}/base_klipper13.cfg
+    check_link ${MOD_CONF}/mod/base.cfg /usr/data/zmod/zmod/translate/${ZLANG}/base.cfg
+    check_link ${MOD_CONF}/mod/shell.cfg /usr/data/zmod/zmod/shell.cfg
+    check_link ${MOD_CONF}/mod/moonraker.conf  /usr/data/zmod/zmod/moonraker.conf
+    check_link ${MOD_CONF}/mod/extra_plugins.moonraker.conf  /usr/data/zmod/zmod/extra_plugins.moonraker.conf
+    check_link ${MOD_CONF}/mod/KAMP /usr/data/zmod/zmod/KAMP
 
-    [ -f ${MOD_CONF}/.theme/custom.css ] || cp -a ${MOD_CONF}/mod/.shell/.theme ${MOD_CONF}/mod_data/
+    check_link ${MOD_CONF}/mod/client.cfg /usr/data/zmod/zmod/translate/${ZLANG}/client.cfg
+    check_link ${MOD_CONF}/mod/base_klipper13.cfg /usr/data/zmod/zmod/translate/${ZLANG}/base_klipper13.cfg
+
+    [ -f ${MOD_CONF}/.theme/custom.css ] || cp -a /usr/data/zmod/zmod/.shell/.theme ${MOD_CONF}/mod_data/
     check_link ${MOD_CONF}/.theme mod_data/.theme
 
     if [ ${AD5M} -eq 1 ]; then
-        check_link ${MOD_CONF}/mod/klipper13.cfg translate/${ZLANG}/ff5m_klipper13.cfg
-        check_link ${MOD_CONF}/mod/base_klipper11.cfg translate/${ZLANG}/base_klipper11.cfg
-        grep -q '^MACHINE=Adventurer5MPro$' /opt/auto_run.sh && check_link ${MOD_CONF}/mod/klipper11.cfg translate/${ZLANG}/klipper11_pro.cfg || check_link ${MOD_CONF}/mod/klipper11.cfg translate/${ZLANG}/klipper11.cfg
-        check_link ${MOD_CONF}/mod/display_off.cfg translate/${ZLANG}/ff5m_display_off.cfg
-        check_link ${MOD_CONF}/mod/ff5.cfg translate/${ZLANG}/ff5.cfg
-        check_link ${MOD_CONF}/mod/mod.cfg translate/${ZLANG}/mod.cfg
-        check_link ${MOD_CONF}/mod/ff5m_config_native.cfg translate/${ZLANG}/ff5m_config_native.cfg
-        check_link ${MOD_CONF}/mod/ff5m_config_off.cfg translate/${ZLANG}/ff5m_config_off.cfg
+        check_link ${MOD_CONF}/mod/switch_sensor.cfg /usr/data/zmod/zmod/switch_sensor.cfg
+        check_link ${MOD_CONF}/mod/klipper13.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5m_klipper13.cfg
+        check_link ${MOD_CONF}/mod/base_klipper11.cfg /usr/data/zmod/zmod/translate/${ZLANG}/base_klipper11.cfg
+        grep -q '^MACHINE=Adventurer5MPro$' /opt/auto_run.sh && check_link ${MOD_CONF}/mod/klipper11.cfg /usr/data/zmod/zmod/translate/${ZLANG}/klipper11_pro.cfg || check_link ${MOD_CONF}/mod/klipper11.cfg /usr/data/zmod/zmod/translate/${ZLANG}/klipper11.cfg
+        check_link ${MOD_CONF}/mod/display_off.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5m_display_off.cfg
+        check_link ${MOD_CONF}/mod/ff5.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5.cfg
+        check_link ${MOD_CONF}/mod/mod.cfg /usr/data/zmod/zmod/translate/${ZLANG}/mod.cfg
+        check_link ${MOD_CONF}/mod/ff5m_config_native.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5m_config_native.cfg
+        check_link ${MOD_CONF}/mod/ff5m_config_off.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5m_config_off.cfg
     fi
     if [ ${AD5X} -eq 1 ]; then
-        check_link ${MOD_CONF}/mod/klipper13.cfg translate/${ZLANG}/ad5x_klipper13.cfg
-        check_link ${MOD_CONF}/mod/display_off.cfg translate/${ZLANG}/ad5x_display_off.cfg
-        check_link ${MOD_CONF}/mod/ad5x.cfg translate/${ZLANG}/ad5x.cfg
-        check_link ${MOD_CONF}/mod/ad5x_config_native.cfg translate/${ZLANG}/ad5x_config_native.cfg
-        check_link ${MOD_CONF}/mod/ad5x_config_off.cfg translate/${ZLANG}/ad5x_config_off.cfg
+        check_link ${MOD_CONF}/mod/klipper13.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ad5x_klipper13.cfg
+        check_link ${MOD_CONF}/mod/display_off.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ad5x_display_off.cfg
+        check_link ${MOD_CONF}/mod/ad5x.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ad5x.cfg
+        check_link ${MOD_CONF}/mod/ad5x_config_native.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ad5x_config_native.cfg
+        check_link ${MOD_CONF}/mod/ad5x_config_off.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ad5x_config_off.cfg
 
         # В Версии 1.0.7 перенесли конфиг в /usr/prog/config/
         [ -d /usr/prog/config/mod ] && rm -rf /usr/prog/config/mod
@@ -372,10 +427,10 @@ fix_config()
         [ -f /usr/prog/config/PowerOff ] && check_link ${MOD_CONF}/PowerOff /usr/prog/config/PowerOff
         [ -f /usr/prog/config/fileSlotId.json ] && check_link ${MOD_CONF}/fileSlotId.json /usr/prog/config/fileSlotId.json
     fi
-    check_link ${MOD_CONF}/mod/base_mod.cfg translate/${ZLANG}/base_mod.cfg
-    check_link ${MOD_CONF}/mod/base_display_off.cfg translate/${ZLANG}/base_display_off.cfg
-    check_link ${MOD_CONF}/mod/motion_sensor.cfg translate/${ZLANG}/motion_sensor.cfg
-    check_link ${MOD_CONF}/mod/switch_sensor_display_off.cfg translate/${ZLANG}/switch_sensor_display_off.cfg
+    check_link ${MOD_CONF}/mod/base_mod.cfg /usr/data/zmod/zmod/translate/${ZLANG}/base_mod.cfg
+    check_link ${MOD_CONF}/mod/base_display_off.cfg /usr/data/zmod/zmod/translate/${ZLANG}/base_display_off.cfg
+    check_link ${MOD_CONF}/mod/motion_sensor.cfg /usr/data/zmod/zmod/translate/${ZLANG}/motion_sensor.cfg
+    check_link ${MOD_CONF}/mod/switch_sensor_display_off.cfg /usr/data/zmod/zmod/translate/${ZLANG}/switch_sensor_display_off.cfg
 
     if ! [ -f ${MOD_CONF}/mod_data/user.moonraker.conf ]; then
         echo "#Enter user config here
@@ -404,28 +459,17 @@ cors_domains:
         [ -L /etc/init.d/S98camera ] && rm -f /etc/init.d/S98camera
         [ -f /etc/init.d/S98camera ] && rm -f /etc/init.d/S98camera
 
-        check_link /bin/dropbearkey /opt/config/mod/.shell/eabi/dropbear
-        check_link /bin/dropbear /opt/config/mod/.shell/eabi/dropbear
-        check_link /bin/dbclient /opt/config/mod/.shell/eabi/dropbear
-        check_link /bin/scp /opt/config/mod/.shell/eabi/dropbear
-        check_link /bin/ssh /opt/config/mod/.shell/eabi/dropbear
-
-        check_link /etc/init.d/S00fix /opt/config/mod/.shell/fix_config.sh
-        check_link /etc/init.d/S60dropbear /opt/config/mod/.shell/S60dropbear
-        check_link /etc/init.d/S98zssh /opt/config/mod/.shell/S98zssh
-        check_link /etc/init.d/S99camera /opt/config/mod/.shell/S99camera
-        check_link /etc/init.d/S99moon /opt/config/mod/.shell/S99moon
-        check_link /etc/init.d/K99moon /opt/config/mod/.shell/S99moon
-        check_link /etc/init.d/prepare.sh /opt/config/mod/.shell/prepare.sh
+        enable_zmod_ad5m
     fi
 
+    mkdir -p ${LOG_FILES}
     check_link ${LOG_FILES}/zmod ${MOD_CONF}/mod_data/log/
 
     rm -f /usr/bin/audio /usr/bin/audio_midi.sh /usr/lib/python3.7/site-packages/audio.py
     [ -d ${PYTHON_DIR}/site-packages/mido ] && rm -rf ${PYTHON_DIR}/site-packages/mido
     [ -d ${PYTHON_DIR}/site-packages/mido-1.3.3.dist-info ] && rm -rf ${PYTHON_DIR}/site-packages/mido-1.3.3.dist-info
-    check_link ${PYTHON_DIR}/site-packages/mido /opt/config/mod/.shell/root/mido/
-    check_link ${PYTHON_DIR}/site-packages/mido-1.3.3.dist-info /opt/config/mod/.shell/root/mido-1.3.3.dist-info/
+    check_link ${PYTHON_DIR}/site-packages/mido /usr/data/zmod/zmod/.shell/root/mido/
+    check_link ${PYTHON_DIR}/site-packages/mido-1.3.3.dist-info /usr/data/zmod/zmod/.shell/root/mido-1.3.3.dist-info/
 
     NEED_REBOOT=0
     PRINTER_BASE_ORIG="${MOD_CONF}/printer.base.cfg"
@@ -467,7 +511,7 @@ unset LD_PRELOAD
             china_block polar3d.com
         fi
         if [ ${AD5X} -eq 1 ]; then
-            mount --bind /usr/data/config/mod/.shell/hosts /etc/hosts
+            mount --bind /usr/data/zmod/zmod/.shell/hosts /etc/hosts
         fi
     else
         if [ ${AD5M} -eq 1 ]; then
@@ -484,31 +528,31 @@ unset LD_PRELOAD
         fi
     fi
 
-    grep -q "zmod 1.1" ${KLIPPER_DIR}/klippy/webhooks.py || cp ${MOD_CONF}/mod/.shell/webhooks.py ${KLIPPER_DIR}/klippy/webhooks.py
-    grep -q ZLOAD_VARIABLE ${KLIPPER_DIR}/klippy/extras/save_variables.py || cp ${MOD_CONF}/mod/.shell/save_variables.py ${KLIPPER_DIR}/klippy/extras/save_variables.py
+    grep -q "zmod 1.1" ${KLIPPER_DIR}/klippy/webhooks.py || cp /usr/data/zmod/zmod/.shell/webhooks.py ${KLIPPER_DIR}/klippy/webhooks.py
+    grep -q ZLOAD_VARIABLE ${KLIPPER_DIR}/klippy/extras/save_variables.py || cp /usr/data/zmod/zmod/.shell/save_variables.py ${KLIPPER_DIR}/klippy/extras/save_variables.py
     if [ ${AD5M} -eq 1 ]; then
-        grep -q "Zcontrol 1.25" ${KLIPPER_DIR}/klippy/extras/spi_temperature.py || cp ${MOD_CONF}/mod/.shell/spi_temperature.py ${KLIPPER_DIR}/klippy/extras/spi_temperature.py
-        grep -q "zmod 1.0" /opt/klipper/start.sh || cp ${MOD_CONF}/mod/.shell/start.sh /opt/klipper/start.sh
+        grep -q "Zcontrol 1.25" ${KLIPPER_DIR}/klippy/extras/spi_temperature.py || cp /usr/data/zmod/zmod/.shell/spi_temperature.py ${KLIPPER_DIR}/klippy/extras/spi_temperature.py
+        grep -q "zmod 1.0" /opt/klipper/start.sh || cp /usr/data/zmod/zmod/.shell/start.sh /opt/klipper/start.sh
     fi
     if [ ${AD5X} -eq 1 ]; then
-        grep -q "zmod 1.12" ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py || cp ${MOD_CONF}/mod/.shell/virtual_sdcard.py ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py
-        check_link ${KLIPPER_DIR}/klippy/extras/zmod_color.py ${MOD_CONF}/mod/.shell/zmod_color.py
-        check_link ${KLIPPER_DIR}/klippy/extras/zmod_tenz.py ${MOD_CONF}/mod/.shell/zmod_tenz.py
-        check_link ${KLIPPER_DIR}/klippy/extras/zmod_ifs.py ${MOD_CONF}/mod/.shell/zmod_ifs.py
-        check_link ${KLIPPER_DIR}/klippy/extras/zmod_ifs_switch_sensor.py ${MOD_CONF}/mod/.shell/zmod_ifs_switch_sensor.py
-        check_link ${KLIPPER_DIR}/klippy/extras/zmod_ifs_motion_sensor.py ${MOD_CONF}/mod/.shell/zmod_ifs_motion_sensor.py
+        grep -q "zmod 1.12" ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py || cp /usr/data/zmod/zmod/.shell/virtual_sdcard.py ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py
+        check_link ${KLIPPER_DIR}/klippy/extras/zmod_color.py /usr/data/zmod/zmod/.shell/zmod_color.py
+        check_link ${KLIPPER_DIR}/klippy/extras/zmod_tenz.py /usr/data/zmod/zmod/.shell/zmod_tenz.py
+        check_link ${KLIPPER_DIR}/klippy/extras/zmod_ifs.py /usr/data/zmod/zmod/.shell/zmod_ifs.py
+        check_link ${KLIPPER_DIR}/klippy/extras/zmod_ifs_switch_sensor.py /usr/data/zmod/zmod/.shell/zmod_ifs_switch_sensor.py
+        check_link ${KLIPPER_DIR}/klippy/extras/zmod_ifs_motion_sensor.py /usr/data/zmod/zmod/.shell/zmod_ifs_motion_sensor.py
         check_link /opt/config/rw /usr/prog/config/
     fi
 
-    check_link ${KLIPPER_DIR}/klippy/extras/zmod.py ${MOD_CONF}/mod/.shell/zmod.py
-    check_link ${KLIPPER_DIR}/klippy/extras/ens160.py ${MOD_CONF}/mod/.shell/ens160.py
+    check_link ${KLIPPER_DIR}/klippy/extras/zmod.py /usr/data/zmod/zmod/.shell/zmod.py
+    check_link ${KLIPPER_DIR}/klippy/extras/ens160.py /usr/data/zmod/zmod/.shell/ens160.py
 
     if [ ${AD5M} -eq 1 ]; then
         # Fix possible ordering issue if a callback blocks in button handler#6440
-        grep -q receive_time ${KLIPPER_DIR}/klippy/extras/buttons.py || cp /opt/config/mod/.shell/buttons.py ${KLIPPER_DIR}/klippy/extras/buttons.py
+        grep -q receive_time ${KLIPPER_DIR}/klippy/extras/buttons.py || cp /usr/data/zmod/zmod/.shell/buttons.py ${KLIPPER_DIR}/klippy/extras/buttons.py
     fi
 
-    grep -q zmod_1.0 ${KLIPPER_DIR}/klippy/extras/gcode_shell_command.py || cp ${MOD_CONF}/mod/.shell/gcode_shell_command.py ${KLIPPER_DIR}/klippy/extras/gcode_shell_command.py
+    grep -q zmod_1.0 ${KLIPPER_DIR}/klippy/extras/gcode_shell_command.py || cp /usr/data/zmod/zmod/.shell/gcode_shell_command.py ${KLIPPER_DIR}/klippy/extras/gcode_shell_command.py
     if [ -L ${KLIPPER_DIR}/klippy/extras/load_cell_tare.py ] || [ -f ${KLIPPER_DIR}/klippy/extras/load_cell_tare.py ]; then
         rm -f ${KLIPPER_DIR}/klippy/extras/load_cell_tare.py
     fi
@@ -924,7 +968,7 @@ stepper: stepper_x, stepper_y, stepper_z
     echo "END fix_config"
 
     if [ "$1" == "start" ] && [ ${AD5M} -eq 1 ]; then
-        ${MOD_CONF}/mod/.shell/app_startup_mcu.sh
+        /usr/data/zmod/zmod/.shell/app_startup_mcu.sh
     fi
     sync
 }
@@ -941,7 +985,7 @@ if [ -f ${MOD_CONF}/mod/SKIP_ZMOD ] || [ -f ${MOD_CONF}/mod/REMOVE ] || [ -f ${M
     restore_base &>${MOD_CONF}/mod_data/log/fix_config.log
 else
     fix_config "$1" &>${MOD_CONF}/mod_data/log/fix_config.log
-    ${MOD_CONF}/mod/.shell/wifi.sh &
+    /usr/data/zmod/zmod/.shell/wifi.sh &
 fi
 
 sync

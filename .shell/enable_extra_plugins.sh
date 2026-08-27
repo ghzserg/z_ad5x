@@ -1,7 +1,7 @@
 #!/bin/sh
 # (C) 2024-2026 ghzserg https://github.com/ghzserg/zmod
 
-source /opt/config/mod/.shell/0.sh
+source /usr/data/zmod/zmod/.shell/0.sh
 
 if [ "$1" == "1" ]; then
     echo "[include ../mod/extra_plugins.moonraker.conf]" >${MOD_CONF}/mod_data/extra_plugins.moonraker.conf

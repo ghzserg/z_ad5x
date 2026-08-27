@@ -1,7 +1,7 @@
 #!/bin/sh
 # (C) 2024-2026 ghzserg https://github.com/ghzserg/zmod
 
-source /opt/config/mod/.shell/0.sh
+source /usr/data/zmod/zmod/.shell/0.sh
 
 get_origin_from_config() {
   local config_file="$1"
@@ -58,9 +58,9 @@ if grep -q "[update_manager $1]" ${MOD_CONF}/moonraker.conf || grep -q "[update_
     if ! [ -f /ZMOD ]; then
         unset LD_LIBRARY_PATH
         unset LD_PRELOAD
-        chroot ${MOD} /opt/config/mod/.shell/reset_git.sh $1
+        chroot ${MOD} /usr/data/zmod/zmod/.shell/reset_git.sh $1
     else
-        /opt/config/mod/.shell/reset_git.sh "$1"
+        /usr/data/zmod/zmod/.shell/reset_git.sh "$1"
     fi
 
     if ! [ -f "${MOD_CONF}/mod_data/plugins/$1/$1.cfg" ] && ! [ -f "${MOD_CONF}/mod_data/plugins/$1/${ZLANG}/$1.cfg" ]; then

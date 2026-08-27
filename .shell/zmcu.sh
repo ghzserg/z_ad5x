@@ -1,7 +1,7 @@
 #!/bin/sh
 # (C) 2024-2026 ghzserg https://github.com/ghzserg/zmod
 
-source /opt/config/mod/.shell/0.sh
+source /usr/data/zmod/zmod/.shell/0.sh
 set -x
 
 if grep -q bambufy /opt/config/mod_data/plugins.cfg; then
@@ -29,15 +29,15 @@ if [ -d "${CONTROL_DIR}${CONTROL_VERSION}" ]; then
     if [ "$1" -eq 1 ]; then
         echo "SAVE_VARIABLE VARIABLE=klipper13 VALUE=1" >/tmp/printer
         if ! [ -f /ZMOD ]; then
-            start-stop-daemon -S -b -x /opt/config/mod/.shell/update_mcu.sh -- mainboard
+            start-stop-daemon -S -b -x /usr/data/zmod/zmod/.shell/update_mcu.sh -- mainboard
         else
-            /opt/config/mod/.shell/zremote.sh /opt/config/mod/.shell/zmcu_13.sh "${CONTROL_DIR}${CONTROL_VERSION}"
+            /usr/data/zmod/zmod/.shell/zremote.sh /usr/data/zmod/zmod/.shell/zmcu_13.sh "${CONTROL_DIR}${CONTROL_VERSION}"
         fi
     else
         echo "SAVE_VARIABLE VARIABLE=klipper13 VALUE=0" >/tmp/printer
-        /opt/config/mod/.shell/root/audio/audio_midi.sh For_Elise.mid
+        /usr/data/zmod/zmod/.shell/root/audio/audio_midi.sh For_Elise.mid
         sync
         sleep 5
-        /opt/config/mod/.shell/zremote.sh poweroff
+        /usr/data/zmod/zmod/.shell/zremote.sh poweroff
     fi
 fi

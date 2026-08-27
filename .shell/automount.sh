@@ -2,11 +2,7 @@
 # (C) 2024-2026 ghzserg https://github.com/ghzserg/zmod
 
 # Загружаем конфигурацию
-if [ -f /opt/config/mod/.shell/0.sh ]; then
-    . /opt/config/mod/.shell/0.sh
-elif [ -f /usr/data/config/mod/.shell/0.sh ]; then
-    . /usr/data/config/mod/.shell/0.sh
-fi
+. /usr/data/zmod/zmod/.shell/0.sh
 
 # Проверяем, нужно ли запускать скрипт
 if ! grep -q '^\[include ./mod/display_off\.cfg\]' "${MOD_CONF}/printer.cfg"; then

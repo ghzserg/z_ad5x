@@ -1,7 +1,7 @@
 #!/bin/sh
 # (C) 2024-2026 ghzserg https://github.com/ghzserg/zmod
 
-source /opt/config/mod/.shell/0.sh
+source /usr/data/zmod/zmod/.shell/0.sh
 
 CONF="/opt/config/mod_data/zlink.txt"
 
@@ -19,9 +19,9 @@ start_zlink()
     mv ${MOD_CONF}/mod_data/log/zlink.log   ${MOD_CONF}/mod_data/log/zlink.1.log 2>/dev/null
 
     if [ -f /ZMOD ]; then
-        /opt/config/mod/.shell/root/zlink 2>/dev/null
+        /usr/data/zmod/zmod/.shell/root/zlink 2>/dev/null
     else
-        chroot ${MOD} /opt/config/mod/.shell/root/zlink 2>/dev/null
+        chroot ${MOD} /usr/data/zmod/zmod/.shell/root/zlink 2>/dev/null
     fi
 }
 

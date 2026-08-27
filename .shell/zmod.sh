@@ -1,12 +1,12 @@
 #!/bin/sh
 # (C) 2024-2026 ghzserg https://github.com/ghzserg/zmod
 
-source /opt/config/mod/.shell/0.sh
+source /usr/data/zmod/zmod/.shell/0.sh
 
 up()
 {
     if ! [ -f /ZMOD ]; then
-        #/opt/config/mod/.shell/S99moon up
+        #/usr/data/zmod/zmod/.shell/S99moon up
         [ "$1" -eq 1 ] && chroot ${MOD} /etc/init.d/S80guppyscreen start
         [ "$2" -eq 1 ] && chroot ${MOD} /etc/init.d/S65moonraker start
         [ "$3" -eq 1 ] && chroot ${MOD} /etc/init.d/S70httpd start
@@ -20,7 +20,7 @@ up()
 stop()
 {
     if ! [ -f /ZMOD ]; then
-        #/opt/config/mod/.shell/S99moon stop
+        #/usr/data/zmod/zmod/.shell/S99moon stop
         [ "$1" -eq 1 ] && chroot ${MOD} /etc/init.d/S80guppyscreen stop
         [ "$2" -eq 1 ] && chroot ${MOD} /etc/init.d/S65moonraker stop
         [ "$3" -eq 1 ] && chroot ${MOD} /etc/init.d/S70httpd stop

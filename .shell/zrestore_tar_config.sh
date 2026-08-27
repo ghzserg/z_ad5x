@@ -1,7 +1,7 @@
 #!/bin/sh
 # (C) 2024-2026 ghzserg https://github.com/ghzserg/zmod
 
-source /opt/config/mod/.shell/0.sh
+source /usr/data/zmod/zmod/.shell/0.sh
 
 unset LD_PRELOAD
 
@@ -14,6 +14,6 @@ if ! [ -f "/opt/config/mod_data/config.tar.gz" ]; then
 else
     gunzip /opt/config/mod_data/config.tar.gz
     tar -xvf /opt/config/mod_data/config.tar -C /
-    /opt/config/mod/.shell/zclear.sh
+    /usr/data/zmod/zmod/.shell/zclear.sh
     echo REBOOT >/tmp/printer
 fi

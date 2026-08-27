@@ -5,12 +5,7 @@ set -x
 unset LD_LIBRARY_PATH
 unset LD_PRELOAD
 
-if [ -f /opt/config/mod/.shell/0.sh ]; then
-    source /opt/config/mod/.shell/0.sh
-else if [ -f /usr/data/config/mod/.shell/0.sh ]; then
-    source /usr/data/config/mod/.shell/0.sh
-fi
-fi
+source /usr/data/zmod/zmod/.shell/0.sh
 
 CHECH_ARCH=`uname -m`
 if [ "${CHECH_ARCH}" == "armv7l" ]; then
@@ -44,14 +39,14 @@ app_startup_mcu()
     CONTRIL_M=${CONTROL_DIR}${CONTROL_VERSION}UpdateM
 
     if  [ -f "${CONTRIL_M}" ] || [ -f ${CONTRIL_FLAG} ]; then
-        [ ${KLIPPER13} -eq 1 ] && mount -o bind ${MOD_CONF}/mod/.shell/update_mcu.sh ${CONTROL_DIR}${CONTROL_VERSION}run.sh
+        [ ${KLIPPER13} -eq 1 ] && mount -o bind /usr/data/zmod/zmod/.shell/update_mcu.sh ${CONTROL_DIR}${CONTROL_VERSION}run.sh
         if [ ${AD5X} -eq 1 ]; then
             cd ${CONTROL_DIR}${CONTROL_VERSION}
             ./run.sh
             reboot -f
         fi
     else
-        [ ${KLIPPER13} -eq 1 ] && mount -o bind ${MOD_CONF}/mod/.shell/klipper13.sh ${KLIPPER_DIR}/start.sh
+        [ ${KLIPPER13} -eq 1 ] && mount -o bind /usr/data/zmod/zmod/.shell/klipper13.sh ${KLIPPER_DIR}/start.sh
     fi
 }
 
