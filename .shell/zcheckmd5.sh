@@ -161,6 +161,8 @@ else
         check_link ${MOD_CONF}/mod/ff5m_config_off.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5m_config_off.cfg &>/dev/null
     fi
     if [ ${AD5X} -eq 1 ]; then
+        check_link ${MOD_CONF}/mod/ff5.cfg /usr/data/zmod/zmod/ff5.cfg &>/dev/null
+        check_link ${MOD_CONF}/mod/mod.cfg /usr/data/zmod/zmod/mod.cfg &>/dev/null
         check_link ${MOD_CONF}/mod/klipper13.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ad5x_klipper13.cfg &>/dev/null
         check_link ${MOD_CONF}/mod/display_off.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ad5x_display_off.cfg &>/dev/null
         check_link ${MOD_CONF}/mod/ad5x.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ad5x.cfg &>/dev/null
