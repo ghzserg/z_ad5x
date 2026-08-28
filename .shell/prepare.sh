@@ -6,12 +6,7 @@ set -x
 unset LD_LIBRARY_PATH
 unset LD_PRELOAD
 
-if [ -f /opt/config/mod/.shell/0.sh ]; then
-    source /opt/config/mod/.shell/0.sh
-else if [ -f /usr/data/config/mod/.shell/0.sh ]; then
-    source /usr/data/config/mod/.shell/0.sh
-fi
-fi
+source /usr/data/zmod/zmod/.shell/0.sh
 
 remove_base()
 {
@@ -56,9 +51,8 @@ remove_base()
     sync
 
     rm -f ${LOG_FILES}/zmod
-    rm -rf ${MOD_CONF}/mod/
-    rm -rf ${MOD_CONF}/base/
     rm -rf ${MOD_CONF}/.theme/
+    rm -rf /usr/data/zmod/
     sync
     reboot
     exit
@@ -92,9 +86,9 @@ start_moon()
     [ ${AD5X} -eq 1 ] && VER=$(find /usr/prog/PROGRAM/software/ -type d | sed 's|/usr/prog/PROGRAM/software/||' | grep -v "/" | grep .)
 
     # Запуск камеры
-    #[ ${AD5M} -eq 1 ] && ${MOD_CONF}/mod/.shell/S99camera init
+    #[ ${AD5M} -eq 1 ] && /usr/data/zmod/zmod/.shell/S99camera init
 
-    chroot ${MOD} /opt/config/mod/.shell/root/start.sh "$SWAP" "$VER" "$MACHINE" &
+    chroot ${MOD} /usr/data/zmod/zmod/.shell/root/start.sh "$SWAP" "$VER" "$MACHINE" &
 
     sleep 10
     mount
@@ -109,14 +103,23 @@ start_moon()
 
 start_prepare()
 {
-    if [ ${AD5M} -eq 1 ] && ! [ -L /etc/init.d/S00fix ]; then ln -s ${MOD_CONF}/mod/.shell/fix_config.sh /etc/init.d/S00fix; fi
+    if [ ${AD5M} -eq 1 ]; then
+        if [ "$(readlink -f /etc/init.d/S00fix)" != "/usr/data/zmod/zmod/.shell/fix_config.sh" ]; then
+            rm -f /etc/init.d/S00fix
+            ln -s /usr/data/zmod/zmod/.shell/fix_config.sh /etc/init.d/S00fix
+        fi
+    fi
     echo "System start" >${MOD_CONF}/mod_data/log/ssh.log
+
 
     mount -t proc /proc ${MOD}/proc
     mount --rbind /sys ${MOD}/sys
     mount --rbind /dev ${MOD}/dev
     mount --bind /tmp ${MOD}/tmp
     mount --bind /run ${MOD}/run
+
+    mkdir -p ${MOD}/usr/data/zmod
+    mount --bind /usr/data/zmod ${MOD}/usr/data/zmod
 
     mkdir -p ${MOD}/opt/config
     mount --bind ${MOD_CONF} ${MOD}/opt/config
@@ -156,7 +159,7 @@ start_prepare()
     cp ${TS_LIB}/ts.conf /tmp/ts.conf
 
     start_moon
-    /opt/config/mod/.shell/klipper_policy.sh
+    /usr/data/zmod/zmod/.shell/klipper_policy.sh
 }
 
 cnt=$(find ${PROGRAM_DIR}control/ -name Update | wc -l)

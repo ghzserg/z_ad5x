@@ -2,11 +2,11 @@
 # (C) 2024-2026 ghzserg https://github.com/ghzserg/zmod
 
 if [ -f /ZMOD ]; then
-    /opt/config/mod/.shell/zremote.sh /opt/config/mod/.shell/screen.sh
+    /usr/data/zmod/zmod/.shell/zremote.sh /usr/data/zmod/zmod/.shell/screen.sh
     exit
 fi
 
-source /opt/config/mod/.shell/0.sh
+source /usr/data/zmod/zmod/.shell/0.sh
 
 FB_DEV="/dev/fb0"
 OUT_FILE="/opt/config/mod_data/screen.jpg"

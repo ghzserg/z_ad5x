@@ -13,4 +13,4 @@ fi
 sync
 sleep 5
 sync
-grep -q display_off.cfg /opt/config/printer.cfg && echo "FIRMWARE_RESTART" >/tmp/printer || /opt/config/mod/.shell/zremote.sh reboot
+grep -q display_off.cfg /opt/config/printer.cfg && echo "FIRMWARE_RESTART" >/tmp/printer || /usr/data/zmod/zmod/.shell/zremote.sh reboot

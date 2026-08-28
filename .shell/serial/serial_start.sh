@@ -1,6 +1,6 @@
 #!/bin/sh
 
-cd /usr/data/config/mod/.shell/serial/
+cd /usr/data/zmod/zmod/.shell/serial/
 
 insmod usbserial.ko
 insmod usb-serial-simple.ko

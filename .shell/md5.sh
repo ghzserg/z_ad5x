@@ -7,7 +7,7 @@ mkdir -p ../stock
 cat << 'EOF' > list.link
 #!/bin/sh
 
-source /opt/config/mod/.shell/0.sh
+source /usr/data/zmod/zmod/.shell/0.sh
 
 if [ ${ZLANG} != 'ru' ]; then
     A1="Incorrect access rights"
@@ -31,7 +31,7 @@ fi
 
 check_dir()
 {
-    a=$(/opt/config/mod/.shell/stat-coreutils -c '%a' "$1" 2>/dev/null)
+    a=$(/usr/data/zmod/zmod/.shell/stat-coreutils -c '%a' "$1" 2>/dev/null)
     if [ "$a" != "$2" ]; then
         /bin/echo -n "$1 - ${A1} ($a!=$2): "|| /bin/echo -n "$1 - ${A1} ($a!=$2): "
         mkdir -p "$1" && chmod "$2" "$1" 2>/dev/null && echo "${FIXED_STR}" || echo "${NOT_FIXED_STR}"
@@ -50,7 +50,7 @@ check_link()
 
 check_file()
 {
-    a=$(/opt/config/mod/.shell/stat-coreutils -c '%a' "$1" 2>/dev/null)
+    a=$(/usr/data/zmod/zmod/.shell/stat-coreutils -c '%a' "$1" 2>/dev/null)
     if [ "$a" != "$2" ]; then
         /bin/echo -n "$1 - ${ERROR_FILE} ($a!=$2): "
         chmod "$2" "$1" 2>/dev/null && echo "${FIXED_STR}" || echo "${NOT_FIXED_STR}"

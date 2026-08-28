@@ -1,12 +1,7 @@
 #!/bin/sh
 # (C) 2024-2026 ghzserg https://github.com/ghzserg/zmod
 
-if [ -f /opt/config/mod/.shell/0.sh ]; then
-    source /opt/config/mod/.shell/0.sh
-else if [ -f /usr/data/config/mod/.shell/0.sh ]; then
-    source /usr/data/config/mod/.shell/0.sh
-fi
-fi
+source /usr/data/zmod/zmod/.shell/0.sh
 
 case "$2" in
     CONNECTED)

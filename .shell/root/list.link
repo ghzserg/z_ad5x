@@ -1,6 +1,6 @@
 #!/bin/sh
 
-source /opt/config/mod/.shell/0.sh
+source /usr/data/zmod/zmod/.shell/0.sh
 
 if [ ${ZLANG} != 'ru' ]; then
     A1="Incorrect access rights"
@@ -1689,7 +1689,6 @@ check_link './root/printer_data/config' '/usr/data/config'
 check_link './root/printer_data/database' '/opt/config/mod_data/database'
 check_link './root/printer_data/gcodes' '/usr/data/gcodes'
 check_link './root/printer_data/logs' '/usr/data/logs'
-check_link './root/printer_data/scripts' '/opt/config/mod/.shell/'
 check_link './sbin' 'usr/sbin'
 check_link './usr/bin/[' 'test'
 check_link './usr/bin/ash' 'busybox'

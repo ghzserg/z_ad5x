@@ -6,15 +6,10 @@ set -x
 unset LD_LIBRARY_PATH
 unset LD_PRELOAD
 
-if [ -f /opt/config/mod/.shell/0.sh ]; then
-    source /opt/config/mod/.shell/0.sh
-else if [ -f /usr/data/config/mod/.shell/0.sh ]; then
-    source /usr/data/config/mod/.shell/0.sh
-fi
-fi
+source /usr/data/zmod/zmod/.shell/0.sh
 
 if [ -f /ZMOD ]; then
-    /opt/config/mod/.shell/zremote.sh /opt/config/mod/.shell/wifi_prepare.sh
+    /usr/data/zmod/zmod/.shell/zremote.sh /usr/data/zmod/zmod/.shell/wifi_prepare.sh
     exit
 fi
 
@@ -113,7 +108,7 @@ wifi_fix()
     killall wpa_cli
     killall -9 wpa_cli
 
-    start-stop-daemon --start --oknodo --background --exec /usr/sbin/wpa_cli -- -i $INTERFACE -a ${MOD_CONF}/mod/.shell/wifi_reconnect.sh
+    start-stop-daemon --start --oknodo --background --exec /usr/sbin/wpa_cli -- -i $INTERFACE -a /usr/data/zmod/zmod/.shell/wifi_reconnect.sh
     echo "Wi-Fi restart initiated. DHCP will start automatically on connection."
 }
 

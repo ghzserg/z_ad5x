@@ -6,7 +6,7 @@
 
 unset LD_PRELOAD
 
-source /opt/config/mod/.shell/0.sh
+source /usr/data/zmod/zmod/.shell/0.sh
 
 WEB="fluidd"
 grep -q "CLIENT=$WEB" /opt/config/mod_data/web.conf && WEB="mainsail"
@@ -23,7 +23,7 @@ CLIENT=$WEB
 sync
 
 if [ -f /ZMOD ]; then
-    /opt/config/mod/.shell/root/S70httpd restart
+    /usr/data/zmod/zmod/.shell/root/S70httpd restart
 else
-    chroot ${MOD} /opt/config/mod/.shell/root/S70httpd restart
+    chroot ${MOD} /usr/data/zmod/zmod/.shell/root/S70httpd restart
 fi

@@ -1,7 +1,7 @@
 #!/bin/sh
 # (C) 2024-2026 ghzserg https://github.com/ghzserg/zmod
 
-source /opt/config/mod/.shell/0.sh
+source /usr/data/zmod/zmod/.shell/0.sh
 
 # Более точный замер времени - Alexander
 if [ $# -ne 2 ] && [ $# -ne 3 ] && [ $# -ne 4 ]; then

@@ -2,7 +2,7 @@
 # (C) 2026 ghzserg https://github.com/ghzserg/zmod
 exit 0
 
-. /opt/config/mod/.shell/0.sh
+. /usr/data/zmod/zmod/.shell/0.sh
 
 MAX_RETRIES=30
 RETRY_COUNT=0
