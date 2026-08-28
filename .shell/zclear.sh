@@ -1,8 +1,7 @@
 #!/bin/sh
 # (C) 2024-2026 ghzserg https://github.com/ghzserg/zmod
 
-LOG_FILES="/data/logFiles"
-source /opt/config/mod/.shell/0.sh
+source /usr/data/zmod/zmod/.shell/0.sh
 
 if  [ "$1" == 1 ]; then
     rm -rf ${LOG_FILES}/*

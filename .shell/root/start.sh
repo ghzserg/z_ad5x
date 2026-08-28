@@ -1,20 +1,20 @@
 #!/bin/sh
 # (C) 2024-2026 ghzserg https://github.com/ghzserg/zmod
 
-source /opt/config/mod/.shell/0.sh
+source /usr/data/zmod/zmod/.shell/0.sh
 
 set -x
 
 
 start_moonraker() {
-    /opt/config/mod/.shell/root/S65moonraker start
-    /opt/config/mod/.shell/root/S70httpd start
+    /usr/data/zmod/zmod/.shell/root/S65moonraker start
+    /usr/data/zmod/zmod/.shell/root/S70httpd start
 }
 
 start_klipper() {
     if [ ${AD5M} -eq 1 ]; then
         if grep -q "klipper13 = 1" /opt/config/mod_data/variables.cfg; then
-            /opt/config/mod/.shell/root/S60klipper start
+            /usr/data/zmod/zmod/.shell/root/S60klipper start
         fi
     fi
 }
@@ -113,18 +113,18 @@ prepare_chroot()
 
     [ -d /root/guppyscreen ] || mkdir -p /root/guppyscreen
     rm -f /root/guppyscreen/guppyscreen
-    cp /opt/config/mod/.shell/root/guppyscreen /root/guppyscreen/guppyscreen
+    cp /usr/data/zmod/zmod/.shell/root/guppyscreen /root/guppyscreen/guppyscreen
 
     [ -d /var/run/ ] || mkdir -p /var/run/
 
-    [ -L /root/printer_data/scripts ] || ln -s /opt/config/mod/.shell /root/printer_data/scripts
+    rmdir /opt/config/base 2>/dev/null
 
     [ -d /etc/init.d/ ] || mkdir -p /etc/init.d/
 
-    [ -L /etc/init.d/S98zssh ] || ln -s /opt/config/mod/.shell/S98zssh /etc/init.d/
+    check_link /etc/init.d/S98zssh /usr/data/zmod/zmod/.shell/S98zssh
     [ -L /etc/init.d/S98camera ] && rm -f /etc/init.d/S98camera
-    [ -L /etc/init.d/S99camera ] || ln -s /opt/config/mod/.shell/root/S99camera /etc/init.d/
-    [ -L /etc/init.d/S60klipper ] || ln -s /opt/config/mod/.shell/root/S60klipper /etc/init.d/
+    check_link /etc/init.d/S99camera /usr/data/zmod/zmod/.shell/root/S99camera
+    check_link /etc/init.d/S60klipper /usr/data/zmod/zmod/.shell/root/S60klipper
 
     [ -d /srv/helixscreen/ ] || mkdir -p /srv/helixscreen/
     if ! [ -f /srv/helixscreen/release_info.json ]; then
@@ -138,65 +138,65 @@ prepare_chroot()
         sed -i 's/ghzserg/prestonbrown/' /srv/helixscreen/release_info.json
     fi
 
-    [ ${AD5M} -eq 1 ] && check_link /root/klipper-env/klippy /opt/config/base/klipper/klippy
-    if [ -f /opt/config/base/klipper/klippy/klippy.py ]; then
-        check_link ${MOD_CONF}/base/klipper/klippy/extras/gcode_shell_command.py ${MOD_CONF}/mod/.shell/gcode_shell_command.py
-        check_link ${MOD_CONF}/base/klipper/klippy/extras/zmod.py ${MOD_CONF}/mod/.shell/zmod.py
-        check_link ${MOD_CONF}/base/klipper/klippy/extras/ens160.py ${MOD_CONF}/mod/.shell/ens160.py
+    [ ${AD5M} -eq 1 ] && check_link /root/klipper-env/klippy /usr/data/zmod/klipper/klippy
+    if [ -f /usr/data/zmod/klipper/klippy/klippy.py ]; then
+        check_link /usr/data/zmod/klipper/klippy/extras/gcode_shell_command.py /usr/data/zmod/zmod/.shell/gcode_shell_command.py
+        check_link /usr/data/zmod/klipper/klippy/extras/zmod.py /usr/data/zmod/zmod/.shell/zmod.py
+        check_link /usr/data/zmod/klipper/klippy/extras/ens160.py /usr/data/zmod/zmod/.shell/ens160.py
 
         if [ ${AD5M} -eq 1 ]; then
-            check_link /opt/config/base/klipper/klippy/chelper/c_helper.so /opt/config/base/klipper/mcu/ff5m/c_helper.so
-            check_link ${MOD_CONF}/base/klipper/klippy/extras/ens160.py ${MOD_CONF}/mod/.shell/ens160.py
-            #check_link ${MOD_CONF}/base/klipper/klippy/extras/flashforge_loadcell.py ${MOD_CONF}/mod/.shell/flashforge_loadcell.py
-            [ -L ${MOD_CONF}/base/klipper/klippy/extras/flashforge_loadcell.py ] && rm -f ${MOD_CONF}/base/klipper/klippy/extras/flashforge_loadcell.py
+            check_link /usr/data/zmod/klipper/klippy/chelper/c_helper.so /usr/data/zmod/klipper/mcu/ff5m/c_helper.so
+            check_link /usr/data/zmod/klipper/klippy/extras/ens160.py /usr/data/zmod/zmod/.shell/ens160.py
+            #check_link /usr/data/zmod/klipper/klippy/extras/flashforge_loadcell.py /usr/data/zmod/zmod/.shell/flashforge_loadcell.py
+            [ -L /usr/data/zmod/klipper/klippy/extras/flashforge_loadcell.py ] && rm -f /usr/data/zmod/klipper/klippy/extras/flashforge_loadcell.py
         fi
         if [ ${AD5X} -eq 1 ]; then
-            check_link ${MOD_CONF}/base/klipper/klippy/chelper/c_helper.so ${MOD_CONF}/base/klipper/mcu/ad5x/c_helper.so
-            check_link ${MOD_CONF}/base/klipper/klippy/extras/zmod_color.py ${MOD_CONF}/mod/.shell/zmod_color.py
-            check_link ${MOD_CONF}/base/klipper/klippy/extras/zmod_ifs_motion_sensor.py ${MOD_CONF}/mod/.shell/zmod_ifs_motion_sensor.py
-            check_link ${MOD_CONF}/base/klipper/klippy/extras/zmod_ifs_switch_sensor.py ${MOD_CONF}/mod/.shell/zmod_ifs_switch_sensor.py
-            check_link ${MOD_CONF}/base/klipper/klippy/extras/zmod_ifs.py ${MOD_CONF}/mod/.shell/zmod_ifs.py
-            check_link ${MOD_CONF}/base/klipper/klippy/extras/zmod_tenz.py ${MOD_CONF}/mod/.shell/zmod_tenz.py
-            if [ -f ${MOD_CONF}/base/klipper/klippy/extras/aio_executor.py ]; then
-                check_link ${MOD_CONF}/base/klipper/klippy/extras/virtual_sdcard.py ${MOD_CONF}/mod/.shell/virtual_sdcard_13.py
+            check_link /usr/data/zmod/klipper/klippy/chelper/c_helper.so /usr/data/zmod/klipper/mcu/ad5x/c_helper.so
+            check_link /usr/data/zmod/klipper/klippy/extras/zmod_color.py /usr/data/zmod/zmod/.shell/zmod_color.py
+            check_link /usr/data/zmod/klipper/klippy/extras/zmod_ifs_motion_sensor.py /usr/data/zmod/zmod/.shell/zmod_ifs_motion_sensor.py
+            check_link /usr/data/zmod/klipper/klippy/extras/zmod_ifs_switch_sensor.py /usr/data/zmod/zmod/.shell/zmod_ifs_switch_sensor.py
+            check_link /usr/data/zmod/klipper/klippy/extras/zmod_ifs.py /usr/data/zmod/zmod/.shell/zmod_ifs.py
+            check_link /usr/data/zmod/klipper/klippy/extras/zmod_tenz.py /usr/data/zmod/zmod/.shell/zmod_tenz.py
+            if [ -f /usr/data/zmod/klipper/klippy/extras/aio_executor.py ]; then
+                check_link /usr/data/zmod/klipper/klippy/extras/virtual_sdcard.py /usr/data/zmod/zmod/.shell/virtual_sdcard_13.py
             else
-                check_link ${MOD_CONF}/base/klipper/klippy/extras/virtual_sdcard.py ${MOD_CONF}/mod/.shell/virtual_sdcard.py
+                check_link /usr/data/zmod/klipper/klippy/extras/virtual_sdcard.py /usr/data/zmod/zmod/.shell/virtual_sdcard.py
             fi
         fi
     fi
 
-    check_link /root/moonraker-env/moonraker /opt/config/base/moonraker
-    check_link /etc/init.d/S80helixscreen /opt/config/mod/.shell/root/S80helixscreen
-    check_link /etc/init.d/S80guppyscreen /opt/config/mod/.shell/root/S80guppyscreen
-    check_link /etc/init.d/S65moonraker /opt/config/mod/.shell/root/S65moonraker
-    check_link /etc/init.d/S70httpd /opt/config/mod/.shell/root/S70httpd
+    check_link /root/moonraker-env/moonraker /usr/data/zmod/moonraker
+    check_link /etc/init.d/S80helixscreen /usr/data/zmod/zmod/.shell/root/S80helixscreen
+    check_link /etc/init.d/S80guppyscreen /usr/data/zmod/zmod/.shell/root/S80guppyscreen
+    check_link /etc/init.d/S65moonraker /usr/data/zmod/zmod/.shell/root/S65moonraker
+    check_link /etc/init.d/S70httpd /usr/data/zmod/zmod/.shell/root/S70httpd
 
     [ -L /etc/init.d/S35tslib ] && rm -f /etc/init.d/S35tslib
 
-    [ -L /usr/lib/python3.12/site-packages/mido ] || ln -s /opt/config/mod/.shell/root/mido/ /usr/lib/python3.12/site-packages/
-    [ -L /usr/lib/python3.12/site-packages/mido-1.3.3.dist-info ] || ln -s /opt/config/mod/.shell/root/mido-1.3.3.dist-info/ /usr/lib/python3.12/site-packages/
+    [ -L /usr/lib/python3.12/site-packages/mido ] || ln -s /usr/data/zmod/zmod/.shell/root/mido/ /usr/lib/python3.12/site-packages/
+    [ -L /usr/lib/python3.12/site-packages/mido-1.3.3.dist-info ] || ln -s /usr/data/zmod/zmod/.shell/root/mido-1.3.3.dist-info/ /usr/lib/python3.12/site-packages/
     if [ ${AD5M} -eq 1 ]; then
         [ -L /root/klipper-env/lib/python3.12/site-packages/numpy ] || ln -s /usr/lib/python3.12/site-packages/numpy /root/klipper-env/lib/python3.12/site-packages/
     fi
 
     if ! [ -L /bin/sudo ]; then
         rm -f /bin/sudo
-        ln -s /opt/config/mod/.shell/root/sudo /bin/sudo
+        ln -s /usr/data/zmod/zmod/.shell/root/sudo /bin/sudo
     fi
 
     if ! [ -L /bin/systemctl ]; then
         rm -f /bin/systemctl
-        ln -s /opt/config/mod/.shell/root/sudo /bin/systemctl
+        ln -s /usr/data/zmod/zmod/.shell/root/sudo /bin/systemctl
     fi
 
-    [ -L /usr/bin/audio ] || ln -s /opt/config/mod/.shell/root/audio/audio /usr/bin/audio
-    [ -L /usr/bin/audio_midi.sh ] || ln -s /opt/config/mod/.shell/root/audio/audio_midi.sh /usr/bin/audio_midi.sh
-    [ -L /usr/bin/audio.py ] || ln -s /opt/config/mod/.shell/root/audio/audio.py /usr/bin/audio.py
+    check_link /usr/bin/audio /usr/data/zmod/zmod/.shell/root/audio/audio
+    check_link /usr/bin/audio_midi.sh /usr/data/zmod/zmod/.shell/root/audio/audio_midi.sh
+    check_link /usr/bin/audio.py /usr/data/zmod/zmod/.shell/root/audio/audio.py
 
     CUR_DIR=$(pwd)
-        cd /opt/config/mod/.shell/midi/
+        cd /usr/data/zmod/zmod/.shell/midi/
         for i in *.mid; do
-            [ -f "/opt/config/mod_data/midi/$i" ] || cp "/opt/config/mod/.shell/midi/$i" /opt/config/mod_data/midi/
+            [ -f "/opt/config/mod_data/midi/$i" ] || cp "/usr/data/zmod/zmod/.shell/midi/$i" /opt/config/mod_data/midi/
         done
     cd ${CUR_DIR}
 
@@ -206,8 +206,8 @@ prepare_chroot()
         cd ${CUR_DIR}
     fi
 
-    #[ -L /bin/boot_eboard_mcu ] || ln -s /opt/config/mod/.shell/root/mcu/boot_eboard_mcu /bin/boot_eboard_mcu
-    [ -L /bin/backlight ] || ln -s /opt/config/mod/.shell/root/backlight /bin/backlight
+    #[ -L /bin/boot_eboard_mcu ] || ln -s /usr/data/zmod/zmod/.shell/root/mcu/boot_eboard_mcu /bin/boot_eboard_mcu
+    check_link /bin/backlight /usr/data/zmod/zmod/.shell/root/backlight
 
     # fix ssh keys
     mkdir -p /root/.ssh/ /.ssh/
@@ -235,7 +235,7 @@ name: {printer_name}
     fi
 }
 
-${MOD_CONF}/mod/.shell/znice.sh
+/usr/data/zmod/zmod/.shell/znice.sh
 
 if [ ${AD5M} -eq 1 ]; then
     SWAP="$1"
@@ -253,9 +253,9 @@ fi
 prepare_chroot
 
 if grep -q display_off.cfg /opt/config/printer.cfg && grep -q "save_restore = 1" /opt/config/mod_data/variables.cfg; then
-    /opt/config/mod/.shell/root/console_log --save --${ZLANG}
+    /usr/data/zmod/zmod/.shell/root/console_log --save --${ZLANG}
 else
-    /opt/config/mod/.shell/root/console_log --not-save --${ZLANG}
+    /usr/data/zmod/zmod/.shell/root/console_log --not-save --${ZLANG}
 fi
 
 rm -f /root/guppyscreen/guppyconfig.json
@@ -263,11 +263,11 @@ ln -s /opt/config/mod_data/guppyconfig.json /root/guppyscreen/guppyconfig.json
 [ -s /opt/config/mod_data/guppyconfig.json ] || rm -f /opt/config/mod_data/guppyconfig.json
 
 if [ "$3" == "Adventurer5M" ]; then
-    [ -f /opt/config/mod_data/guppyconfig.json ] || cp /opt/config/mod/guppyconfig_${ZLANG}.json /opt/config/mod_data/guppyconfig.json
+    [ -f /opt/config/mod_data/guppyconfig.json ] || cp /usr/data/zmod/zmod/guppyconfig_${ZLANG}.json /opt/config/mod_data/guppyconfig.json
 else if [ "$3" == "Adventurer5MPro" ]; then
-    [ -f /opt/config/mod_data/guppyconfig.json ] || cp /opt/config/mod/guppyconfig_${ZLANG}_pro.json /opt/config/mod_data/guppyconfig.json
+    [ -f /opt/config/mod_data/guppyconfig.json ] || cp /usr/data/zmod/zmod/guppyconfig_${ZLANG}_pro.json /opt/config/mod_data/guppyconfig.json
 else if [ "$3" == "AD5X" ]; then
-    [ -f /opt/config/mod_data/guppyconfig.json ] || cp /opt/config/mod/guppyconfig_${ZLANG}_5x.json /opt/config/mod_data/guppyconfig.json
+    [ -f /opt/config/mod_data/guppyconfig.json ] || cp /usr/data/zmod/zmod/guppyconfig_${ZLANG}_5x.json /opt/config/mod_data/guppyconfig.json
 fi
 fi
 fi
@@ -285,7 +285,7 @@ grep -q "PRETTY_NAME=\"${V1} -> ${V2}\"" /etc/os-release || sed -i "s|PRETTY_NAM
 mkdir -p ${DATA_GCODES}/tmp
 
 KLIPPER=0
-if [ -f /opt/config/base/klipper/klippy/klippy.py ]; then
+if [ -f /usr/data/zmod/klipper/klippy/klippy.py ]; then
     start_klipper
     KLIPPER=1
 fi
@@ -295,10 +295,10 @@ sqlite3 /opt/config/mod_data/database/moonraker-sql.db "DELETE FROM namespace_st
 
 # Создаем каталоги под плагины
 update_plugins /opt/config/moonraker.conf
-grep -q "extra_plugins.moonraker.conf" ${MOD_CONF}/mod_data/extra_plugins.moonraker.conf && update_plugins /opt/config/mod/extra_plugins.moonraker.conf
+grep -q "extra_plugins.moonraker.conf" ${MOD_CONF}/mod_data/extra_plugins.moonraker.conf && update_plugins /usr/data/zmod/zmod/extra_plugins.moonraker.conf
 update_plugins /opt/config/mod_data/user.moonraker.conf
 
-if ! [ -f /root/printer_data/config/base/klipper/klippy/klippy.py ]; then
+if ! [ -f /usr/data/zmod/klipper/klippy/klippy.py ]; then
     branch="main"
     url="https://github.com/ghzserg/zmod_klipper.git"
     a="klippy"
@@ -307,7 +307,7 @@ if ! [ -f /root/printer_data/config/base/klipper/klippy/klippy.py ]; then
      INSERT INTO namespace_store (namespace, key, value) VALUES ('update_manager', '$a', '{\"last_config_hash\":\"?\",\"last_refresh_time\":0.0,\"is_valid\":false,\"pip_version_info\":null,\"repo_valid\":false,\"git_owner\":\"none\",\"git_repo_name\":\"$a\",\"git_remote\":\"origin\",\"git_branch\":\"$branch\",\"current_version\":\"0.0.0.0\",\"upstream_version\":\"0.0.0.0\",\"current_commit\":\"?\",\"upstream_commit\":\"?\",\"rollback_commit\":\"?\",\"rollback_branch\":\"$branch\",\"rollback_version\":\"0.0.0.0\",\"upstream_url\":\"$url\",\"recovery_url\":\"$url\",\"branches\":[\"$branch\"],\"head_detached\":false,\"git_messages\":[],\"commits_behind\":[],\"cbh_count\":0,\"diverged\":false,\"corrupt\":true,\"modified_files\":[],\"untracked_files\":[],\"pinned_commit_valid\":true}');"
 else
     CUR_DIR=$(pwd)
-    cd /root/printer_data/config/base/klipper
+    cd /usr/data/zmod/klipper
     if [ ${AD5X} -eq 1 ]; then
         git update-index --skip-worktree klippy/extras/virtual_sdcard.py
     else
@@ -316,7 +316,7 @@ else
     cd ${CUR_DIR}
 fi
 
-if ! [ -f /root/printer_data/config/base/moonraker/moonraker.py ]; then
+if ! [ -f /usr/data/zmod/moonraker/moonraker.py ]; then
     branch="main"
     url="https://github.com/ghzserg/zmod_moonraker.git"
     a="moon"
@@ -339,7 +339,7 @@ fi
 [ -d /root/printer_data/gcodes/timelapse/tmp ] && rm -rf /root/printer_data/gcodes/timelapse/tmp/*
 
 MOONRAKER=0
-if [ -f /opt/config/base/moonraker/moonraker.py ]; then
+if [ -f /usr/data/zmod/moonraker/moonraker.py ]; then
     start_moonraker
     MOONRAKER=1
 fi
@@ -375,7 +375,7 @@ test_file printer.base.cfg
 test_file printer.cfg
 
 sleep 15
-cd /opt/config/mod/
+cd /usr/data/zmod/zmod/
 git log | head -3|grep Date >/opt/config/mod_data/date.txt
 echo "ZSSH_RELOAD" >/tmp/printer
 
@@ -395,7 +395,7 @@ for i in `seq 0 50`; do
 done
 date
 
-cd /opt/config/base/
+cd /usr/data/zmod/
 # Klipper
 if ! [ -f klipper/klippy/klippy.py ]; then
     git clone https://github.com/ghzserg/zmod_klipper klipper

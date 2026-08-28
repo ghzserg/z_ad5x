@@ -6,10 +6,10 @@
 
 #set -x
 
-source /opt/config/mod/.shell/0.sh
+source /usr/data/zmod/zmod/.shell/0.sh
 
 if ! [ -f /opt/config/mod_data/camera.conf ]; then
-    /opt/config/mod/.shell/zcamera.sh off 640 480 20 ${VIDEO} 0 auto MJPEG NOTRESTART
+    /usr/data/zmod/zmod/.shell/zcamera.sh off 640 480 20 ${VIDEO} 0 auto MJPEG NOTRESTART
 fi
 
 VIDEO=video0
@@ -38,13 +38,13 @@ start_mjpg_streamer() {
 
     ${V4l2} -d /dev/$VIDEO --set-fmt-video=width=${WIDTH},height=${HEIGHT},pixelformat=MJPG >>${MOD_CONF}/mod_data/log/cam/mjpg_streamer.log 2>&1
     if [ -f /ZMOD ]; then
-        /opt/config/mod/.shell/root/zcam/zcam ${MOD_CONF}/mod_data/log/cam/mjpg_streamer.log /usr/bin/mjpg_streamer -o "/usr/lib/mjpg-streamer/output_http.so -w /usr/share/mjpg-streamer/www -p 8080" -i  "/usr/lib/mjpg-streamer/input_uvc.so -b 1 -d /dev/${VIDEO} -r ${WIDTH}x${HEIGHT} -f $FPS $FFS"
+        /usr/data/zmod/zmod/.shell/root/zcam/zcam ${MOD_CONF}/mod_data/log/cam/mjpg_streamer.log /usr/bin/mjpg_streamer -o "/usr/lib/mjpg-streamer/output_http.so -w /usr/share/mjpg-streamer/www -p 8080" -i  "/usr/lib/mjpg-streamer/input_uvc.so -b 1 -d /dev/${VIDEO} -r ${WIDTH}x${HEIGHT} -f $FPS $FFS"
     else
         if [ ${AD5M} -eq 1 ]; then
-            nohup /opt/config/mod/.shell/eabi/mjpg_streamer -o "/opt/config/mod/.shell/eabi/lib/output_http.so -w /opt/mjpg-streamer/www -p 8080" -i  "/opt/config/mod/.shell/eabi/lib/input_uvc.so -b 1 -d /dev/${VIDEO} -r ${WIDTH}x${HEIGHT} -f $FPS $FFS" >>${MOD_CONF}/mod_data/log/cam/mjpg_streamer.log 2>&1 &
+            nohup /usr/data/zmod/zmod/.shell/eabi/mjpg_streamer -o "/usr/data/zmod/zmod/.shell/eabi/lib/output_http.so -w /opt/mjpg-streamer/www -p 8080" -i  "/usr/data/zmod/zmod/.shell/eabi/lib/input_uvc.so -b 1 -d /dev/${VIDEO} -r ${WIDTH}x${HEIGHT} -f $FPS $FFS" >>${MOD_CONF}/mod_data/log/cam/mjpg_streamer.log 2>&1 &
         fi
         if [ ${AD5X} -eq 1 ]; then
-            chroot $MOD /opt/config/mod/.shell/root/zcam/zcam ${MOD_CONF}/mod_data/log/cam/mjpg_streamer.log /usr/bin/mjpg_streamer -o "/usr/lib/mjpg-streamer/output_http.so -w /usr/share/mjpg-streamer/www -p 8080" -i  "/usr/lib/mjpg-streamer/input_uvc.so -b 1 -d /dev/${VIDEO} -r ${WIDTH}x${HEIGHT} -f $FPS $FFS"
+            chroot $MOD /usr/data/zmod/zmod/.shell/root/zcam/zcam ${MOD_CONF}/mod_data/log/cam/mjpg_streamer.log /usr/bin/mjpg_streamer -o "/usr/lib/mjpg-streamer/output_http.so -w /usr/share/mjpg-streamer/www -p 8080" -i  "/usr/lib/mjpg-streamer/input_uvc.so -b 1 -d /dev/${VIDEO} -r ${WIDTH}x${HEIGHT} -f $FPS $FFS"
         fi
     fi
 }
@@ -56,9 +56,9 @@ start_ustreamer() {
     [ "$STREAMER" == "auto" ] && FORMAT=$(${V4l2} -d /dev/$VIDEO --list-formats| grep '\[' | tail -1| cut -d "'" -f2)
     echo ${FORMAT} >>${MOD_CONF}/mod_data/log/cam/ustreamer.log 2>&1
     if [ -f /ZMOD ]; then
-        /opt/config/mod/.shell/root/zcam/zcam ${MOD_CONF}/mod_data/log/cam/ustreamer.log /opt/config/mod/.shell/root/zcam/ustreamer --process-name-prefix camera_ustreamer -l -b 1 -d /dev/${VIDEO} -r ${WIDTH}x${HEIGHT} -f $FPS --format=$FORMAT -s 0.0.0.0 -m MJPEG --device-timeout=2 -w 1 -I MMAP -c HW
+        /usr/data/zmod/zmod/.shell/root/zcam/zcam ${MOD_CONF}/mod_data/log/cam/ustreamer.log /usr/data/zmod/zmod/.shell/root/zcam/ustreamer --process-name-prefix camera_ustreamer -l -b 1 -d /dev/${VIDEO} -r ${WIDTH}x${HEIGHT} -f $FPS --format=$FORMAT -s 0.0.0.0 -m MJPEG --device-timeout=2 -w 1 -I MMAP -c HW
     else
-        chroot ${MOD} /opt/config/mod/.shell/root/zcam/zcam ${MOD_CONF}/mod_data/log/cam/ustreamer.log /opt/config/mod/.shell/root/zcam/ustreamer --process-name-prefix camera_ustreamer -l -b 1 -d /dev/${VIDEO} -r ${WIDTH}x${HEIGHT} -f $FPS --format=$FORMAT -s 0.0.0.0 -m MJPEG --device-timeout=2 -w 1 -I MMAP -c HW
+        chroot ${MOD} /usr/data/zmod/zmod/.shell/root/zcam/zcam ${MOD_CONF}/mod_data/log/cam/ustreamer.log /usr/data/zmod/zmod/.shell/root/zcam/ustreamer --process-name-prefix camera_ustreamer -l -b 1 -d /dev/${VIDEO} -r ${WIDTH}x${HEIGHT} -f $FPS --format=$FORMAT -s 0.0.0.0 -m MJPEG --device-timeout=2 -w 1 -I MMAP -c HW
     fi
 }
 

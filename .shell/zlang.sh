@@ -1,7 +1,7 @@
 #!/bin/sh
 # (C) 2024-2026 ghzserg https://github.com/ghzserg/zmod
 
-source /opt/config/mod/.shell/0.sh
+source /usr/data/zmod/zmod/.shell/0.sh
 
 if [ "$1" == 'en' ]; then ZLANG="en"
 else if [ "$1" == 'de' ]; then ZLANG="de"

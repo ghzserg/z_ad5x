@@ -1,7 +1,7 @@
 #!/bin/sh
 # (C) 2024-2026 ghzserg https://github.com/ghzserg/zmod
 
-source /opt/config/mod/.shell/0.sh
+source /usr/data/zmod/zmod/.shell/0.sh
 
 if [ ${AD5X} -eq 1 ]; then
     export LD_LIBRARY_PATH=//usr/prog/qt-4.8.6/lib:$LD_LIBRARY_PATH
@@ -16,7 +16,7 @@ if [ ${AD5X} -eq 1 ]; then
     export LD_LIBRARY_PATH=/usr/prog/Python-3.8.2/lib:$LD_LIBRARY_PATH
 fi
 
-$PYTHON /opt/config/mod/.shell/ps_mem.py -S >/tmp/list.txt
+$PYTHON /usr/data/zmod/zmod/.shell/ps_mem.py -S >/tmp/list.txt
 
 [ ${ZLANG} != 'ru' ] && cat /tmp/list.txt || awk '{
     gsub(/main/, "Камера ustreamer");

@@ -4,7 +4,7 @@
 # Start TelegramBot
 #
 
-source /opt/config/mod/.shell/0.sh
+source /usr/data/zmod/zmod/.shell/0.sh
 
 if ! [ -f /opt/config/mod_data/ssh.key ] || ! [ -f /opt/config/mod_data/ssh.pub.txt ]; then
     dropbearkey -t ${KEY_TYPE} -f /opt/config/mod_data/ssh.key
@@ -12,7 +12,7 @@ if ! [ -f /opt/config/mod_data/ssh.key ] || ! [ -f /opt/config/mod_data/ssh.pub.
 fi
 
 if ! [ -f /opt/config/mod_data/ssh.conf ]; then
-    /opt/config/mod/.shell/zssh.sh STOP 127.0.0.1 22 user 8080 7125 NONE NOTRESTART
+    /usr/data/zmod/zmod/.shell/zssh.sh STOP 127.0.0.1 22 user 8080 7125 NONE NOTRESTART
 fi
 
 if ! [ -f /opt/config/mod_data/ssh.local.key ] || ! [ -f /opt/config/mod_data/ssh.local.txt ]; then
@@ -31,7 +31,7 @@ if ! grep -q "$KEY" /root/.ssh/authorized_keys 2>/dev/null; then
     chmod 600 /root/.ssh/authorized_keys
 fi
 
-#/opt/config/mod/.shell/zversion.sh
+#/usr/data/zmod/zmod/.shell/zversion.sh
 
 REMOTE_RUN="NONE"
 source /opt/config/mod_data/ssh.conf

@@ -9,7 +9,7 @@ export LD_LIBRARY_PATH=/opt/Python-3.7.11/lib:$LD_LIBRARY_PATH
 
 # zmod 1.1
 if ! grep -q "zmod 1.1" /opt/klipper/klippy/extras/virtual_sdcard.py; then
-    cp /opt/config/mod/.shell/virtual_sdcard.py /opt/klipper/klippy/extras/virtual_sdcard.py
+    cp /usr/data/zmod/zmod/.shell/virtual_sdcard.py /opt/klipper/klippy/extras/virtual_sdcard.py
 fi
 
 /opt/Python-3.7.11/bin/python3.7 /opt/klipper/klippy/klippy.py /opt/config/printer.cfg -l /data/logFiles/printer.log -a /tmp/uds &

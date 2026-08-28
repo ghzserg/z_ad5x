@@ -6,7 +6,7 @@
 
 if [ "$1" == "off" ] && [ "$9" != "NOTRESTART" ]; then
     sed -i 's/^START=.*/START=off/' /opt/config/mod_data/camera.conf
-    /opt/config/mod/.shell/S99camera stop
+    /usr/data/zmod/zmod/.shell/S99camera stop
     exit 0;
 fi
 
@@ -60,4 +60,4 @@ STREAMER=$7
 FORMAT=$8
 " >/opt/config/mod_data/camera.conf
 
-[ $9 = "RESTART" ] && /opt/config/mod/.shell/S99camera restart
+[ $9 = "RESTART" ] && /usr/data/zmod/zmod/.shell/S99camera restart

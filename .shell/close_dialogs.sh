@@ -1,7 +1,7 @@
 #!/bin/sh
 # (C) 2024-2026 ghzserg https://github.com/ghzserg/zmod
 
-source /opt/config/mod/.shell/0.sh
+source /usr/data/zmod/zmod/.shell/0.sh
 
 if [ -f /ZMOD ]; then
     [ ${ZLANG} != 'ru' ] && echo "Close dialogs not working. Use FAST_CLOSE_DIALOGS" || echo "Закрытие диалогов не поддерживается. Используйте FAST_CLOSE_DIALOGS"

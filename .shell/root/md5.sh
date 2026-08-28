@@ -6,7 +6,7 @@ mkdir -p ../stock
 cat << 'EOF' > list.link
 #!/bin/sh
 
-source /opt/config/mod/.shell/0.sh
+source /usr/data/zmod/zmod/.shell/0.sh
 
 if [ ${ZLANG} != 'ru' ]; then
     A1="Incorrect access rights"

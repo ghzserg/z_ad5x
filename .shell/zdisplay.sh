@@ -1,7 +1,7 @@
 #!/bin/sh
 # (C) 2024-2026 ghzserg https://github.com/ghzserg/zmod
 
-source /opt/config/mod/.shell/0.sh
+source /usr/data/zmod/zmod/.shell/0.sh
 
 if ! [ $# -eq 1 ]; then echo "Use $0 on|off|test"; exit 1; fi
 
@@ -21,7 +21,7 @@ native_wifi_off()
                 echo _REBOOT >/tmp/printer
                 sync
                 sleep 5
-                /opt/config/mod/.shell/zremote.sh reboot
+                /usr/data/zmod/zmod/.shell/zremote.sh reboot
             fi
     fi
     return 0
@@ -52,11 +52,11 @@ display_off()
         killall firmwareExe helix-watchdog helix-screen helix-splash
         sleep 1
         if grep -q "guppy = 1" /opt/config/mod_data/variables.cfg || grep -q "helix = 1" /opt/config/mod_data/variables.cfg ; then
-            /opt/config/mod/.shell/zguppy.sh up
+            /usr/data/zmod/zmod/.shell/zguppy.sh up
         else
-            xzcat /opt/config/mod/.shell/screen_off.raw.xz > /dev/fb0
+            xzcat /usr/data/zmod/zmod/.shell/screen_off.raw.xz > /dev/fb0
         fi
-        echo '/opt/config/mod/.shell/automount.sh' > /proc/sys/kernel/hotplug
+        echo '/usr/data/zmod/zmod/.shell/automount.sh' > /proc/sys/kernel/hotplug
         native_wifi_off
     fi
 
@@ -64,22 +64,22 @@ display_off()
         sed -i 's|\[include ./mod/display_off.cfg\]|\[include ./mod/mod.cfg\]|' /opt/config/printer.cfg
         sync
         native_wifi_on
-        /opt/config/mod/.shell/zremote.sh reboot
+        /usr/data/zmod/zmod/.shell/zremote.sh reboot
     fi
 
     if [ $1 = "off" ] || [ $1 = "guppy" ] || [ $1 = "helix" ]; then
         sed -i 's|\[include ./mod/mod.cfg\]|\[include ./mod/display_off.cfg\]|' /opt/config/printer.cfg
         sync
         killall firmwareExe guppyscreen console_log helix-watchdog helix-screen helix-splash
-        [ -f /ZMOD ] && /opt/config/mod/.shell/root/console_log --save --${ZLANG} || chroot ${MOD} /opt/config/mod/.shell/root/console_log --save --${ZLANG}
+        [ -f /ZMOD ] && /usr/data/zmod/zmod/.shell/root/console_log --save --${ZLANG} || chroot ${MOD} /usr/data/zmod/zmod/.shell/root/console_log --save --${ZLANG}
 
         if [ $1 = "off" ]; then
-            xzcat /opt/config/mod/.shell/screen_off.raw.xz > /dev/fb0
+            xzcat /usr/data/zmod/zmod/.shell/screen_off.raw.xz > /dev/fb0
         else
-            /opt/config/mod/.shell/zguppy.sh up
+            /usr/data/zmod/zmod/.shell/zguppy.sh up
         fi
 
-        echo '/opt/config/mod/.shell/automount.sh' > /proc/sys/kernel/hotplug
+        echo '/usr/data/zmod/zmod/.shell/automount.sh' > /proc/sys/kernel/hotplug
         native_wifi_off
     fi
 

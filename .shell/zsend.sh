@@ -1,7 +1,7 @@
 #!/bin/sh
 # (C) 2024-2026 ghzserg https://github.com/ghzserg/zmod
 
-source /opt/config/mod/.shell/0.sh
+source /usr/data/zmod/zmod/.shell/0.sh
 
 unset LD_PRELOAD
 unset LD_LIBRARY_PATH
@@ -20,7 +20,7 @@ if [ ${AD5X} -eq 1 ]; then
 fi
 
 if [ $# -eq 1 ]; then
-    RET=$(${PYTHON} /opt/config/mod/.shell/zsend.py "$1" 2>&1)
+    RET=$(${PYTHON} /usr/data/zmod/zmod/.shell/zsend.py "$1" 2>&1)
     if [ $? -ne 0 ]; then
         [ ${ZLANG} != 'ru' ] && echo "Error sending message to native screen. Is it working?" || echo "Ошибка передачи сообщения на родной экран. Он у вас работает?"
     fi
@@ -41,7 +41,7 @@ if [ $# -eq 2 ]; then
         fi
         exit 1
     else
-        RET=$(${PYTHON} /opt/config/mod/.shell/zsend.py "M23" "$2" 2>&1)
+        RET=$(${PYTHON} /usr/data/zmod/zmod/.shell/zsend.py "M23" "$2" 2>&1)
         if [ $? -ne 0 ]; then
             [ ${ZLANG} != 'ru' ] && echo "Error sending message to native screen. Is it working?" || echo "Ошибка передачи сообщения на родной экран. Он у вас работает?"
         fi

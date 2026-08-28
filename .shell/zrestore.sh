@@ -1,7 +1,7 @@
 #!/bin/sh
 # (C) 2024-2026 ghzserg https://github.com/ghzserg/zmod
 
-source /opt/config/mod/.shell/0.sh
+source /usr/data/zmod/zmod/.shell/0.sh
 
 unset LD_PRELOAD
 
@@ -19,9 +19,9 @@ fi
 
 if [ -f /opt/config/mod_data/klipper_data.json ]; then
     if ! [ -f /ZMOD ]; then
-        chroot ${MOD} /opt/config/mod/.shell/root/restore_gcode /opt/config/mod_data/klipper_data.json /tmp/uds ${DATA_GCODES} ${ZLANG}
+        chroot ${MOD} /usr/data/zmod/zmod/.shell/root/restore_gcode /opt/config/mod_data/klipper_data.json /tmp/uds ${DATA_GCODES} ${ZLANG}
     else
-        /opt/config/mod/.shell/root/restore_gcode /opt/config/mod_data/klipper_data.json /tmp/uds ${DATA_GCODES} ${ZLANG}
+        /usr/data/zmod/zmod/.shell/root/restore_gcode /opt/config/mod_data/klipper_data.json /tmp/uds ${DATA_GCODES} ${ZLANG}
     fi
 else
     [ ${ZLANG} != 'ru' ] && echo "Print recovery file not found" || echo "Файл восстановления печати не найден"

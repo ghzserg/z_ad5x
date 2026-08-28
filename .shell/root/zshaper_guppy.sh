@@ -1,7 +1,7 @@
 #!/bin/sh
 # (C) 2024-2026 ghzserg https://github.com/ghzserg/zmod
 
-source /opt/config/mod/.shell/0.sh
+source /usr/data/zmod/zmod/.shell/0.sh
 
 ADD=""
 json_in_present=false
@@ -29,4 +29,4 @@ if [ "$1"  == "/tmp/resonances_y_y.csv" ] && ! $json_in_present; then
     mv Y /tmp/resonances_y_y.csv
 fi
 
-python3 /opt/config/mod/.shell/root/zshaper/calibrate_shaper.py $@ --scv=$SCV -r 1 --${ZLANG} ${ADD}
+python3 /usr/data/zmod/zmod/.shell/root/zshaper/calibrate_shaper.py $@ --scv=$SCV -r 1 --${ZLANG} ${ADD}
