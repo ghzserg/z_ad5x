@@ -179,15 +179,8 @@ prepare_chroot()
         [ -L /root/klipper-env/lib/python3.12/site-packages/numpy ] || ln -s /usr/lib/python3.12/site-packages/numpy /root/klipper-env/lib/python3.12/site-packages/
     fi
 
-    if ! [ -L /bin/sudo ]; then
-        rm -f /bin/sudo
-        ln -s /usr/data/zmod/zmod/.shell/root/sudo /bin/sudo
-    fi
-
-    if ! [ -L /bin/systemctl ]; then
-        rm -f /bin/systemctl
-        ln -s /usr/data/zmod/zmod/.shell/root/sudo /bin/systemctl
-    fi
+    check_link /bin/sudo /usr/data/zmod/zmod/.shell/root/sudo
+    check_link /bin/systemctl /usr/data/zmod/zmod/.shell/root/sudo
 
     check_link /usr/bin/audio /usr/data/zmod/zmod/.shell/root/audio/audio
     check_link /usr/bin/audio_midi.sh /usr/data/zmod/zmod/.shell/root/audio/audio_midi.sh
