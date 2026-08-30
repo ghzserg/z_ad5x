@@ -396,11 +396,12 @@ fix_config()
     echo "[zmod]
     language: ${ZLANG}" >${MOD_CONF}/mod_data/lang.cfg
 
-    check_link ${MOD_CONF}/mod/base.cfg /usr/data/zmod/zmod/translate/${ZLANG}/base.cfg
     check_link ${MOD_CONF}/mod/shell.cfg /usr/data/zmod/zmod/shell.cfg
     check_link ${MOD_CONF}/mod/moonraker.conf  /usr/data/zmod/zmod/moonraker.conf
     check_link ${MOD_CONF}/mod/extra_plugins.moonraker.conf  /usr/data/zmod/zmod/extra_plugins.moonraker.conf
     check_link ${MOD_CONF}/mod/KAMP /usr/data/zmod/zmod/KAMP
+
+    check_link ${MOD_CONF}/mod/base.cfg /usr/data/zmod/zmod/translate/${ZLANG}/base.cfg
     check_link ${MOD_CONF}/mod/base_mod.cfg /usr/data/zmod/zmod/translate/${ZLANG}/base_mod.cfg
     check_link ${MOD_CONF}/mod/base_display_off.cfg /usr/data/zmod/zmod/translate/${ZLANG}/base_display_off.cfg
     check_link ${MOD_CONF}/mod/client.cfg /usr/data/zmod/zmod/translate/${ZLANG}/client.cfg
@@ -410,21 +411,21 @@ fix_config()
     check_link ${MOD_CONF}/.theme mod_data/.theme
 
     if [ ${AD5M} -eq 1 ]; then
-        check_link ${MOD_CONF}/mod/switch_sensor.cfg /usr/data/zmod/zmod/switch_sensor.cfg
+        check_link ${MOD_CONF}/mod/switch_sensor.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5m_switch_sensor.cfg
         check_link ${MOD_CONF}/mod/klipper13.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5m_klipper13.cfg
         check_link ${MOD_CONF}/mod/base_klipper11.cfg /usr/data/zmod/zmod/translate/${ZLANG}/base_klipper11.cfg
         grep -q '^MACHINE=Adventurer5MPro$' /opt/auto_run.sh && check_link ${MOD_CONF}/mod/klipper11.cfg /usr/data/zmod/zmod/translate/${ZLANG}/klipper11_pro.cfg || check_link ${MOD_CONF}/mod/klipper11.cfg /usr/data/zmod/zmod/translate/${ZLANG}/klipper11.cfg
         check_link ${MOD_CONF}/mod/display_off.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5m_display_off.cfg
-        check_link ${MOD_CONF}/mod/ff5.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5.cfg
-        check_link ${MOD_CONF}/mod/mod.cfg /usr/data/zmod/zmod/translate/${ZLANG}/mod.cfg
+        check_link ${MOD_CONF}/mod/generic.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5m_generic.cfg
+        check_link ${MOD_CONF}/mod/mod.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5m_mod.cfg
         check_link ${MOD_CONF}/mod/ff5m_config_native.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5m_config_native.cfg
         check_link ${MOD_CONF}/mod/ff5m_config_off.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5m_config_off.cfg
-        check_link ${MOD_CONF}/mod/motion_sensor.cfg /usr/data/zmod/zmod/translate/${ZLANG}/motion_sensor.cfg
-        check_link ${MOD_CONF}/mod/switch_sensor_display_off.cfg /usr/data/zmod/zmod/translate/${ZLANG}/switch_sensor_display_off.cfg
+        check_link ${MOD_CONF}/mod/motion_sensor.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5m_motion_sensor.cfg
+        check_link ${MOD_CONF}/mod/switch_sensor_display_off.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5m_switch_sensor_display_off.cfg
     fi
     if [ ${AD5X} -eq 1 ]; then
-        check_link ${MOD_CONF}/mod/ff5.cfg /usr/data/zmod/zmod/ff5.cfg
-        check_link ${MOD_CONF}/mod/mod.cfg /usr/data/zmod/zmod/mod.cfg
+        check_link ${MOD_CONF}/mod/generic.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ad5x_generic.cfg
+        check_link ${MOD_CONF}/mod/mod.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ad5x_mod.cfg
         check_link ${MOD_CONF}/mod/klipper13.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ad5x_klipper13.cfg
         check_link ${MOD_CONF}/mod/display_off.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ad5x_display_off.cfg
         check_link ${MOD_CONF}/mod/ad5x.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ad5x.cfg

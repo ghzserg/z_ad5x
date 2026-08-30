@@ -140,38 +140,6 @@ else
     git restore . 2>&1 |grep -v ".cfg"
     git status --porcelain 2>&1 |grep -v ".cfg"
 
-    [ ${ZLANG} != 'ru' ] && echo "Restoring the correct Z-Mod language" || echo "Восстановление правильного языка Z-Mod"
-    check_link ${MOD_CONF}/mod/base.cfg /usr/data/zmod/zmod/translate/${ZLANG}/base.cfg &>/dev/null
-    check_link ${MOD_CONF}/mod/shell.cfg /usr/data/zmod/zmod/shell.cfg &>/dev/null
-    check_link ${MOD_CONF}/mod/moonraker.conf  /usr/data/zmod/zmod/moonraker.conf &>/dev/null
-    check_link ${MOD_CONF}/mod/extra_plugins.moonraker.conf  /usr/data/zmod/zmod/extra_plugins.moonraker.conf &>/dev/null
-    check_link ${MOD_CONF}/mod/KAMP /usr/data/zmod/zmod/KAMP &>/dev/null
-    check_link ${MOD_CONF}/mod/base_mod.cfg /usr/data/zmod/zmod/translate/${ZLANG}/base_mod.cfg &>/dev/null
-    check_link ${MOD_CONF}/mod/base_display_off.cfg /usr/data/zmod/zmod/translate/${ZLANG}/base_display_off.cfg &>/dev/null
-    check_link ${MOD_CONF}/mod/client.cfg /usr/data/zmod/zmod/translate/${ZLANG}/client.cfg &>/dev/null
-    check_link ${MOD_CONF}/mod/base_klipper13.cfg /usr/data/zmod/zmod/translate/${ZLANG}/base_klipper13.cfg &>/dev/null
-    if [ ${AD5M} -eq 1 ]; then
-        check_link ${MOD_CONF}/mod/switch_sensor.cfg /usr/data/zmod/zmod/switch_sensor.cfg &>/dev/null
-        check_link ${MOD_CONF}/mod/klipper13.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5m_klipper13.cfg &>/dev/null
-        check_link ${MOD_CONF}/mod/base_klipper11.cfg /usr/data/zmod/zmod/translate/${ZLANG}/base_klipper11.cfg &>/dev/null
-        grep -q 'Adventurer5MPro' /etc/os-release && check_link ${MOD_CONF}/mod/klipper11.cfg /usr/data/zmod/zmod/translate/${ZLANG}/klipper11_pro.cfg &>/dev/null || check_link ${MOD_CONF}/mod/klipper11.cfg /usr/data/zmod/zmod/translate/${ZLANG}/klipper11.cfg &>/dev/null
-        check_link ${MOD_CONF}/mod/display_off.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5m_display_off.cfg &>/dev/null
-        check_link ${MOD_CONF}/mod/ff5.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5.cfg &>/dev/null
-        check_link ${MOD_CONF}/mod/mod.cfg /usr/data/zmod/zmod/translate/${ZLANG}/mod.cfg &>/dev/null
-        check_link ${MOD_CONF}/mod/ff5m_config_native.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5m_config_native.cfg &>/dev/null
-        check_link ${MOD_CONF}/mod/ff5m_config_off.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5m_config_off.cfg &>/dev/null
-        check_link ${MOD_CONF}/mod/motion_sensor.cfg /usr/data/zmod/zmod/translate/${ZLANG}/motion_sensor.cfg &>/dev/null
-        check_link ${MOD_CONF}/mod/switch_sensor_display_off.cfg /usr/data/zmod/zmod/translate/${ZLANG}/switch_sensor_display_off.cfg &>/dev/null
-    fi
-    if [ ${AD5X} -eq 1 ]; then
-        check_link ${MOD_CONF}/mod/ff5.cfg /usr/data/zmod/zmod/ff5.cfg &>/dev/null
-        check_link ${MOD_CONF}/mod/mod.cfg /usr/data/zmod/zmod/mod.cfg &>/dev/null
-        check_link ${MOD_CONF}/mod/klipper13.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ad5x_klipper13.cfg &>/dev/null
-        check_link ${MOD_CONF}/mod/display_off.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ad5x_display_off.cfg &>/dev/null
-        check_link ${MOD_CONF}/mod/ad5x.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ad5x.cfg &>/dev/null
-        check_link ${MOD_CONF}/mod/ad5x_config_native.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ad5x_config_native.cfg &>/dev/null
-        check_link ${MOD_CONF}/mod/ad5x_config_off.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ad5x_config_off.cfg &>/dev/null
-    fi
     find /usr/data/zmod/klipper/ -name '*.pyc' -delete
     find /usr/data/zmod/moonraker/ -name '*.pyc' -delete
 
