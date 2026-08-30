@@ -37,7 +37,7 @@ fi
 if [ ${AD5X} -eq 1 ] || [ ${AD5M} -eq 1 ]; then
     serialNumber=$(cat ${FFCONFIG} | grep "printerSerialNumber"| cut  -d ":" -f2| awk '{print $1}' | sed 's|[",]||g')
     checkCode=$(cat ${FFCONFIG} | grep "lanCode"| cut  -d ":" -f2| awk '{print $1}' | sed 's|[",]||g')
-else
+else # C5PRO
     serialNumber=$(cat ${FFCONFIG}/general.json | grep "serialNumber"| cut  -d ":" -f2| awk '{print $1}' | sed 's|[",]||g')
     checkCode=$(cat ${FFCONFIG}/network.json | grep "lanModeCode"| cut  -d ":" -f2| awk '{print $1}' | sed 's|[",]||g')
 fi

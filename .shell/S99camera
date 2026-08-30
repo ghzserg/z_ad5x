@@ -8,14 +8,7 @@
 
 source /usr/data/zmod/zmod/.shell/0.sh
 
-if ! [ -f /opt/config/mod_data/camera.conf ]; then
-    /usr/data/zmod/zmod/.shell/zcamera.sh off 640 480 20 ${VIDEO} 0 auto MJPEG NOTRESTART
-fi
-
-VIDEO=video0
-FS=0
-STREAMER=auto
-if [ ${AD5X} -eq 1 ]; then
+if [ ${C5PRO} -eq 1 ] || [ ${AD5X} -eq 1 ]; then
     WIDTH=1280
     HEIGHT=720
 fi
@@ -23,6 +16,14 @@ if [ ${AD5M} -eq 1 ]; then
     WIDTH=640
     HEIGHT=480
 fi
+
+if ! [ -f /opt/config/mod_data/camera.conf ]; then
+    /usr/data/zmod/zmod/.shell/zcamera.sh off $WIDTH $HEIGHT 20 ${VIDEO} 0 auto MJPEG NOTRESTART
+fi
+
+VIDEO=video0
+FS=0
+STREAMER=auto
 FORMAT=MJPEG
 FPS=20
 source /opt/config/mod_data/camera.conf
@@ -43,7 +44,7 @@ start_mjpg_streamer() {
         if [ ${AD5M} -eq 1 ]; then
             nohup /usr/data/zmod/zmod/.shell/eabi/mjpg_streamer -o "/usr/data/zmod/zmod/.shell/eabi/lib/output_http.so -w /opt/mjpg-streamer/www -p 8080" -i  "/usr/data/zmod/zmod/.shell/eabi/lib/input_uvc.so -b 1 -d /dev/${VIDEO} -r ${WIDTH}x${HEIGHT} -f $FPS $FFS" >>${MOD_CONF}/mod_data/log/cam/mjpg_streamer.log 2>&1 &
         fi
-        if [ ${AD5X} -eq 1 ]; then
+        if [ ${C5PRO} -eq 1 ] || [ ${AD5X} -eq 1 ]; then
             chroot $MOD /usr/data/zmod/zmod/.shell/root/zcam/zcam ${MOD_CONF}/mod_data/log/cam/mjpg_streamer.log /usr/bin/mjpg_streamer -o "/usr/lib/mjpg-streamer/output_http.so -w /usr/share/mjpg-streamer/www -p 8080" -i  "/usr/lib/mjpg-streamer/input_uvc.so -b 1 -d /dev/${VIDEO} -r ${WIDTH}x${HEIGHT} -f $FPS $FFS"
         fi
     fi

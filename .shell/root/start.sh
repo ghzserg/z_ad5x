@@ -104,7 +104,7 @@ prepare_chroot()
     echo ZMOD >/ZMOD
     [ ${AD5M} -eq 1 ] && mv /tmp/localtime /etc/localtime
 
-    if [ ${AD5X} -eq 1 ]; then
+    if [ ${C5PRO} -eq 1 ] || [ ${AD5X} -eq 1 ]; then
         [ -f /opt/config/mod_data/filament.json ] || echo "{}" >/opt/config/mod_data/filament.json
     fi
 
@@ -131,7 +131,7 @@ prepare_chroot()
         if [ ${AD5M} -eq 1 ]; then
             echo '{"project_name":"helixscreen","project_owner":"prestonbrown","version":"v0.0.1","asset_name":"helixscreen-ad5m.zip"}' >/srv/helixscreen/release_info.json
         fi
-        if [ ${AD5X} -eq 1 ]; then
+        if [ ${C5PRO} -eq 1 ] || [ ${AD5X} -eq 1 ]; then
             echo '{"project_name":"helixscreen","project_owner":"prestonbrown","version":"v0.0.1","asset_name":"helixscreen-ad5x.zip"}' >/srv/helixscreen/release_info.json
         fi
     else
@@ -218,7 +218,7 @@ prepare_chroot()
     if [ ${AD5M} -eq 1 ]; then
         rm -rf /root/moonraker-env/lib/python3.12/site-packages/msgspec* || echo "msgspec уже убит"
     fi
-    if [ ${AD5X} -eq 1 ]; then
+    if [ ${C5PRO} -eq 1 ] || [ ${AD5X} -eq 1 ]; then
         sed -i '/127.0.0.1 /d' /.ssh/known_hosts
         sed -i '/127.0.0.1 /d' /root/.ssh/known_hosts
     fi
@@ -262,14 +262,18 @@ rm -f /root/guppyscreen/guppyconfig.json
 ln -s /opt/config/mod_data/guppyconfig.json /root/guppyscreen/guppyconfig.json
 [ -s /opt/config/mod_data/guppyconfig.json ] || rm -f /opt/config/mod_data/guppyconfig.json
 
-if [ "$3" == "Adventurer5M" ]; then
-    [ -f /opt/config/mod_data/guppyconfig.json ] || cp /usr/data/zmod/zmod/guppyconfig_${ZLANG}.json /opt/config/mod_data/guppyconfig.json
-else if [ "$3" == "Adventurer5MPro" ]; then
-    [ -f /opt/config/mod_data/guppyconfig.json ] || cp /usr/data/zmod/zmod/guppyconfig_${ZLANG}_pro.json /opt/config/mod_data/guppyconfig.json
-else if [ "$3" == "AD5X" ]; then
-    [ -f /opt/config/mod_data/guppyconfig.json ] || cp /usr/data/zmod/zmod/guppyconfig_${ZLANG}_5x.json /opt/config/mod_data/guppyconfig.json
-fi
-fi
+if [ ! -f /opt/config/mod_data/guppyconfig.json ]; then
+    if [ "$3" == "Adventurer5M" ]; then
+        cp "/usr/data/zmod/zmod/guppyconfig_${ZLANG}.json" /opt/config/mod_data/guppyconfig.json
+    elif [ "$3" == "Adventurer5MPro" ]; then
+        cp "/usr/data/zmod/zmod/guppyconfig_${ZLANG}_pro.json" /opt/config/mod_data/guppyconfig.json
+    elif [ "$3" == "AD5X" ]; then
+        cp "/usr/data/zmod/zmod/guppyconfig_${ZLANG}_5x.json" /opt/config/mod_data/guppyconfig.json
+    elif [ "$3" == "Creator5" ]; then
+        cp "/usr/data/zmod/zmod/guppyconfig_${ZLANG}_c5.json" /opt/config/mod_data/guppyconfig.json
+    elif [ "$3" == "Creator5Pro" ]; then
+        cp "/usr/data/zmod/zmod/guppyconfig_${ZLANG}_c5pro.json" /opt/config/mod_data/guppyconfig.json
+    fi
 fi
 
 VER="$3 $2"
