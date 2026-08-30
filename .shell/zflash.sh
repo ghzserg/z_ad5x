@@ -34,6 +34,8 @@ MACHINE="Неизвестная машина"
 [ -f /opt/auto_run.sh ] && grep -q '^MACHINE=Adventurer5MPro$' /opt/auto_run.sh && MACHINE=Adventurer5MPro
 [ -f /opt/auto_run.sh ] && grep -q '^MACHINE=Adventurer5M$' /opt/auto_run.sh && MACHINE=Adventurer5M
 [ -f /usr/prog/app_startup.sh ] && grep -q "^MACHINE=AD5X" /usr/prog/app_startup.sh && MACHINE=AD5X
+[ -f /usr/prog/app_startup.sh ] && grep -q '^MACHINE=Creatror5$' /usr/prog/app_startup.sh && MACHINE=Creator5
+[ -f /usr/prog/app_startup.sh ] && grep -q "^MACHINE=Creator5Pro" /usr/prog/app_startup.sh && MACHINE=Creator5Pro
 
 if [ "${MACHINE}" == "Неизвестная машина" ]; then
     [ "${ZLANG}" != 'ru' ] && echo "Failed to determine printer model" || echo "Не удалось определить модель принетра"
