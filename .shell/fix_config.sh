@@ -413,6 +413,7 @@ fix_config()
     if [ ${AD5M} -eq 1 ]; then
         check_link ${MOD_CONF}/mod/switch_sensor.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5m_switch_sensor.cfg
         check_link ${MOD_CONF}/mod/klipper13.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5m_klipper13.cfg
+        check_link ${MOD_CONF}/mod/ff5m_klipper11.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5m_klipper11.cfg
         grep -q '^MACHINE=Adventurer5MPro$' /opt/auto_run.sh && check_link ${MOD_CONF}/mod/klipper11.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5m_klipper11_pro.cfg || check_link ${MOD_CONF}/mod/klipper11.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5m_klipper11.cfg
         check_link ${MOD_CONF}/mod/display_off.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5m_display_off.cfg
         check_link ${MOD_CONF}/mod/generic.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5m_generic.cfg
