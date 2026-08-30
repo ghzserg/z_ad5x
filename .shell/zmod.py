@@ -37,6 +37,8 @@ class zmod:
 
     def cmd_LOAD_ZOFFSET_NATIVE(self, gcmd):
         start = gcmd.get_int("START", 0)
+        if self.c5pro:
+            return
 
         config_path = FFCONFIG1 if os.path.isfile(FFCONFIG1) else FFCONFIG2 if os.path.isfile(FFCONFIG2) else None
         if not config_path:
