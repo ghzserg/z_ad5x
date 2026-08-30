@@ -572,30 +572,46 @@ unset LD_PRELOAD
         NEED_REBOOT=1
     fi
 
+    # Удаление check_md5.cfg
     grep -q '^\[include check_md5.cfg\]' ${PRINTER_CFG} && sed -i '/^\[include check_md5.cfg\]/d' ${PRINTER_CFG} && NEED_REBOOT=1
 
+    # Удаление display_off.cfg если есть mod.cfg
     grep -q '^\[include ./mod/mod.cfg\]' ${PRINTER_CFG} && grep -q '^\[include ./mod/display_off.cfg\]' ${PRINTER_CFG} && sed -i '/^\[include .\/mod\/display_off.cfg\]/d' ${PRINTER_CFG} && NEED_REBOOT=1
 
+    # Удаление 2+ mod_data/user.cfg
     cnt=$(grep '^\[include ./mod_data/user.cfg\]' ${PRINTER_CFG} |wc -l)
     [ "$cnt" -gt 1 ] && sed -i '/^\[include .\/mod_data\/user.cfg\]/d' ${PRINTER_CFG} && NEED_REBOOT=1
 
+    # Удаление 2+ mod_data/plugins.cfg
     cnt=$(grep '^\[include ./mod_data/plugins.cfg\]' ${PRINTER_CFG} |wc -l)
     [ "$cnt" -gt 1 ] && sed -i '/^\[include .\/mod_data\/plugins.cfg\]/d' ${PRINTER_CFG} && NEED_REBOOT=1
 
+    # Удаление 2+ mod.cfg
     cnt=$(grep '^\[include ./mod/mod.cfg\]' ${PRINTER_CFG} |wc -l)
     [ "$cnt" -gt 1 ] && sed -i '/^\[include .\/mod\/mod.cfg\]/d' ${PRINTER_CFG} && NEED_REBOOT=1
 
+    # Удаление 2+ klipper13.cfg
     cnt=$(grep '^\[include ./mod/klipper13.cfg\]' ${PRINTER_CFG} |wc -l)
     [ "$cnt" -gt 1 ] && sed -i '/^\[include .\/mod\/klipper13.cfg\]/d' ${PRINTER_CFG} && NEED_REBOOT=1
 
+    # Удаление 2+ klipper11.cfg
     cnt=$(grep '^\[include ./mod/klipper11.cfg\]' ${PRINTER_CFG} |wc -l)
     [ "$cnt" -gt 1 ] && sed -i '/^\[include .\/mod\/klipper11.cfg\]/d' ${PRINTER_CFG} && NEED_REBOOT=1
 
-    ! grep -q '^\[include ./mod/mod.cfg\]' ${PRINTER_CFG} && ! grep -q '^\[include ./mod/display_off.cfg\]' ${PRINTER_CFG} && sed -i '2 i\[include ./mod/mod.cfg]' ${PRINTER_CFG} && NEED_REBOOT=1
+    # Добавление mod.cfg
+    if ! grep -q '^\[include ./mod/mod.cfg\]' ${PRINTER_CFG} && ! grep -q '^\[include ./mod/display_off.cfg\]' ${PRINTER_CFG}; then
+        [ ${C5PRO} -eq 1 ] && sed -i '/^\[include printer\.motor\.cfg\]/a [include ./mod/mod.cfg]' ${PRINTER_CFG} && NEED_REBOOT=1
+        [ ${C5PRO} -eq 0 ] && sed -i '2 i\[include ./mod/mod.cfg]' ${PRINTER_CFG} && NEED_REBOOT=1
+    fi
 
+    # Замена mod.user.cfg на user.cfg
     grep -q '^\[include mod.user.cfg\]' ${PRINTER_CFG} && sed -i 's|^\[include mod.user.cfg\]|\[include ./mod_data/user.cfg\]|' ${PRINTER_CFG} && NEED_REBOOT=1
 
-    ! grep -q '^\[include ./mod_data/user.cfg\]' ${PRINTER_CFG} && sed -i '3 i\[include ./mod_data/user.cfg]' ${PRINTER_CFG} && NEED_REBOOT=1
+    # Добавление user.cfg
+    ! grep -q '^\[include \./mod_data/user\.cfg\]' ${PRINTER_CFG} && sed -i '/^\[include \.\/mod\/mod\.cfg\]/a [include ./mod_data/user.cfg]' ${PRINTER_CFG} && NEED_REBOOT=1
+    ! grep -q '^\[include \./mod_data/user\.cfg\]' ${PRINTER_CFG} && sed -i '/^\[include \.\/mod\/display_off\.cfg\]/a [include ./mod_data/user.cfg]' ${PRINTER_CFG} && NEED_REBOOT=1
+
+    # Добавление plugins.cfg перед user.cfg
     ! grep -q '^\[include ./mod_data/plugins.cfg\]' ${PRINTER_CFG} && awk 'BEGIN { found_user = 0; inserted = 0; }
 /\[include \.\/mod_data\/user\.cfg\]/ {
     if (!inserted) print "[include ./mod_data/plugins.cfg]";
@@ -609,18 +625,18 @@ unset LD_PRELOAD
     print $0;
 }' ${PRINTER_CFG} > ${PRINTER_CFG}.tmp && mv ${PRINTER_CFG}.tmp ${PRINTER_CFG} && NEED_REBOOT=1
 
-    # Восстанавливаем настройки
+    # Заменяем mod.cfg на display_off.cfg и обратно
     if grep -q "display_off = 1" ${MOD_CONF}/mod_data/variables.cfg; then
         grep -q '^\[include ./mod_data/mod.cfg\]' ${PRINTER_CFG} && sed -i 's|\[include ./mod/mod.cfg\]|\[include ./mod/display_off.cfg\]|' ${PRINTER_CFG} && NEED_REBOOT=1
     else
         grep -q '^\[include ./mod/display_off.cfg\]' ${PRINTER_CFG} && sed -i 's|\[include ./mod/display_off.cfg\]|\[include ./mod/mod.cfg\]|' ${PRINTER_CFG} && NEED_REBOOT=1
     fi
 
+    # Перенос heater_bed из printer.base.cfg в printer.cfg
     if ! grep -q '^\[heater_bed' ${PRINTER_CFG}; then
         NEED_REBOOT=1
         cd ${MOD_CONF}
 
-        # Copy and remove from printer.base.cfg
         if grep -q '^\[heater_bed' ${PRINTER_BASE}; then
             sed -e '/^\[heater_bed/,/^\[/d' ${PRINTER_BASE} >printer.base.tmp
             diff -u ${PRINTER_BASE} printer.base.tmp | grep -v "printer.base.cfg" |grep "^-" | cut -b 2- >heater_bed.txt
@@ -874,7 +890,8 @@ stepper: stepper_x, stepper_y, stepper_z
     if grep -q "klipper13 = 1" ${MOD_CONF}/mod_data/variables.cfg; then
         if ! grep -q '^\[include ./mod/klipper13.cfg\]' ${PRINTER_CFG}; then
             NEED_REBOOT=1
-            sed -i '/\[include printer\.base\.cfg\]/a [include ./mod/klipper13.cfg]' ${PRINTER_CFG}
+            [ ${C5PRO} -eq 0 ] && sed -i '/\[include printer\.base\.cfg\]/a [include ./mod/klipper13.cfg]' ${PRINTER_CFG}
+            [ ${C5PRO} -eq 1 ] && sed -i '/\[include printer\.motor\.cfg\]/a [include ./mod/klipper13.cfg]' ${PRINTER_CFG}
         fi
     else
         if grep -q '^\[include ./mod/klipper13.cfg\]' ${PRINTER_CFG}; then
