@@ -43,7 +43,7 @@ remove_base()
         rm -rf /usr/lib/python3.7/site-packages/mido/
         rm -f /etc/init.d/prepare.sh
     fi
-    if [ ${AD5X} -eq 1 ]; then
+    if [ ${C5PRO} -eq 1 ] || [ ${AD5X} -eq 1 ]; then
         rm -f /usr/data/zmod_install.log
         sed -i '/fix_config.sh/d' /usr/prog/app_startup.sh
         sed -i '/prepare.sh/d' /usr/prog/app_startup.sh
@@ -81,9 +81,10 @@ start_moon()
     MACHINE="Неизвестная машина"
     grep -q '^MACHINE=Adventurer5MPro$' /opt/auto_run.sh && MACHINE=Adventurer5MPro
     grep -q '^MACHINE=Adventurer5M$' /opt/auto_run.sh && MACHINE=Adventurer5M
-    grep -q "^MACHINE=AD5X" /usr/prog/app_startup.sh && MACHINE=AD5X
+    grep -q "^MACHINE=Creator5Pro" /usr/prog/app_startup.sh && MACHINE=Creator5Pro
+    grep -q '^MACHINE=Creator5$' /usr/prog/app_startup.sh && MACHINE=Creator5
     [ ${AD5M} -eq 1 ] && VER=$(find /opt/PROGRAM/software/ -type d | sed 's|/opt/PROGRAM/software/||' | grep -v "/" | grep .) && echo "$VER" >/root/version
-    [ ${AD5X} -eq 1 ] && VER=$(find /usr/prog/PROGRAM/software/ -type d | sed 's|/usr/prog/PROGRAM/software/||' | grep -v "/" | grep .)
+    if [ ${C5PRO} -eq 1 ] || [ ${AD5X} -eq 1 ]; then VER=$(find /usr/prog/PROGRAM/software/ -type d | sed 's|/usr/prog/PROGRAM/software/||' | grep -v "/" | grep .); fi
 
     # Запуск камеры
     #[ ${AD5M} -eq 1 ] && /usr/data/zmod/zmod/.shell/S99camera init
@@ -124,7 +125,7 @@ start_prepare()
     mkdir -p ${MOD}/opt/config
     mount --bind ${MOD_CONF} ${MOD}/opt/config
 
-    if [ ${AD5X} -eq 1 ]; then
+    if [ ${C5PRO} -eq 1 ] || [ ${AD5X} -eq 1 ]; then
         mkdir -p ${MOD}${MOD_CONF} ${MOD}/usr/prog/config
         mount --bind ${MOD_CONF} ${MOD}${MOD_CONF}
         mount --bind ${MOD}/opt/ /opt
@@ -135,6 +136,11 @@ start_prepare()
 
         mkdir -p ${MOD}${LOG_FILES}
         mount --bind ${LOG_FILES}/ ${MOD}${LOG_FILES}/
+    fi
+    if [ ${C5PRO} -eq 1 ]; then
+        mkdir -p /usr/data/.mod/.zmod/usr/data/config/rw/ /usr/data/config/rw/
+        mount -o bind /usr/data/firmwareRes/config/ /usr/data/.mod/.zmod/usr/data/config/rw/
+        mount -o bind /usr/data/firmwareRes/config/ /usr/data/config/rw/
     fi
     if [ ${AD5M} -eq 1 ]; then
         mkdir -p ${MOD}/opt/PROGRAM/

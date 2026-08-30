@@ -11,7 +11,7 @@ if ! [ -f "/opt/config/mod_data/midi/$1" ]; then #&& ! [ -f "/opt/config/mod_dat
     exit 1
 fi
 
-if [ ${AD5X} -eq 1 ]; then
+if [ ${C5PRO} -eq 1 ] || [ ${AD5X} -eq 1 ]; then
 #    [ -f "/opt/config/mod_data/midi/$1.wav" ] && chroot $MOD aplay /opt/config/mod_data/midi/$1.wav &
 #    [ -f "/opt/config/mod_data/midi/$1" ] && chroot $MOD aplay /opt/config/mod_data/midi/$1 &
     export PATH=$PATH:/usr/prog/Python-3.8.2/bin

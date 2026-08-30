@@ -16,9 +16,14 @@ check_link()
     fi
 }
 
-# Активация мода для AD5X
-enable_zmod_ad5x()
+# Активация мода для AD5X и C5PRO
+enable_zmod_ad5x_c5pro()
 {
+    # Удаляем старую ссылку
+    grep -q '/usr/data/config/mod/.shell/fix_config.sh start' /usr/prog/klipper/start.sh && sed -i '/fix_config.sh/d' /usr/prog/klipper/start.sh
+    grep -q '/usr/data/config/mod/.shell/app_startup_mcu.sh' /usr/prog/app_startup.sh && sed -i '/app_startup_mcu.sh/d' /usr/prog/app_startup.sh
+    grep -q '/usr/data/config/mod/.shell/prepare.sh' /usr/prog/app_startup.sh && sed -i '/prepare.sh/d' /usr/prog/app_startup.sh
+
     grep -q '/usr/data/zmod/zmod/.shell/fix_config.sh start' /usr/prog/klipper/start.sh || sed -i '2 i\/usr/data/zmod/zmod/.shell/fix_config.sh start' /usr/prog/klipper/start.sh
     grep -q "mount --bind /bin/echo /usr/bin/cmd_pwm" /usr/prog/app_startup.sh || sed -i '\#mount /usr/prog/etc /etc#a\mount --bind /bin/echo /usr/bin/cmd_pwm' /usr/prog/app_startup.sh
 
@@ -75,16 +80,12 @@ if ! [ -f /usr/data/zmod/zmod/.shell/0.sh ]; then
         sync && sleep 10 && reboot
         exit 0
     fi
-    if [ ${AD5X} -eq 1 ]; then
+    if [ ${C5PRO} -eq 1 ] || [ ${AD5X} -eq 1 ] ; then
         mv /usr/data/config/base/klipper/ /usr/data/zmod/
         mv /usr/data/config/base/moonraker/ /usr/data/zmod/
 
-        # Удаляем старую ссылку
-        grep -q '/usr/data/config/mod/.shell/fix_config.sh start' /usr/prog/klipper/start.sh && sed -i '/fix_config.sh/d' /usr/prog/klipper/start.sh
-        grep -q '/usr/data/config/mod/.shell/app_startup_mcu.sh' /usr/prog/app_startup.sh && sed -i '/app_startup_mcu.sh/d' /usr/prog/app_startup.sh
-        grep -q '/usr/data/config/mod/.shell/prepare.sh' /usr/prog/app_startup.sh && sed -i '/prepare.sh/d' /usr/prog/app_startup.sh
 
-        enable_zmod_ad5x
+        enable_zmod_ad5x_c5pro
         sync
         mv /usr/data/config/mod/ /usr/data/zmod/zmod/ 
         sync && sleep 10 && reboot
@@ -94,6 +95,10 @@ fi
 
 source /usr/data/zmod/zmod/.shell/0.sh
 mkdir -p /usr/data/zmod/klipper/ /usr/data/zmod/moonraker/ ${MOD_CONF}/mod
+
+if [ ${C5PRO} -eq 1 ] && grep -q 'START=on' ${MOD_CONF}/mod_data/camera.conf; then
+    mv /dev/video0 /dev/video67
+fi
 
 # Разблокировка
 china_razbl()
@@ -141,11 +146,12 @@ restore_base()
         grep -q zmod ${KLIPPER_DIR}/klippy/extras/spi_temperature.py && cp /usr/data/zmod/zmod/.shell/spi_temperature.py.orig ${KLIPPER_DIR}/klippy/extras/spi_temperature.py
         grep -q zmod /opt/klipper/start.sh && cp /usr/data/zmod/zmod/.shell/start.sh.orig /opt/klipper/start.sh
     fi
-    if [ ${AD5X} -eq 1 ]; then
+    if [ ${C5PRO} -eq 1 ] || [ ${AD5X} -eq 1 ]; then
         [ -f /usr/prog/logo.jpeg ] && rm -f /usr/prog/logo.jpeg
         sed -i '\|mount --bind /bin/echo /usr/bin/cmd_pwm|d' /usr/prog/app_startup.sh
         sed -i '\|/usr/data/zmod/zmod/.shell/app_startup_mcu.sh|d' /usr/prog/app_startup.sh
-
+    fi
+    if [ ${AD5X} -eq 1 ]; then
         grep -q zmod ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py && cp /usr/data/zmod/zmod/.shell/virtual_sdcard.py.orig ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py
 
         rm -f ${KLIPPER_DIR}/klippy/extras/zmod_color.py
@@ -173,7 +179,7 @@ restore_base()
     fi
 
     # Удаляем controller_fan driver_fan
-    if grep -q '^\[controller_fan driver_fan' ${MOD_CONF}/printer.base.cfg; then
+    if [ ${C5PRO} -eq 0 ] && grep -q '^\[controller_fan driver_fan' ${MOD_CONF}/printer.base.cfg; then
         cd ${MOD_CONF}
         sed -e '/^\[controller_fan driver_fan/,/^\[/d' printer.base.cfg >printer.base.tmp
         diff -u printer.base.cfg printer.base.tmp | grep -v "printer.base.cfg" |grep "^-" | cut -b 2- >heater_bed.txt
@@ -204,9 +210,10 @@ pin:PB6
     fi
 
     # Возвращаем fan_generic pcb_fan
+
     if [ ${AD5X} -eq 1 ]; then PIN="PA5"; fi
     if [ ${AD5M} -eq 1 ]; then PIN="PB7"; fi
-    if ! grep -q '^\[fan_generic pcb_fan' ${MOD_CONF}/printer.base.cfg; then
+    if [ ${C5PRO} -eq 0 ] && ! grep -q '^\[fan_generic pcb_fan' ${MOD_CONF}/printer.base.cfg; then
         echo "
 [fan_generic pcb_fan]
 pin:${PIN}
@@ -295,7 +302,7 @@ fix_config()
     date
     echo 15 > /proc/sys/vm/swappiness
 
-    if [ ${AD5X} -eq 1 ]; then
+    if [ ${C5PRO} -eq 1 ] || [ ${AD5X} -eq 1 ]; then
         /usr/data/zmod/zmod/.shell/serial/serial_start.sh
         if [ -L /etc/dropbear \
              -a "$(readlink /etc/dropbear)" = "/var/run/dropbear" ]
@@ -311,7 +318,7 @@ fix_config()
 
     fstrim ${DATA} -v
     if [ ${AD5M} -eq 1 ]; then fstrim / -v; fi
-    if [ ${AD5X} -eq 1 ]; then fstrim /usr/prog -v; fi
+    if [ ${C5PRO} -eq 1 ] || [ ${AD5X} -eq 1 ]; then fstrim /usr/prog -v; fi
 
     [ -f /etc/profile.d/path.sh ] || echo "export PATH=\"$PATH:/opt/bin/:/opt/sbin/\"" >/etc/profile.d/path.sh
 
@@ -327,7 +334,7 @@ fix_config()
     [ -f ${MOD_CONF}/mod_data/variables.cfg ] || echo "[Variables]" >${MOD_CONF}/mod_data/variables.cfg
 
     # logo
-    if [ ${AD5X} -eq 1 ]; then
+    if [ ${C5PRO} -eq 1 ] || [ ${AD5X} -eq 1 ]; then
         if ! [ -f ${MOD_CONF}/mod_data/logo/logo.jpeg ]; then
             mkdir -p ${MOD_CONF}/mod_data/logo/
             cp /usr/data/zmod/zmod/.shell/logo/logo.jpeg ${MOD_CONF}/mod_data/logo/
@@ -394,7 +401,8 @@ fix_config()
     check_link ${MOD_CONF}/mod/moonraker.conf  /usr/data/zmod/zmod/moonraker.conf
     check_link ${MOD_CONF}/mod/extra_plugins.moonraker.conf  /usr/data/zmod/zmod/extra_plugins.moonraker.conf
     check_link ${MOD_CONF}/mod/KAMP /usr/data/zmod/zmod/KAMP
-
+    check_link ${MOD_CONF}/mod/base_mod.cfg /usr/data/zmod/zmod/translate/${ZLANG}/base_mod.cfg
+    check_link ${MOD_CONF}/mod/base_display_off.cfg /usr/data/zmod/zmod/translate/${ZLANG}/base_display_off.cfg
     check_link ${MOD_CONF}/mod/client.cfg /usr/data/zmod/zmod/translate/${ZLANG}/client.cfg
     check_link ${MOD_CONF}/mod/base_klipper13.cfg /usr/data/zmod/zmod/translate/${ZLANG}/base_klipper13.cfg
 
@@ -411,6 +419,8 @@ fix_config()
         check_link ${MOD_CONF}/mod/mod.cfg /usr/data/zmod/zmod/translate/${ZLANG}/mod.cfg
         check_link ${MOD_CONF}/mod/ff5m_config_native.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5m_config_native.cfg
         check_link ${MOD_CONF}/mod/ff5m_config_off.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5m_config_off.cfg
+        check_link ${MOD_CONF}/mod/motion_sensor.cfg /usr/data/zmod/zmod/translate/${ZLANG}/motion_sensor.cfg
+        check_link ${MOD_CONF}/mod/switch_sensor_display_off.cfg /usr/data/zmod/zmod/translate/${ZLANG}/switch_sensor_display_off.cfg
     fi
     if [ ${AD5X} -eq 1 ]; then
         check_link ${MOD_CONF}/mod/ff5.cfg /usr/data/zmod/zmod/ff5.cfg
@@ -429,10 +439,6 @@ fix_config()
         [ -f /usr/prog/config/PowerOff ] && check_link ${MOD_CONF}/PowerOff /usr/prog/config/PowerOff
         [ -f /usr/prog/config/fileSlotId.json ] && check_link ${MOD_CONF}/fileSlotId.json /usr/prog/config/fileSlotId.json
     fi
-    check_link ${MOD_CONF}/mod/base_mod.cfg /usr/data/zmod/zmod/translate/${ZLANG}/base_mod.cfg
-    check_link ${MOD_CONF}/mod/base_display_off.cfg /usr/data/zmod/zmod/translate/${ZLANG}/base_display_off.cfg
-    check_link ${MOD_CONF}/mod/motion_sensor.cfg /usr/data/zmod/zmod/translate/${ZLANG}/motion_sensor.cfg
-    check_link ${MOD_CONF}/mod/switch_sensor_display_off.cfg /usr/data/zmod/zmod/translate/${ZLANG}/switch_sensor_display_off.cfg
 
     if ! [ -f ${MOD_CONF}/mod_data/user.moonraker.conf ]; then
         echo "#Enter user config here
@@ -512,7 +518,7 @@ unset LD_PRELOAD
             china_block cloud.sz3dp.com
             china_block polar3d.com
         fi
-        if [ ${AD5X} -eq 1 ]; then
+        if [ ${C5PRO} -eq 1 ] || [ ${AD5X} -eq 1 ]; then
             mount --bind /usr/data/zmod/zmod/.shell/hosts /etc/hosts
         fi
     else
@@ -711,7 +717,7 @@ max_temp: 130
     fi
 
     # Удаляем fan_generic pcb_fan
-    if grep -q '^\[fan_generic pcb_fan' ${PRINTER_BASE}; then
+    if [ ${C5PRO} -eq 0 ] && grep -q '^\[fan_generic pcb_fan' ${PRINTER_BASE}; then
         NEED_REBOOT=1
         cd ${MOD_CONF}
 
@@ -756,7 +762,7 @@ max_temp: 130
     fi
 
     # Удаляем controller_fan pcb_fan
-    if grep -q '^\[controller_fan pcb_fan' ${PRINTER_BASE}; then
+    if [ ${C5PRO} -eq 0 ] && grep -q '^\[controller_fan pcb_fan' ${PRINTER_BASE}; then
         NEED_REBOOT=1
         cd ${MOD_CONF}
 
@@ -824,7 +830,7 @@ press_gcode:
     # Добавляем controller_fan driver_fan
     if [ ${AD5X} -eq 1 ]; then PIN="PA5"; fi
     if [ ${AD5M} -eq 1 ]; then PIN="PB7"; fi
-    if grep -q '^\[controller_fan driver_fan' ${PRINTER_BASE}; then
+    if [ ${C5PRO} -eq 0 ] && grep -q '^\[controller_fan driver_fan' ${PRINTER_BASE}; then
         if ! grep -A1 '^\[controller_fan driver_fan' ${PRINTER_BASE} | grep -q "pin:${PIN}"; then
             # Удаляем controller_fan driver_fan
             cd ${MOD_CONF}
@@ -838,7 +844,7 @@ press_gcode:
             rm -f heater_bed.txt printer.base.tmp
         fi
     fi
-    if ! grep -q '^\[controller_fan driver_fan' ${PRINTER_BASE}; then
+    if [ ${C5PRO} -eq 0 ] && ! grep -q '^\[controller_fan driver_fan' ${PRINTER_BASE}; then
         NEED_REBOOT=1
         cd ${MOD_CONF}
 
@@ -852,7 +858,7 @@ stepper: stepper_x, stepper_y, stepper_z
     fi
 
     # klipper13 FIX
-    if grep -q "klipper13 = 1" ${MOD_CONF}/mod_data/variables.cfg || [ ${AD5X} -eq 1 ]; then
+    if grep -q "klipper13 = 1" ${MOD_CONF}/mod_data/variables.cfg || [ ${C5PRO} -eq 1 ]|| [ ${AD5X} -eq 1 ]; then
         if grep -q '^max_accel_to_decel' ${PRINTER_BASE}; then
             NEED_REBOOT=1
             sed -i 's|^max_accel_to_decel.*|minimum_cruise_ratio: 0.5|' ${PRINTER_BASE}
@@ -965,7 +971,7 @@ stepper: stepper_x, stepper_y, stepper_z
         diff -u ${PRINTER_CFG_ORIG} ${PRINTER_CFG}
     fi
 
-    [ ${AD5X} -eq 1 ] && enable_zmod_ad5x
+    if [ ${AD5X} -eq 1 ] || [ ${C5PRO} -eq 1 ]; then enable_zmod_ad5x_c5pro; fi
 
     echo "END fix_config"
 
