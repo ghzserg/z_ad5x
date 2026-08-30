@@ -11,6 +11,7 @@ class zmod:
         self.printer = config.get_printer()
         self.lang = config.get('language', 'en')
         self.ad5x = config.getboolean('ad5x', False)
+        self.c5pro = config.getboolean('c5pro', False)
         self.screen = config.getboolean('screen', True)
 
         self.gcode = self.printer.lookup_object('gcode')
@@ -50,7 +51,7 @@ class zmod:
             z_probe_offset = 0.0
 
         zoffset = round(float(z_probe_offset), 4)
-        if not self.ad5x:
+        if not self.ad5x and not self.c5pro:
             zoffset += 0.025
             if self.screen or start == 0:
                 if self.lang != 'ru':

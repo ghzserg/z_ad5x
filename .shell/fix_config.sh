@@ -404,7 +404,7 @@ fix_config()
     check_link ${MOD_CONF}/mod/base.cfg /usr/data/zmod/zmod/translate/${ZLANG}/base.cfg
     check_link ${MOD_CONF}/mod/base_mod.cfg /usr/data/zmod/zmod/translate/${ZLANG}/base_mod.cfg
     check_link ${MOD_CONF}/mod/base_display_off.cfg /usr/data/zmod/zmod/translate/${ZLANG}/base_display_off.cfg
-    check_link ${MOD_CONF}/mod/client.cfg /usr/data/zmod/zmod/translate/${ZLANG}/client.cfg
+    check_link ${MOD_CONF}/mod/client.cfg /usr/data/zmod/zmod/translate/${ZLANG}/base_client.cfg
     check_link ${MOD_CONF}/mod/base_klipper13.cfg /usr/data/zmod/zmod/translate/${ZLANG}/base_klipper13.cfg
 
     [ -f ${MOD_CONF}/.theme/custom.css ] || cp -a /usr/data/zmod/zmod/.shell/.theme ${MOD_CONF}/mod_data/
@@ -413,8 +413,7 @@ fix_config()
     if [ ${AD5M} -eq 1 ]; then
         check_link ${MOD_CONF}/mod/switch_sensor.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5m_switch_sensor.cfg
         check_link ${MOD_CONF}/mod/klipper13.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5m_klipper13.cfg
-        check_link ${MOD_CONF}/mod/base_klipper11.cfg /usr/data/zmod/zmod/translate/${ZLANG}/base_klipper11.cfg
-        grep -q '^MACHINE=Adventurer5MPro$' /opt/auto_run.sh && check_link ${MOD_CONF}/mod/klipper11.cfg /usr/data/zmod/zmod/translate/${ZLANG}/klipper11_pro.cfg || check_link ${MOD_CONF}/mod/klipper11.cfg /usr/data/zmod/zmod/translate/${ZLANG}/klipper11.cfg
+        grep -q '^MACHINE=Adventurer5MPro$' /opt/auto_run.sh && check_link ${MOD_CONF}/mod/klipper11.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5m_klipper11_pro.cfg || check_link ${MOD_CONF}/mod/klipper11.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5m_klipper11.cfg
         check_link ${MOD_CONF}/mod/display_off.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5m_display_off.cfg
         check_link ${MOD_CONF}/mod/generic.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5m_generic.cfg
         check_link ${MOD_CONF}/mod/mod.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5m_mod.cfg
@@ -428,7 +427,6 @@ fix_config()
         check_link ${MOD_CONF}/mod/mod.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ad5x_mod.cfg
         check_link ${MOD_CONF}/mod/klipper13.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ad5x_klipper13.cfg
         check_link ${MOD_CONF}/mod/display_off.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ad5x_display_off.cfg
-        check_link ${MOD_CONF}/mod/ad5x.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ad5x.cfg
         check_link ${MOD_CONF}/mod/ad5x_config_native.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ad5x_config_native.cfg
         check_link ${MOD_CONF}/mod/ad5x_config_off.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ad5x_config_off.cfg
 
@@ -440,6 +438,15 @@ fix_config()
         [ -f /usr/prog/config/PowerOff ] && check_link ${MOD_CONF}/PowerOff /usr/prog/config/PowerOff
         [ -f /usr/prog/config/fileSlotId.json ] && check_link ${MOD_CONF}/fileSlotId.json /usr/prog/config/fileSlotId.json
     fi
+    if [ ${C5PRO} -eq 1 ]; then
+        check_link ${MOD_CONF}/mod/generic.cfg /usr/data/zmod/zmod/translate/${ZLANG}/c5pro_generic.cfg
+        check_link ${MOD_CONF}/mod/mod.cfg /usr/data/zmod/zmod/translate/${ZLANG}/c5pro_mod.cfg
+        check_link ${MOD_CONF}/mod/klipper13.cfg /usr/data/zmod/zmod/translate/${ZLANG}/c5pro_klipper13.cfg
+        check_link ${MOD_CONF}/mod/display_off.cfg /usr/data/zmod/zmod/translate/${ZLANG}/c5pro_display_off.cfg
+        check_link ${MOD_CONF}/mod/c5pro_config_native.cfg /usr/data/zmod/zmod/translate/${ZLANG}/c5pro_config_native.cfg
+        check_link ${MOD_CONF}/mod/c5pro_config_off.cfg /usr/data/zmod/zmod/translate/${ZLANG}/c5pro_config_off.cfg
+    fi
+
 
     if ! [ -f ${MOD_CONF}/mod_data/user.moonraker.conf ]; then
         echo "#Enter user config here
