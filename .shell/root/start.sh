@@ -150,6 +150,9 @@ prepare_chroot()
             #check_link /usr/data/zmod/klipper/klippy/extras/flashforge_loadcell.py /usr/data/zmod/zmod/.shell/flashforge_loadcell.py
             [ -L /usr/data/zmod/klipper/klippy/extras/flashforge_loadcell.py ] && rm -f /usr/data/zmod/klipper/klippy/extras/flashforge_loadcell.py
         fi
+        if [ ${C5PRO} -eq 1 ]; then
+            check_link /usr/data/zmod/klipper/klippy/extras/zmod_color.py /usr/data/zmod/zmod/.shell/zmod_color.py
+        fi
         if [ ${AD5X} -eq 1 ]; then
             check_link /usr/data/zmod/klipper/klippy/chelper/c_helper.so /usr/data/zmod/klipper/mcu/ad5x/c_helper.so
             check_link /usr/data/zmod/klipper/klippy/extras/zmod_color.py /usr/data/zmod/zmod/.shell/zmod_color.py

@@ -3,7 +3,7 @@
 
 . /usr/data/zmod/zmod/.shell/0.sh
 
-if [ ${AD5X} -eq 1 ]; then
+if [ ${C5PRO} -eq 1 ] ||[ ${AD5X} -eq 1 ]; then
     /usr/data/zmod/zmod/.shell/fix_config.sh start
 
     find /usr/prog/PROGRAM/control/ -name NationsCommand| while read a; do $a -r ; done;

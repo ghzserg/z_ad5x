@@ -151,6 +151,9 @@ restore_base()
         sed -i '\|mount --bind /bin/echo /usr/bin/cmd_pwm|d' /usr/prog/app_startup.sh
         sed -i '\|/usr/data/zmod/zmod/.shell/app_startup_mcu.sh|d' /usr/prog/app_startup.sh
     fi
+    if [ ${C5PRO} -eq 1 ]; then
+        rm -f ${KLIPPER_DIR}/klippy/extras/zmod_color.py
+    fi
     if [ ${AD5X} -eq 1 ]; then
         grep -q zmod ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py && cp /usr/data/zmod/zmod/.shell/virtual_sdcard.py.orig ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py
 
@@ -550,6 +553,9 @@ unset LD_PRELOAD
     if [ ${AD5M} -eq 1 ]; then
         grep -q "Zcontrol 1.25" ${KLIPPER_DIR}/klippy/extras/spi_temperature.py || cp /usr/data/zmod/zmod/.shell/spi_temperature.py ${KLIPPER_DIR}/klippy/extras/spi_temperature.py
         grep -q "zmod 1.0" /opt/klipper/start.sh || cp /usr/data/zmod/zmod/.shell/start.sh /opt/klipper/start.sh
+    fi
+    if [ ${C5PRO} -eq 1 ]; then
+        check_link ${KLIPPER_DIR}/klippy/extras/zmod_color.py /usr/data/zmod/zmod/.shell/zmod_color.py
     fi
     if [ ${AD5X} -eq 1 ]; then
         grep -q "zmod 1.12" ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py || cp /usr/data/zmod/zmod/.shell/virtual_sdcard.py ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py

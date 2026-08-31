@@ -15,6 +15,20 @@ if [ ${AD5X} -eq 1 ]; then
     export LD_LIBRARY_PATH=/usr/prog/nim/lib:$LD_LIBRARY_PATH
     export LD_LIBRARY_PATH=/usr/prog/Python-3.8.2/lib:$LD_LIBRARY_PATH
 fi
+if [ ${C5PRO} -eq 1 ]; then
+    export LD_LIBRARY_PATH=/usr/prog/libffi-3.4.4/lib:$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH=/usr/prog/curl-7.55.1/lib:$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH=/usr/prog/ffmpeg-402/lib:$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH=/usr/prog/x264/lib:$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH=/usr/prog/libffi-3.4.4/lib:$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH=/usr/prog/libsodium/lib:$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH=/usr/prog/opencv-4.2/lib:$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH=/usr/prog/mjpg-streamer:$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH=/usr/prog/nim/lib:$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH=/usr/prog/libzip-1.10.1/lib:$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH=/usr/prog/Python-3.8.2/lib:$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH=/usr/prog/openssl-1.0.2d/lib:$LD_LIBRARY_PATH
+fi
 
 if [ -f /ZMOD ]; then
     DIR="/usr/data/zmod/zmod/.shell/root"
