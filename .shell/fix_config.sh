@@ -152,7 +152,6 @@ restore_base()
     fi
     if [ ${C5PRO} -eq 1 ]; then
         rm -f ${KLIPPER_DIR}/klippy/extras/zmod_color.py
-        sed -i 's|path: /usr/data/gcodes$|path: /usr/data/gcodes/|' /usr/data/config/printer.base.cfg
     fi
     if [ ${AD5X} -eq 1 ]; then
         grep -q zmod ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py && cp /usr/data/zmod/zmod/.shell/virtual_sdcard.py.orig ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py
@@ -181,7 +180,6 @@ restore_base()
         rm -f ${KLIPPER_DIR}/klippy/extras/load_cell_tare.py
     fi
 
-    [ ${C5PRO} -eq 1 ] && sed -i 's|path: /usr/data/gcodes$|path: /usr/data/gcodes/|' /usr/data/config/printer.base.cfg
     # Удаляем controller_fan driver_fan
     if [ ${C5PRO} -eq 0 ] && grep -q '^\[controller_fan driver_fan' ${MOD_CONF}/printer.base.cfg; then
         cd ${MOD_CONF}
@@ -703,6 +701,8 @@ max_temp: 130
             cat printer.tmp >${PRINTER_CFG}
             rm heater_bed.txt || echo "Not heater_bed.txt"
     fi
+
+    [ ${C5PRO} -eq 1 ] && grep '/usr/data/gcodes$' ${PRINTER_BASE} && sed -i 's|path: /usr/data/gcodes$|path: /usr/data/gcodes/|' ${PRINTER_BASE} && NEED_REBOOT=1
 
     if grep -q '^\[heater_bed' ${PRINTER_BASE}; then
         NEED_REBOOT=1
