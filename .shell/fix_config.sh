@@ -84,7 +84,6 @@ if ! [ -f /usr/data/zmod/zmod/.shell/0.sh ]; then
         mv /usr/data/config/base/klipper/ /usr/data/zmod/
         mv /usr/data/config/base/moonraker/ /usr/data/zmod/
 
-
         enable_zmod_ad5x_c5pro
         sync
         mv /usr/data/config/mod/ /usr/data/zmod/zmod/ 
@@ -153,6 +152,7 @@ restore_base()
     fi
     if [ ${C5PRO} -eq 1 ]; then
         rm -f ${KLIPPER_DIR}/klippy/extras/zmod_color.py
+        sed -i 's|path: /usr/data/gcodes$|path: /usr/data/gcodes/|' /usr/data/config/printer.base.cfg
     fi
     if [ ${AD5X} -eq 1 ]; then
         grep -q zmod ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py && cp /usr/data/zmod/zmod/.shell/virtual_sdcard.py.orig ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py
