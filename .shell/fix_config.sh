@@ -181,6 +181,7 @@ restore_base()
         rm -f ${KLIPPER_DIR}/klippy/extras/load_cell_tare.py
     fi
 
+    [ ${C5PRO} -eq 1 ] && sed -i 's|path: /usr/data/gcodes$|path: /usr/data/gcodes/|' /usr/data/config/printer.base.cfg
     # Удаляем controller_fan driver_fan
     if [ ${C5PRO} -eq 0 ] && grep -q '^\[controller_fan driver_fan' ${MOD_CONF}/printer.base.cfg; then
         cd ${MOD_CONF}
