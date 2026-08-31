@@ -11,7 +11,7 @@ else
     if [ ${AD5M} -eq 1 ]; then
         chroot ${MOD} /usr/data/zmod/zmod/.shell/root/zshaper_guppy.sh $@
     fi
-    if [ ${AD5X} -eq 1 ]; then
+    if [ ${C5PRO} -eq 1 ] || [ ${AD5X} -eq 1 ]; then
         export PATH=$PATH:/usr/prog/Python-3.8.2/bin
         export LD_LIBRARY_PATH=/usr/prog/Python-3.8.2/lib:$LD_LIBRARY_PATH
         export LD_LIBRARY_PATH=/usr/prog/openssl-1.0.2d/lib:$LD_LIBRARY_PATH
