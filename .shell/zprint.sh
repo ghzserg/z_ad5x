@@ -6,8 +6,19 @@
 
 source /usr/data/zmod/zmod/.shell/0.sh
 
-if [ $# -ne 2 ]; then
-    [ ${ZLANG} != 'ru' ] && echo "Use $0 PRINT|CLOSE FILE" || echo "Используйте $0 PRINT|CLOSE FILE"
+# Проверка аргументов в зависимости от команды
+if [ "$1" = "PRINT" ]; then
+    if [ $# -ne 2 ]; then
+        [ ${ZLANG} != 'ru' ] && echo "Use $0 PRINT FILE" || echo "Используйте $0 PRINT FILE"
+        exit 1
+    fi
+elif [ "$1" = "PAUSE" ] || [ "$1" = "RESUME" ] || [ "$1" = "CANCEL" ] || [ "$1" = "CLOSE" ]; then
+    if [ $# -ne 1 ]; then
+        [ ${ZLANG} != 'ru' ] && echo "Use $0 PAUSE | RESUME | CANCEL" || echo "Используйте $0 PAUSE | RESUME | CANCEL | CLOSE"
+        exit 1
+    fi
+else
+    [ ${ZLANG} != 'ru' ] && echo "Use $0 PRINT FILE | CLOSE | PAUSE | RESUME | CANCEL" || echo "Используйте $0 PRINT FILE | CLOSE | PAUSE | RESUME | CANCEL"
     exit 1
 fi
 
@@ -66,29 +77,60 @@ if [ "$1" == "CLOSE" ]; then
     else
         echo "Нет ответа от принтера с IP $ip. Необходимо настроить принтер. На экране принтера: \"Настройки\" -> \"Иконка WiFi\" -> \"Сетевой режим\" -> включить ползунок \"Только локальные сети\""
     fi
-else
-    if [ "$1" == "PRINT" ]; then
-        if ! [ -f "${DATA_GCODES}/$2" ]; then
-            if [ ${ZLANG} != 'ru' ]; then
-                echo "RESPOND TYPE=error MSG=\"File $2 not found.\"" >/tmp/printer
-            else
-                echo "RESPOND TYPE=error MSG=\"Файл $2 не найден.\"" >/tmp/printer
-            fi
-            echo "CANCEL_PRINT" >/tmp/printer
-            exit 1
-        fi
-
-        ${CCURL} -m 60 -s \
-            http://$ip:8898/printGcode \
-            -H 'Content-Type: application/json' \
-            -d "{\"serialNumber\":\"$serialNumber\",\"checkCode\":\"$checkCode\",\"fileName\":\"$2\",\"levelingBeforePrint\":true}'" || \
-        if [ ${ZLANG} != 'ru' ]; then
-            echo "No response from printer at $ip. Printer setup required. On printer screen: 'Settings' -> 'WiFi icon' -> 'Network mode' -> toggle 'Local network only'"
-        else
-            echo "Нет ответа от принтера с IP $ip. Необходимо настроить принтер. На экране принтера: \"Настройки\" -> \"Иконка WiFi\" -> \"Сетевой режим\" -> включить ползунок \"Только локальные сети\""
-        fi
+elif [ "$1" == "PAUSE" ]; then
+    ${CCURL} -m 60 -s \
+        http://$ip:8898/control \
+        -H 'Accept: */*' \
+        -H 'Content-Type: application/json' \
+        -d "{\"serialNumber\":\"$serialNumber\",\"checkCode\":\"$checkCode\",\"payload\":{\"cmd\":\"jobCtl_cmd\",\"args\":{\"jobID\":\"\",\"action\":\"pause\"}}}" || \
+    if [ ${ZLANG} != 'ru' ]; then
+        echo "No response from printer at $ip. Printer setup required. On printer screen: 'Settings' -> 'WiFi icon' -> 'Network mode' -> toggle 'Local network only'"
     else
-        [ ${ZLANG} != 'ru' ] && echo "Use $0 PRINT|CLOSE FILE [PRECLEAR]" || echo "Используйте $0 PRINT|CLOSE FILE [PRECLEAR]"
+        echo "Нет ответа от принтера с IP $ip. Необходимо настроить принтер. На экране принтера: \"Настройки\" -> \"Иконка WiFi\" -> \"Сетевой режим\" -> включить ползунок \"Только локальные сети\""
+    fi
+elif [ "$1" == "RESUME" ]; then
+    ${CCURL} -m 60 -s \
+        http://$ip:8898/control \
+        -H 'Accept: */*' \
+        -H 'Content-Type: application/json' \
+        -d "{\"serialNumber\":\"$serialNumber\",\"checkCode\":\"$checkCode\",\"payload\":{\"cmd\":\"jobCtl_cmd\",\"args\":{\"jobID\":\"\",\"action\":\"continue\"}}}" || \
+    if [ ${ZLANG} != 'ru' ]; then
+        echo "No response from printer at $ip. Printer setup required. On printer screen: 'Settings' -> 'WiFi icon' -> 'Network mode' -> toggle 'Local network only'"
+    else
+        echo "Нет ответа от принтера с IP $ip. Необходимо настроить принтер. На экране принтера: \"Настройки\" -> \"Иконка WiFi\" -> \"Сетевой режим\" -> включить ползунок \"Только локальные сети\""
+    fi
+elif [ "$1" == "CANCEL" ]; then
+    ${CCURL} -m 60 -s \
+        http://$ip:8898/control \
+        -H 'Accept: */*' \
+        -H 'Content-Type: application/json' \
+        -d "{\"serialNumber\":\"$serialNumber\",\"checkCode\":\"$checkCode\",\"payload\":{\"cmd\":\"jobCtl_cmd\",\"args\":{\"jobID\":\"\",\"action\":\"cancel\"}}}" || \
+    if [ ${ZLANG} != 'ru' ]; then
+        echo "No response from printer at $ip. Printer setup required. On printer screen: 'Settings' -> 'WiFi icon' -> 'Network mode' -> toggle 'Local network only'"
+    else
+        echo "Нет ответа от принтера с IP $ip. Необходимо настроить принтер. На экране принтера: \"Настройки\" -> \"Иконка WiFi\" -> \"Сетевой режим\" -> включить ползунок \"Только локальные сети\""
+    fi
+elif [ "$1" == "PRINT" ]; then
+    if ! [ -f "${DATA_GCODES}/$2" ]; then
+        if [ ${ZLANG} != 'ru' ]; then
+            echo "RESPOND TYPE=error MSG=\"File $2 not found.\"" >/tmp/printer
+        else
+            echo "RESPOND TYPE=error MSG=\"Файл $2 не найден.\"" >/tmp/printer
+        fi
+        echo "CANCEL_PRINT" >/tmp/printer
         exit 1
     fi
+
+    ${CCURL} -m 60 -s \
+        http://$ip:8898/printGcode \
+        -H 'Content-Type: application/json' \
+        -d "{\"serialNumber\":\"$serialNumber\",\"checkCode\":\"$checkCode\",\"fileName\":\"$2\",\"levelingBeforePrint\":true}" || \
+    if [ ${ZLANG} != 'ru' ]; then
+        echo "No response from printer at $ip. Printer setup required. On printer screen: 'Settings' -> 'WiFi icon' -> 'Network mode' -> toggle 'Local network only'"
+    else
+        echo "Нет ответа от принтера с IP $ip. Необходимо настроить принтер. На экране принтера: \"Настройки\" -> \"Иконка WiFi\" -> \"Сетевой режим\" -> включить ползунок \"Только локальные сети\""
+    fi
+else
+    [ ${ZLANG} != 'ru' ] && echo "Use $0 PRINT|CLOSE FILE | PAUSE | RESUME | CANCEL" || echo "Используйте $0 PRINT|CLOSE FILE | PAUSE | RESUME | CANCEL"
+    exit 1
 fi
