@@ -6,6 +6,17 @@ source /usr/data/zmod/zmod/.shell/0.sh
 unset LD_PRELOAD
 unset LD_LIBRARY_PATH
 
+if [ ${C5PRO} -eq 1 ]; then
+    if [ "$1" == "M24" ]; then
+        /usr/data/zmod/zmod/.shell/zprint.sh RESUME
+    elif [ "$1" == "M25" ]; then
+        /usr/data/zmod/zmod/.shell/zprint.sh PAUSE
+    elif [ "$1" == "M26" ]; then
+        /usr/data/zmod/zmod/.shell/zprint.sh CANCEL
+    fi
+    exit 0
+fi
+
 if [ ${AD5X} -eq 1 ]; then
     export LD_LIBRARY_PATH=/usr/prog/qt-4.8.6/lib:$LD_LIBRARY_PATH
     export LD_LIBRARY_PATH=/usr/prog/openssl-1.0.2d/lib:$LD_LIBRARY_PATH
@@ -17,20 +28,6 @@ if [ ${AD5X} -eq 1 ]; then
     export LD_LIBRARY_PATH=/usr/prog/libzip-1.10.1/lib:$LD_LIBRARY_PATH
     export LD_LIBRARY_PATH=/usr/prog/nim/lib:$LD_LIBRARY_PATH
     export LD_LIBRARY_PATH=/usr/prog/Python-3.8.2/lib:$LD_LIBRARY_PATH
-fi
-if [ ${C5PRO} -eq 1 ]; then
-    export LD_LIBRARY_PATH=/usr/prog/libffi-3.4.4/lib:$LD_LIBRARY_PATH
-    export LD_LIBRARY_PATH=/usr/prog/curl-7.55.1/lib:$LD_LIBRARY_PATH
-    export LD_LIBRARY_PATH=/usr/prog/ffmpeg-402/lib:$LD_LIBRARY_PATH
-    export LD_LIBRARY_PATH=/usr/prog/x264/lib:$LD_LIBRARY_PATH
-    export LD_LIBRARY_PATH=/usr/prog/libffi-3.4.4/lib:$LD_LIBRARY_PATH
-    export LD_LIBRARY_PATH=/usr/prog/libsodium/lib:$LD_LIBRARY_PATH
-    export LD_LIBRARY_PATH=/usr/prog/opencv-4.2/lib:$LD_LIBRARY_PATH
-    export LD_LIBRARY_PATH=/usr/prog/mjpg-streamer:$LD_LIBRARY_PATH
-    export LD_LIBRARY_PATH=/usr/prog/nim/lib:$LD_LIBRARY_PATH
-    export LD_LIBRARY_PATH=/usr/prog/libzip-1.10.1/lib:$LD_LIBRARY_PATH
-    export LD_LIBRARY_PATH=/usr/prog/Python-3.8.2/lib:$LD_LIBRARY_PATH
-    export LD_LIBRARY_PATH=/usr/prog/openssl-1.0.2d/lib:$LD_LIBRARY_PATH
 fi
 
 if [ $# -eq 1 ]; then
