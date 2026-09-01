@@ -28,7 +28,7 @@ cp /usr/data/zmod/zmod/.shell/.theme/sidebar-logo.svg /root/fluidd/logo_fluidd.s
 
 start() {
     if [ ${C5PRO} -eq 1 ]; then
-        cat /usr/data/zmod/zmod/.shell/root/web.cfg | sed 's/fluidd/${CLIENT}/'| sed 's/mainsail/${CLIENT}/' >/root/web.cfg
+        cat /usr/data/zmod/zmod/.shell/root/web.cfg | sed "s/fluidd/${CLIENT}/"| sed "s/mainsail/${CLIENT}/" >/root/web.cfg
         /usr/data/zmod/zmod/.shell/zremote.sh /usr/prog/nginx/sbin/nginx -p /usr/prog/nginx -c /usr/prog/nginx/conf/nginx.conf
     else
         # start busybox httpd
