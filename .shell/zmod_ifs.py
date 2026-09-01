@@ -15,6 +15,8 @@ STOPBITS = 1
 BYTESIZE = 8
 TIMEOUT = 0.2
 HOST_REPORT_TIME = 0.2
+NEXT_CMD_DELAY = 0.02
+DATA_TIMEOUT = 0.02
 OPROS_EXTRUDER = 0.1
 
 FFCONFIG='/usr/prog/config/Adventurer5M.json'
@@ -1178,6 +1180,19 @@ class zmod_ifs:
             self.gcode.run_script_from_command(f"TEMPERATURE_WAIT SENSOR=extruder MINIMUM={config['temp']-2} MAXIMUM={config['temp']+4}")
         self.gcode.run_script_from_command(f"IFS_REMOVE_PRUTOK PRUTOK={prutok} FORCE=0 NEED_TRASH={need_trash}")
 
+    def _ifs_serial_read(self, ser, begin_timeout=HOST_REPORT_TIME, data_timeout=DATA_TIMEOUT):
+        cutoff_time = time.monotonic() + begin_timeout
+        result = b''
+        while True:
+            if ser.in_waiting > 0:
+                cutoff_time = time.monotonic() + data_timeout
+                result += ser.read_all()
+            if time.monotonic() >= cutoff_time:
+                break
+            time.sleep(data_timeout)
+                
+        return result
+
     def _sensor_reader(self):
         while not self.stop_thread:
             ser = None
@@ -1204,10 +1219,8 @@ class zmod_ifs:
                         command = current_command
 
                     ser.write((command + "\r\n").encode())
-                    time.sleep(0.2)
-                    ser.write(b'\xFF')
 
-                    response = ser.readline().decode('utf-8', errors='ignore').strip()
+                    response = self._ifs_serial_read(ser).decode('utf-8', errors='ignore').strip()
                     #self._respond_info(f"IN: {response}")
                     if not response:
                         if self.ifs:
@@ -1259,7 +1272,8 @@ class zmod_ifs:
                             with self._command_lock:
                                 if command_id == self._command_id: # Если текущая команда последняя, то переходим в режим опроса
                                     self._command = "F13"
-                    time.sleep(HOST_REPORT_TIME)
+                                    
+                    time.sleep(NEXT_CMD_DELAY)
             except serial.SerialException as e:
                 logging.warning("IFS: Serial communication error: %s", e)
                 self._respond_info(f"IFS: sensor error: Serial communication error: {str(e)}")
