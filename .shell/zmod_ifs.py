@@ -1190,7 +1190,7 @@ class zmod_ifs:
             if time.monotonic() >= cutoff_time:
                 break
             time.sleep(data_timeout)
-                
+
         return result
 
     def _sensor_reader(self):
@@ -1272,7 +1272,7 @@ class zmod_ifs:
                             with self._command_lock:
                                 if command_id == self._command_id: # Если текущая команда последняя, то переходим в режим опроса
                                     self._command = "F13"
-                                    
+
                     time.sleep(NEXT_CMD_DELAY)
             except serial.SerialException as e:
                 logging.warning("IFS: Serial communication error: %s", e)
