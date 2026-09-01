@@ -10,20 +10,26 @@ source /usr/data/zmod/zmod/.shell/0.sh
 
 FB_DEV="/dev/fb0"
 OUT_FILE="/opt/config/mod_data/screen.jpg"
-WIDTH=800
-HEIGHT=480
+if [ ${C5PRO} -eq 1 ]; then
+    chroot ${MOD} python3 -c \
+    "from PIL import Image; img = Image.frombytes('RGBA', (480, 800), open('/dev/fb0', 'rb').read(), 'raw', 'BGRA'); img.transpose(Image.ROTATE_270).convert('RGB').save('/opt/config/mod_data/screen.jpg', 'JPEG', quality=90)"
+else
+    WIDTH=480
+    HEIGHT=800
 
-if [ ${AD5M} -eq 1 ]; then FFMPEG="/opt/ffmpeg-4.0.2/bin/ffmpeg"; fi
-if [ ${C5PRO} -eq 1 ] || [ ${AD5X} -eq 1 ]; then FFMPEG="/usr/prog/ffmpeg-4.0.2/bin/ffmpeg"; fi
-export LD_LIBRARY_PATH="/usr/prog/ffmpeg-4.0.2/lib:/usr/prog/x264/lib:/opt/ffmpeg-4.0.2/lib:/opt/x264/lib"
+    if [ ${AD5M} -eq 1 ]; then FFMPEG="/opt/ffmpeg-4.0.2/bin/ffmpeg"; fi
+    if [ ${AD5X} -eq 1 ]; then FFMPEG="/usr/prog/ffmpeg-4.0.2/bin/ffmpeg"; fi
+    export LD_LIBRARY_PATH="/usr/prog/ffmpeg-4.0.2/lib:/usr/prog/x264/lib:/opt/ffmpeg-4.0.2/lib:/opt/x264/lib"
 
-"$FFMPEG" -f rawvideo -pix_fmt bgra \
- -video_size ${WIDTH}x${HEIGHT} \
- -i "$FB_DEV" \
- -vframes 1 \
- -f image2 \
- -q:v 4 \
- "$OUT_FILE" \
- -y 2>/dev/null
+    "$FFMPEG" -f rawvideo -pix_fmt bgra \
+     -video_size ${WIDTH}x${HEIGHT} \
+     -i "$FB_DEV" \
+     -vframes 1 \
+     -f image2 \
+     -q:v 4 \
+     "$OUT_FILE" \
+     -y
+fi
+
 
 [ ${ZLANG} != 'ru' ] && echo "Printer screen shot: mod_data/screen.jpg" || echo "Скриншот экрана принтера: mod_data/screen.jpg"
