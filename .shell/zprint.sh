@@ -7,12 +7,12 @@
 source /usr/data/zmod/zmod/.shell/0.sh
 
 # Проверка аргументов в зависимости от команды
-if [ "$1" = "PRINT" ]; then
+if [ "$1" = "PRINT" ] || [ "$1" = "CLOSE" ]; then
     if [ $# -ne 2 ]; then
         [ ${ZLANG} != 'ru' ] && echo "Use $0 PRINT FILE" || echo "Используйте $0 PRINT FILE"
         exit 1
     fi
-elif [ "$1" = "PAUSE" ] || [ "$1" = "RESUME" ] || [ "$1" = "CANCEL" ] || [ "$1" = "CLOSE" ]; then
+elif [ "$1" = "PAUSE" ] || [ "$1" = "RESUME" ] || [ "$1" = "CANCEL" ]; then
     if [ $# -ne 1 ]; then
         [ ${ZLANG} != 'ru' ] && echo "Use $0 PAUSE | RESUME | CANCEL" || echo "Используйте $0 PAUSE | RESUME | CANCEL | CLOSE"
         exit 1
