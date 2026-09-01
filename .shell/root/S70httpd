@@ -27,17 +27,23 @@ sed "s/    \"defaultLocale\": \"ru\",/    \"defaultLocale\": \"${ZLANG}\",/" /us
 cp /usr/data/zmod/zmod/.shell/.theme/sidebar-logo.svg /root/fluidd/logo_fluidd.svg
 
 start() {
-    # start busybox httpd
-    #if [ "$CLIENT" == "mainsail" ]; then
-        start-stop-daemon -S -b -m -p $PID_FILE --exec /usr/data/zmod/zmod/.shell/root/zmod_httpd -- $WEBROOT
-    #else
-    #    start-stop-daemon -S -b -m -p $PID_FILE --exec httpd -- -p 80 -f -h $WEBROOT -c /usr/data/zmod/zmod/.shell/root/httpd.conf
-    #fi
+    if [ ${C5PRO} -eq 1 ]; then
+        cat /usr/data/zmod/zmod/.shell/root/web.cfg | sed -i 's/fluidd/${CLIENT}/'| sed -i 's/mainsail/${CLIENT}/' >/root/web.cfg
+        /usr/data/zmod/zmod/.shell/zremote.sh /usr/prog/nginx/sbin/nginx -p /usr/prog/nginx -c /usr/prog/nginx/conf/nginx.conf
+    else
+        # start busybox httpd
+        #if [ "$CLIENT" == "mainsail" ]; then
+            start-stop-daemon -S -b -m -p $PID_FILE --exec /usr/data/zmod/zmod/.shell/root/zmod_httpd -- $WEBROOT
+        #else
+        #    start-stop-daemon -S -b -m -p $PID_FILE --exec httpd -- -p 80 -f -h $WEBROOT -c /usr/data/zmod/zmod/.shell/root/httpd.conf
+        #fi
+    fi
 }
 
 stop() {
     killall zmod_httpd
     killall httpd
+    killall nginx
     start-stop-daemon -K -p $PID_FILE
 }
 restart() {
