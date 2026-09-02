@@ -155,6 +155,7 @@ class zmod_ifs:
         self.gcode.register_command('IFS_F13', self.cmd_IFS_F13)        # Состояние IFS
         self.gcode.register_command('IFS_F15', self.cmd_IFS_F15)        # Сброс драйвера
         self.gcode.register_command('IFS_F18', self.cmd_IFS_F18)        # Отжим филамента везде
+        self.gcode.register_command('IFS_F19', self.cmd_IFS_F19)        # Get version
         self.gcode.register_command('IFS_F23', self.cmd_IFS_F23)        # Помечаем пруток как вставленный
         self.gcode.register_command('IFS_F24', self.cmd_IFS_F24)        # Прижим филамента
         self.gcode.register_command('IFS_F39', self.cmd_IFS_F39)        # Отжим филамента
@@ -1105,6 +1106,14 @@ class zmod_ifs:
 
         response = self.send_command_and_wait("F13")
         self.print_str(f"F13 > {response}")
+        
+    def cmd_IFS_F19(self, gcmd):
+        if not self.ifs:
+            self.gcode.run_script_from_command("_IFS_OFF")
+            return
+
+        response = self.send_command_and_wait("F19")
+        self.print_str(f"F19 > {response}")
 
     cmd_IFS_STATUS_help = "Get current IFS status"
     def cmd_IFS_STATUS(self, gcmd):
