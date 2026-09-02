@@ -599,6 +599,12 @@ class zmod_color:
             self.serialNumber = data['general']['printerSerialNumber']
             self.checkCode = data['general']['lanCode']
 
+        hide_filament_types = config.get('hide_filament_types', '')
+        if not hide_filament_types:
+            self.hide_filament_types = []
+        else:
+            self.hide_filament_types = [fil.strip() for fil in hide_filament_types.split(',')]
+
     def _handle_ready(self):
         self.zmod = self.printer.lookup_object('zmod', None)
         if self.zmod is not None:
@@ -649,6 +655,7 @@ class zmod_color:
             'display': self.display,
             'color_limit': self.color_limit,
             'valid_types': list(self.valid_types),
+            'hidden_types': list(self.hide_filament_types),
             'extruder_sensor': False,
             'slots': []
         }
@@ -1722,8 +1729,11 @@ class zmod_color:
             gcmd.respond_raw(f"// action:prompt_text {self._t('spool_info', zslot, '', color_name)}")
             gcmd.respond_raw("// action:prompt_button_group_start")
             counter = 0
-            total_materials = len(self.valid_types) - 1  # Исключаем '?'
-            for material in self.valid_types[:-1]:  # Исключаем '?'
+
+            display_types = [fil for fil in self.valid_types if fil not in self.hide_filament_types]
+
+            total_materials = len(display_types) - 1  # Исключаем '?'
+            for material in display_types[:-1]:  # Исключаем '?'
                 gcmd.respond_raw(
                     f"// action:prompt_button {material}|"
                     f"CHANGE_ZCOLOR SLOT={zslot} TYPE={material} HEX={zhex}|primary|{zhex}"

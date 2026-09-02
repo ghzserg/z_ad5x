@@ -16,3 +16,6 @@ if [ ${AD5M} -eq 1 ]; then
         /usr/data/zmod/zmod/.shell/root/S60klipper stop
     fi
 fi
+if [ ${C5PRO} -eq 1 ]; then
+    /usr/data/zmod/zmod/.shell/root/S71screen stop
+fi

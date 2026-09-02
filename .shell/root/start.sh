@@ -5,7 +5,6 @@ source /usr/data/zmod/zmod/.shell/0.sh
 
 set -x
 
-
 start_moonraker() {
     /usr/data/zmod/zmod/.shell/root/S65moonraker start
     /usr/data/zmod/zmod/.shell/root/S70httpd start
@@ -342,6 +341,10 @@ MOONRAKER=0
 if [ -f /usr/data/zmod/moonraker/moonraker.py ]; then
     start_moonraker
     MOONRAKER=1
+fi
+
+if [ ${C5PRO} -eq 1 ]; then
+    /usr/data/zmod/zmod/.shell/root/S71screen start
 fi
 
 date -s "2026-01-01 00:00:00"
