@@ -95,7 +95,7 @@ fi
 source /usr/data/zmod/zmod/.shell/0.sh
 mkdir -p /usr/data/zmod/klipper/ /usr/data/zmod/moonraker/ ${MOD_CONF}/mod
 
-if [ ${C5PRO} -eq 1 ] && grep -q 'START=on' ${MOD_CONF}/mod_data/camera.conf; then
+if [ ${C5PRO} -eq 1 ] && ! grep -q 'START=off' ${MOD_CONF}/mod_data/camera.conf; then
     mv /dev/video0 /dev/video67
 fi
 

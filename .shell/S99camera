@@ -8,9 +8,11 @@
 
 source /usr/data/zmod/zmod/.shell/0.sh
 
+DEFAULT="off"
 if [ ${C5PRO} -eq 1 ] || [ ${AD5X} -eq 1 ]; then
     WIDTH=1280
     HEIGHT=720
+    DEFAULT="on"
 fi
 if [ ${AD5M} -eq 1 ]; then
     WIDTH=640
@@ -18,7 +20,7 @@ if [ ${AD5M} -eq 1 ]; then
 fi
 
 if ! [ -f /opt/config/mod_data/camera.conf ]; then
-    /usr/data/zmod/zmod/.shell/zcamera.sh off $WIDTH $HEIGHT 20 ${VIDEO} 0 auto MJPEG NOTRESTART
+    /usr/data/zmod/zmod/.shell/zcamera.sh $DEFAULT $WIDTH $HEIGHT 20 ${VIDEO} 0 auto MJPEG NOTRESTART
 fi
 
 VIDEO=video0
