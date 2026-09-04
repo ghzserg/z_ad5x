@@ -133,11 +133,19 @@ restore_base()
 
         china_razbl api.cloud.flashforge.com
         china_razbl api.fdmcloud.flashforge.com
+        china_razbl api.voxelshare.com
         china_razbl cloud.sz3dp.com
         china_razbl hz.sz3dp.com
+        china_razbl liveplay.flashforge.com
+        china_razbl livepush.flashforge.com
+        china_razbl polar3d.com
         china_razbl printer2.polar3d.com
+        china_razbl qnvideo.flashforge.com
+        china_razbl qvs-live.qnvideo.flashforge.com
+        china_razbl qvs-publish.qnvideo.flashforge.com
         china_razbl qvs.qiniuapi.com
         china_razbl update.cn.sz3dp.com
+        china_razbl update.flashforge.com
         china_razbl update.sz3dp.com
         china_razbl cloud.sz3dp.com
         china_razbl polar3d.com
@@ -522,11 +530,19 @@ unset LD_PRELOAD
         if [ ${AD5M} -eq 1 ]; then
             china_block api.cloud.flashforge.com
             china_block api.fdmcloud.flashforge.com
+            china_block api.voxelshare.com
             china_block cloud.sz3dp.com
             china_block hz.sz3dp.com
+            china_block liveplay.flashforge.com
+            china_block livepush.flashforge.com
+            china_block polar3d.com
             china_block printer2.polar3d.com
+            china_block qnvideo.flashforge.com
+            china_block qvs-live.qnvideo.flashforge.com
+            china_block qvs-publish.qnvideo.flashforge.com
             china_block qvs.qiniuapi.com
             china_block update.cn.sz3dp.com
+            china_block update.flashforge.com
             china_block update.sz3dp.com
             china_block cloud.sz3dp.com
             china_block polar3d.com
@@ -538,11 +554,19 @@ unset LD_PRELOAD
         if [ ${AD5M} -eq 1 ]; then
             china_razbl api.cloud.flashforge.com
             china_razbl api.fdmcloud.flashforge.com
+            china_razbl api.voxelshare.com
             china_razbl cloud.sz3dp.com
             china_razbl hz.sz3dp.com
+            china_razbl liveplay.flashforge.com
+            china_razbl livepush.flashforge.com
+            china_razbl polar3d.com
             china_razbl printer2.polar3d.com
+            china_razbl qnvideo.flashforge.com
+            china_razbl qvs-live.qnvideo.flashforge.com
+            china_razbl qvs-publish.qnvideo.flashforge.com
             china_razbl qvs.qiniuapi.com
             china_razbl update.cn.sz3dp.com
+            china_razbl update.flashforge.com
             china_razbl update.sz3dp.com
             china_razbl cloud.sz3dp.com
             china_razbl polar3d.com
