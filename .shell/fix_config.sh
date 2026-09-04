@@ -134,7 +134,6 @@ restore_base()
         china_razbl api.cloud.flashforge.com
         china_razbl api.fdmcloud.flashforge.com
         china_razbl api.voxelshare.com
-        china_razbl app.obico.io
         china_razbl cloud.sz3dp.com
         china_razbl hz.sz3dp.com
         china_razbl liveplay.flashforge.com
@@ -532,7 +531,6 @@ unset LD_PRELOAD
             china_block api.cloud.flashforge.com
             china_block api.fdmcloud.flashforge.com
             china_block api.voxelshare.com
-            china_block app.obico.io
             china_block cloud.sz3dp.com
             china_block hz.sz3dp.com
             china_block liveplay.flashforge.com
@@ -557,7 +555,6 @@ unset LD_PRELOAD
             china_razbl api.cloud.flashforge.com
             china_razbl api.fdmcloud.flashforge.com
             china_razbl api.voxelshare.com
-            china_razbl app.obico.io
             china_razbl cloud.sz3dp.com
             china_razbl hz.sz3dp.com
             china_razbl liveplay.flashforge.com
