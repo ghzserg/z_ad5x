@@ -24,6 +24,8 @@ if [ ${C5PRO} -eq 1 ] ||[ ${AD5X} -eq 1 ]; then
 fi
 if [ ${AD5M} -eq 1 ]; then
     find /opt/PROGRAM/control/ -name NationsCommand| while read a; do $a -r ; done;
+    [ -f /opt/config/mod_data/printer.cfg ] && cp /opt/config/mod_data/printer.cfg /opt/config/printer.cfg
+    [ -f /opt/config/mod_data/printer.base.cfg ] && cp /opt/config/mod_data/printer.base.cfg /opt/config/printer.base.cfg
 fi
 
 exit 0
