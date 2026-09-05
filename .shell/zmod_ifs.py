@@ -15,6 +15,7 @@ STOPBITS = 1
 BYTESIZE = 8
 TIMEOUT = 0.2
 HOST_REPORT_TIME = 0.2
+NEXT_CMD_DELAY = 0.02
 DATA_TIMEOUT = 0.02
 OPROS_EXTRUDER = 0.1
 
@@ -1227,8 +1228,6 @@ class zmod_ifs:
                         command = current_command
 
                     ser.write((command + "\r\n").encode())
-                    time.sleep(0.2)
-                    ser.write(b'\xFF')
 
                     response = self._ifs_serial_read(ser).decode('utf-8', errors='ignore').strip()
                     #self._respond_info(f"IN: {response}")
@@ -1282,7 +1281,8 @@ class zmod_ifs:
                             with self._command_lock:
                                 if command_id == self._command_id: # Если текущая команда последняя, то переходим в режим опроса
                                     self._command = "F13"
-                    time.sleep(HOST_REPORT_TIME)
+
+                    time.sleep(NEXT_CMD_DELAY)
             except serial.SerialException as e:
                 logging.warning("IFS: Serial communication error: %s", e)
                 self._respond_info(f"IFS: sensor error: Serial communication error: {str(e)}")
