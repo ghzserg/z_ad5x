@@ -577,7 +577,7 @@ unset LD_PRELOAD
     grep -q ZLOAD_VARIABLE ${KLIPPER_DIR}/klippy/extras/save_variables.py || cp /usr/data/zmod/zmod/.shell/save_variables.py ${KLIPPER_DIR}/klippy/extras/save_variables.py
     if [ ${AD5M} -eq 1 ]; then
         grep -q "Zcontrol 1.25" ${KLIPPER_DIR}/klippy/extras/spi_temperature.py || cp /usr/data/zmod/zmod/.shell/spi_temperature.py ${KLIPPER_DIR}/klippy/extras/spi_temperature.py
-        grep -q "zmod 1.0" /opt/klipper/start.sh || cp /usr/data/zmod/zmod/.shell/start.sh /opt/klipper/start.sh
+        grep -q "zmod 1.2" /opt/klipper/start.sh || cp /usr/data/zmod/zmod/.shell/start.sh /opt/klipper/start.sh
     fi
     if [ ${C5PRO} -eq 1 ]; then
         check_link ${KLIPPER_DIR}/klippy/extras/zmod_color.py /usr/data/zmod/zmod/.shell/zmod_color.py
@@ -1031,6 +1031,10 @@ stepper: stepper_x, stepper_y, stepper_z
     fi
 
     if [ ${AD5X} -eq 1 ] || [ ${C5PRO} -eq 1 ]; then enable_zmod_ad5x_c5pro; fi
+    if [ ${AD5M} -eq 1 ]; then
+        cp ${PRINTER_BASE_ORIG} /opt/config/mod_data/printer.base.cfg
+        cp ${PRINTER_CFG_ORIG} /opt/config/mod_data/printer.cfg
+    fi
 
     echo "END fix_config"
 
