@@ -89,9 +89,8 @@ class zmod_ifs:
         else:
             self.color_limit = max(color_limit, 1)
             
-        self.receive_delay = config.getfloat('receive_delay', 0.2)
         self.next_cmd_delay = config.getfloat('next_cmd_delay', 0.2)
-        self.send_ff_terminator = config.getboolean('send_ff_terminator', True)
+        self.send_ff_terminator = config.getboolean('send_ff_terminator', False)
 
         temp_defaults = {
             "PLA": 220,
@@ -1231,10 +1230,9 @@ class zmod_ifs:
                         command = current_command
 
                     ser.write((command + "\r\n").encode())
-                    if self.receive_delay > 0:
-                        time.sleep(self.receive_delay)
-                        if self.send_ff_terminator:
-                            ser.write(b'\xFF')
+                    if self.send_ff_terminator:
+                        time.sleep(0.2)
+                        ser.write(b'\xFF')
 
                     response = self._ifs_serial_read(ser).decode('utf-8', errors='ignore').strip()
                     #self._respond_info(f"IN: {response}")
