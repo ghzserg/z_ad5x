@@ -89,8 +89,8 @@ class zmod_ifs:
         else:
             self.color_limit = max(color_limit, 1)
             
-        self.receive_delay = config.getint('receive_delay', 0.2)
-        self.next_cmd_delay = config.getint('next_cmd_delay', 0.2)
+        self.receive_delay = config.getfloat('receive_delay', 0.2)
+        self.next_cmd_delay = config.getfloat('next_cmd_delay', 0.2)
         self.send_ff_terminator = config.getboolean('send_ff_terminator', True)
 
         temp_defaults = {
