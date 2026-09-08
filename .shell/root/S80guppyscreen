@@ -16,6 +16,7 @@ start() {
 
     TSNAME="Touchscreen"
     EVENT=event0
+    [ ${C5PRO} -eq 1 ] && EVENT=event2
     for i in 0 1 2 3; do
         file=/sys/class/input/event$i/device/name
             for name in `cat $file`; do
