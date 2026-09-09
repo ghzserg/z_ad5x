@@ -1,0 +1,41 @@
+#!/bin/sh
+# (C) 2026 ghzserg https://github.com/ghzserg/zmod
+#
+# Starts screen service
+#
+
+PID_FILE=/run/screen.pid
+
+if grep -q "web_screen = 0" /opt/config/mod_data/variables.cfg; then
+    exit 0
+fi
+
+start() {
+    start-stop-daemon -S -b -m -p $PID_FILE --exec /usr/data/zmod/zmod/.shell/root/screen.py
+}
+
+stop() {
+    start-stop-daemon -K -p $PID_FILE
+}
+restart() {
+    stop
+    sleep 1
+    start
+}
+
+case "$1" in
+  start)
+        start
+        ;;
+  stop)
+        stop
+        ;;
+  restart|reload)
+        restart
+        ;;
+  *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+esac
+
+exit $?
