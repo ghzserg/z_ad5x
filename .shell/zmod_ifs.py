@@ -77,7 +77,6 @@ class zmod_ifs:
         self.reactor = self.printer.get_reactor()
         self.gcode = self.printer.lookup_object('gcode')
 
-
         self.lang = 'en'
         self.ifs = False
         self.zmod = self.printer.lookup_object('zmod', None)
@@ -88,9 +87,9 @@ class zmod_ifs:
             self.color_limit = 4
         else:
             self.color_limit = max(color_limit, 1)
-            
+
         self.next_cmd_delay = config.getfloat('next_cmd_delay', 0.2)
-        self.send_ff_terminator = config.getboolean('send_ff_terminator', False)
+        self.send_ff_terminator = config.getboolean('send_ff_terminator', True)
 
         temp_defaults = {
             "PLA": 220,
