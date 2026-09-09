@@ -431,7 +431,7 @@ fix_config()
         check_link ${MOD_CONF}/mod/display_off.cfg /usr/data/zmod/zmod/translate/${ZLANG}/c5pro_display_off.cfg
         check_link ${MOD_CONF}/mod/c5pro_config_native.cfg /usr/data/zmod/zmod/translate/${ZLANG}/c5pro_config_native.cfg
         check_link ${MOD_CONF}/mod/c5pro_config_off.cfg /usr/data/zmod/zmod/translate/${ZLANG}/c5pro_config_off.cfg
-        check_link /usr/data/nginx/sites-enabled/mainsail /usr/data/.mod/.zmod/root/web.cfg
+        check_link /usr/data/nginx/sites-enabled/mainsail /usr/data/nginx/sites-available/mainsail
     fi
 
 
