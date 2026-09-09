@@ -89,7 +89,7 @@ class zmod_ifs:
             self.color_limit = max(color_limit, 1)
 
         self.next_cmd_delay = config.getfloat('next_cmd_delay', 0.2)
-        self.send_ff_terminator = config.getboolean('send_ff_terminator', True)
+        self.send_ff_terminator = config.getboolean('send_ff_terminator', False)
 
         temp_defaults = {
             "PLA": 220,
@@ -1107,7 +1107,7 @@ class zmod_ifs:
 
         response = self.send_command_and_wait("F13")
         self.print_str(f"F13 > {response}")
-        
+
     def cmd_IFS_F19(self, gcmd):
         if not self.ifs:
             self.gcode.run_script_from_command("_IFS_OFF")
@@ -1234,6 +1234,7 @@ class zmod_ifs:
                         ser.write(b'\xFF')
 
                     response = self._ifs_serial_read(ser).decode('utf-8', errors='ignore').strip()
+                    #response = ser.readline().decode('utf-8', errors='ignore').strip()
                     #self._respond_info(f"IN: {response}")
                     if not response:
                         if self.ifs:
