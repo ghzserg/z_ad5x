@@ -4,6 +4,7 @@
 # Starts screen service
 #
 
+source /usr/data/zmod/zmod/.shell/0.sh
 PID_FILE=/run/screen.pid
 
 if grep -q "web_screen = 0" /opt/config/mod_data/variables.cfg; then
@@ -11,7 +12,7 @@ if grep -q "web_screen = 0" /opt/config/mod_data/variables.cfg; then
 fi
 
 start() {
-    start-stop-daemon -S -b -m -p $PID_FILE --exec /usr/data/zmod/zmod/.shell/root/screen.py
+    start-stop-daemon -S -b -m -p $PID_FILE --exec /usr/data/zmod/zmod/.shell/root/screen.py -- -ad5x{$AD5X}
 }
 
 stop() {

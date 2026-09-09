@@ -8,11 +8,22 @@ import struct
 import urllib.parse
 import io
 import os
+import sys
 from PIL import Image
 
 PORT = 8010
-TOUCH_DEV = '/dev/input/event2'
-EVENT_FORMAT = 'LLHHl'
+
+USE_AD5X = '-ad5x1' in sys.argv
+
+EVENT_FORMAT = 'IIHHi' if USE_AD5X else 'LLHHl'
+TOUCH_DEV = '/dev/input/event3' if USE_AD5X else '/dev/input/event2'
+FB_SIZE = (800, 480) if USE_AD5X else (480, 800)
+
+def send_event_raw(f, type_, code, value):
+    t = time.time()
+    sec = int(t)
+    usec = int((t - sec) * 1000000)
+    f.write(struct.pack(EVENT_FORMAT, sec, usec, type_, code, value))
 
 def send_touch_event(x, y):
     try:
@@ -21,26 +32,43 @@ def send_touch_event(x, y):
         usec = int((t - sec) * 1000000)
 
         with open(TOUCH_DEV, 'wb') as f:
-            f.write(struct.pack(EVENT_FORMAT, sec, usec, 1, 330, 1))
-            f.write(struct.pack(EVENT_FORMAT, sec, usec, 3, 53, x))
-            f.write(struct.pack(EVENT_FORMAT, sec, usec, 3, 54, y))
-            f.write(struct.pack(EVENT_FORMAT, sec, usec, 3, 48, 18))
-            f.write(struct.pack(EVENT_FORMAT, sec, usec, 3, 50, 18))
-            f.write(struct.pack(EVENT_FORMAT, sec, usec, 3, 57, 0))
-            f.write(struct.pack(EVENT_FORMAT, sec, usec, 0, 2, 0))
-            f.write(struct.pack(EVENT_FORMAT, sec, usec, 0, 0, 0))
-            f.flush()
+            if USE_AD5X:
+                send_event_raw(f, 1, 330, 1)   # EV_KEY, BTN_TOUCH, 1
+                send_event_raw(f, 3, 0, x)     # EV_ABS, ABS_X, x
+                send_event_raw(f, 3, 1, y)     # EV_ABS, ABS_Y, y
+                send_event_raw(f, 3, 24, 57)   # EV_ABS, ABS_PRESSURE, 57
+                send_event_raw(f, 0, 0, 0)     # EV_SYN, SYN_REPORT, 0
+                f.flush()
 
-            time.sleep(0.07)
+                time.sleep(0.12)
 
-            t = time.time()
-            sec = int(t)
-            usec = int((t - sec) * 1000000)
+                send_event_raw(f, 1, 330, 0)   # EV_KEY, BTN_TOUCH, 0
+                send_event_raw(f, 3, 24, 0)    # EV_ABS, ABS_PRESSURE, 0
+                send_event_raw(f, 0, 0, 0)     # EV_SYN, SYN_REPORT, 0
+                f.flush()
+            else:
+                t = time.time()
+                sec = int(t)
+                usec = int((t - sec) * 1000000)
+                f.write(struct.pack(EVENT_FORMAT, sec, usec, 1, 330, 1))
+                f.write(struct.pack(EVENT_FORMAT, sec, usec, 3, 53, x))
+                f.write(struct.pack(EVENT_FORMAT, sec, usec, 3, 54, y))
+                f.write(struct.pack(EVENT_FORMAT, sec, usec, 3, 48, 18))
+                f.write(struct.pack(EVENT_FORMAT, sec, usec, 3, 50, 18))
+                f.write(struct.pack(EVENT_FORMAT, sec, usec, 3, 57, 0))
+                f.write(struct.pack(EVENT_FORMAT, sec, usec, 0, 2, 0))
+                f.write(struct.pack(EVENT_FORMAT, sec, usec, 0, 0, 0))
+                f.flush()
 
-            f.write(struct.pack(EVENT_FORMAT, sec, usec, 1, 330, 0))
-            f.write(struct.pack(EVENT_FORMAT, sec, usec, 0, 2, 0))
-            f.write(struct.pack(EVENT_FORMAT, sec, usec, 0, 0, 0))
-            f.flush()
+                time.sleep(0.07)
+
+                t = time.time()
+                sec = int(t)
+                usec = int((t - sec) * 1000000)
+                f.write(struct.pack(EVENT_FORMAT, sec, usec, 1, 330, 0))
+                f.write(struct.pack(EVENT_FORMAT, sec, usec, 0, 2, 0))
+                f.write(struct.pack(EVENT_FORMAT, sec, usec, 0, 0, 0))
+                f.flush()
     except Exception:
         pass
 
@@ -139,11 +167,14 @@ class StreamHandler(http.server.BaseHTTPRequestHandler):
                 x_web = int(params['x'][0])
                 y_web = int(params['y'][0])
 
-                x_touch = y_web
-                y_touch = 800 - x_web
-
-                x_touch = max(0, min(480, x_touch))
-                y_touch = max(0, min(800, y_touch))
+                if USE_AD5X:
+                    x_touch = int((x_web * 65536 + 4184520) / 76390)
+                    y_touch = int((y_web * 65536 + 6959128) / 95216)
+                else:
+                    x_touch = y_web
+                    y_touch = 800 - x_web
+                    x_touch = max(0, min(480, x_touch))
+                    y_touch = max(0, min(800, y_touch))
 
                 send_touch_event(x_touch, y_touch)
 
@@ -172,8 +203,11 @@ class StreamHandler(http.server.BaseHTTPRequestHandler):
                         if fb == last_fb and last_frame:
                             frame = last_frame
                         else:
-                            img = Image.frombytes('RGBA', (480, 800), fb, 'raw', 'BGRA')
-                            img = img.transpose(Image.ROTATE_270).convert('RGB')
+                            img = Image.frombytes('RGBA', FB_SIZE, fb, 'raw', 'BGRA')
+                            if not USE_AD5X:
+                                img = img.transpose(Image.ROTATE_270)
+                            img = img.convert('RGB')
+
                             memory_buffer.seek(0)
                             memory_buffer.truncate(0)
 
@@ -202,8 +236,11 @@ class StreamHandler(http.server.BaseHTTPRequestHandler):
             self.end_headers()
             try:
                 fb = open('/dev/fb0', 'rb').read()
-                img = Image.frombytes('RGBA', (480, 800), fb, 'raw', 'BGRA').transpose(Image.ROTATE_270).convert('RGB')
-                img.save(self.wfile, format='JPEG', quality=90)
+                img = Image.frombytes('RGBA', FB_SIZE, fb, 'raw', 'BGRA')
+                if not USE_AD5X:
+                    img = img.transpose(Image.ROTATE_270)
+                img = img.convert('RGB')
+                img.save(self.wfile, format='JPEG', quality=60)
             except Exception:
                 pass
             return
