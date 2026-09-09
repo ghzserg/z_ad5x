@@ -27,9 +27,10 @@ sed "s/    \"defaultLocale\": \"ru\",/    \"defaultLocale\": \"${ZLANG}\",/" /us
 cp /usr/data/zmod/zmod/.shell/.theme/sidebar-logo.svg /root/fluidd/logo_fluidd.svg
 
 start() {
-    if [ ${C5PRO} -eq 1 ]; then
-        cat /usr/data/zmod/zmod/.shell/root/web.cfg | sed "s/fluidd/${CLIENT}/"| sed "s/mainsail/${CLIENT}/" >/root/web.cfg
-        /usr/data/zmod/zmod/.shell/zremote.sh /usr/prog/nginx/sbin/nginx -p /usr/prog/nginx -c /usr/prog/nginx/conf/nginx.conf
+    if [ ${C5PRO} -eq 1 ] || [ ${AD5X} -eq 1 ] ; then
+        mkdir -p /root/nginx/client-body /root/nginx/proxy
+        cat /usr/data/zmod/zmod/.shell/root/nginx/nginx.conf | sed "s/fluidd/${CLIENT}/"| sed "s/mainsail/${CLIENT}/" >/root/nginx/nginx.conf
+        /usr/data/zmod/zmod/.shell/root/nginx/nginx -c /root/nginx/nginx.conf -e /opt/config/mod_data/log/nginx.log
     else
         # start busybox httpd
         #if [ "$CLIENT" == "mainsail" ]; then
