@@ -46,7 +46,6 @@ native_wifi_on()
 
 display_off()
 {
-    if [ ${C5PRO} -eq 1 ]; then exit; fi
     set -x
     if [ $1 = "test" ] && grep -q display_off.cfg /opt/config/printer.cfg; then
         killall firmwareExe helix-watchdog helix-screen helix-splash
