@@ -16,8 +16,22 @@ PORT = 8010
 USE_AD5X = '-ad5x1' in sys.argv
 
 EVENT_FORMAT = 'IIHHi' if USE_AD5X else 'LLHHl'
-TOUCH_DEV = '/dev/input/event3' if USE_AD5X else '/dev/input/event2'
 FB_SIZE = (800, 480) if USE_AD5X else (480, 800)
+
+def find_touch_device(default_dev):
+    TSNAME = "Touchscreen"
+    for i in range(10):
+        name_file = f"/sys/class/input/event{i}/device/name"
+        if os.path.exists(name_file):
+            try:
+                with open(name_file, 'r', encoding='utf-8', errors='ignore') as f:
+                    if TSNAME in f.read():
+                        return f"/dev/input/event{i}"
+            except Exception:
+                pass
+    return default_dev
+
+TOUCH_DEV = find_touch_device('/dev/input/event0') if USE_AD5X else '/dev/input/event2'
 
 def send_event_raw(f, type_, code, value):
     t = time.time()
