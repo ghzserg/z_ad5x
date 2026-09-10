@@ -7,6 +7,7 @@ if ! [ $# -eq 1 ]; then echo "Use $0 on|off|test"; exit 1; fi
 
 native_wifi_off()
 {
+    if [ ${C5PRO} -eq 1 ]; then exit; fi
     echo "Test native_wifi_off"
     if  grep -q "wifi = 1" /opt/config/mod_data/variables.cfg && \
         grep -q '"wifiHotspotStatus" : false' "$FFCONFIG" && \
@@ -80,6 +81,12 @@ display_off()
 
         echo '/usr/data/zmod/zmod/.shell/automount.sh' > /proc/sys/kernel/hotplug
         native_wifi_off
+        if [ ${C5PRO} -eq 1 ]; then
+            echo _REBOOT >/tmp/printer
+            sync
+            sleep 5
+            reboot
+        fi
     fi
 
     sync
