@@ -657,6 +657,7 @@ class zmod_color:
             'valid_types': list(self.valid_types),
             'hidden_types': list(self.hide_filament_types),
             'extruder_sensor': False,
+            'total_tools': 1,
             'slots': []
         }
         zmod_ifs = getattr(self, 'zmod_ifs', None)
