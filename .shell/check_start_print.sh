@@ -17,5 +17,7 @@ if ! awk '
     /^START_PRINT/ { start_found = 1 }
     END { exit !(end_found && start_found) }
 ' "${FILE_NAME}"; then
-    [ ${ZLANG} == 'ru' ] && echo 'RESPOND PREFIX="!!" MSG="Неверный стартовый или конечный код. Макрос START_PRINT или END_PRINT не найден в файле печати. При работе без родного экрана он ДОЛЖЕН быть. Подробнее: https://wiki.zmod.link/ru/FAQ/"' >/tmp/printer || echo 'Invalid start or end code. The START_PRINT or END_PRINT macro was not found in the print file. It MUST BE present when working without a native screen. More details: https://wiki.zmod.link/FAQ/' >/tmp/printer
+    [ ${ZLANG} == 'ru' ] && \
+        echo 'RESPOND PREFIX="!!" MSG="Неверный стартовый или конечный код. Макрос START_PRINT или END_PRINT не найден в файле печати. При работе без родного экрана он ДОЛЖЕН быть. Подробнее: https://wiki.zmod.link/ru/FAQ/"' >/tmp/printer || \
+        echo 'RESPOND PREFIX="!!" MSG="Invalid start or end code. The START_PRINT or END_PRINT macro was not found in the print file. It MUST BE present when working without a native screen. More details: https://wiki.zmod.link/FAQ/"' >/tmp/printer
 fi
