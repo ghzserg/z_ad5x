@@ -632,14 +632,19 @@ class zmod_color:
         with open(FFCONFIG, 'r') as file:
             data = json.load(file)
 
+            # Нож
             self.CutXOffset = float(data['leftExtruderOffset']['CutXOffset']) - 2.5
             self.CutYOffset = float(data['leftExtruderOffset']['CutYOffset']) - 7.5
-            self.yOffset    = float(data['leftExtruderOffset']['yOffset']) + 229
-
             self.gcode.run_script_from_command(f"SET_GCODE_VARIABLE MACRO=_CUT_PRUTOK VARIABLE=x_cut VALUE={self.CutXOffset:.2f}")
             self.gcode.run_script_from_command(f"SET_GCODE_VARIABLE MACRO=_CUT_PRUTOK VARIABLE=y_cut VALUE={self.CutYOffset:.2f}")
+
+            # Корзина
+            self.yOffset    = float(data['leftExtruderOffset']['yOffset']) + 229
+            self.xOffset    = float(data['leftExtruderOffset']['xOffset']) + 52.50
             self.gcode.run_script_from_command(f"SET_GCODE_VARIABLE MACRO=_CLIENT_VARIABLE VARIABLE=custom_park_y VALUE={self.yOffset:.2f}")
             self.gcode.run_script_from_command(f"SET_GCODE_VARIABLE MACRO=_CLIENT_VARIABLE VARIABLE=park_at_cancel_y VALUE={self.yOffset:.2f}")
+            self.gcode.run_script_from_command(f"SET_GCODE_VARIABLE MACRO=_CLIENT_VARIABLE VARIABLE=custom_park_x VALUE={self.xOffset:.2f}")
+            self.gcode.run_script_from_command(f"SET_GCODE_VARIABLE MACRO=_CLIENT_VARIABLE VARIABLE=park_at_cancel_x VALUE={self.xOffset:.2f}")
 
     def get_display(self):
         return self.display
