@@ -13,6 +13,7 @@ start() {
     source /usr/data/zmod/zmod/.shell/0.sh
     xzcat /usr/data/zmod/zmod/.shell/screen_off.raw.xz > /dev/fb0
     [ ${AD5M} -eq 1 ] && backlight 0
+    [ ${C5PRO} -eq 1 ] && echo 0 > /sys/class/backlight/backlight_gpio0/bl_power
 
     TSNAME="Touchscreen"
     EVENT=event0
