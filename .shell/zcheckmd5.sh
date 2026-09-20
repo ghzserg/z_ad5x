@@ -78,7 +78,7 @@ if ! [ -f /ZMOD ]; then
         c=$(echo $a|sed 's/md5sum.list//')
         echo "$c"
         cd "$c"
-        awk 'system("test -f " $2) == 0' md5sum.list | md5sum -c
+        awk 'system("test -f " $2) == 0' md5sum.list | md5sum -c | grep -v -e "OK$"
         cd "$b"
     done
 else
