@@ -78,15 +78,7 @@ if ! [ -f /ZMOD ]; then
         c=$(echo $a|sed 's/md5sum.list//')
         echo "$c"
         cd "$c"
-        if echo $c | grep -q control; then
-            touch Update
-            [ ${AD5X} -eq 1 ] && touch UpdateM
-        fi
-        md5sum -c md5sum.list 2>/dev/null | grep -v -e "OK$"
-        if echo $c | grep -q control; then
-            rm -f Update
-            [ ${AD5X} -eq 1 ] && rm -f UpdateM
-        fi
+        awk '{system("test -f " $2) == 0 ? print : next}' md5sum.list | md5sum -c
         cd "$b"
     done
 else
