@@ -71,15 +71,16 @@ display_off()
         sed -i 's|\[include ./mod/mod.cfg\]|\[include ./mod/display_off.cfg\]|' /opt/config/printer.cfg
         sync
         killall firmwareExe guppyscreen console_log helix-watchdog helix-screen helix-splash
-        [ -f /ZMOD ] && /usr/data/zmod/zmod/.shell/root/console_log --save --${ZLANG} || chroot ${MOD} /usr/data/zmod/zmod/.shell/root/console_log --save --${ZLANG}
 
-        if [ $1 = "off" ]; then
-            xzcat /usr/data/zmod/zmod/.shell/screen_off.raw.xz > /dev/fb0
-        else
-            /usr/data/zmod/zmod/.shell/zguppy.sh up
-        fi
+        #[ -f /ZMOD ] && /usr/data/zmod/zmod/.shell/root/console_log --save --${ZLANG} || chroot ${MOD} /usr/data/zmod/zmod/.shell/root/console_log --save --${ZLANG}
 
-        echo '/usr/data/zmod/zmod/.shell/automount.sh' > /proc/sys/kernel/hotplug
+        #if [ $1 = "off" ]; then
+        #    xzcat /usr/data/zmod/zmod/.shell/screen_off.raw.xz > /dev/fb0
+        #else
+        #    /usr/data/zmod/zmod/.shell/zguppy.sh up
+        #fi
+
+        #echo '/usr/data/zmod/zmod/.shell/automount.sh' > /proc/sys/kernel/hotplug
         native_wifi_off
         echo _REBOOT >/tmp/printer
         sync
