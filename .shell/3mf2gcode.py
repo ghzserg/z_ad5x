@@ -2,14 +2,23 @@ import os
 import sys
 import zipfile
 import shutil
-import requests
+import json
+import urllib.request
 
 MOONRAKER_URL = "http://127.0.0.1:7125"
 
 def notify_moonraker(relative_filename):
     try:
         url = f"{MOONRAKER_URL}/server/files/metadata"
-        requests.post(url, json={"filename": relative_filename}, timeout=5)
+        data = json.dumps({"filename": relative_filename}).encode('utf-8')
+        req = urllib.request.Request(
+            url, 
+            data=data, 
+            headers={'Content-Type': 'application/json'},
+            method='POST'
+        )
+        with urllib.request.urlopen(req, timeout=10) as response:
+            pass
     except:
         pass
 

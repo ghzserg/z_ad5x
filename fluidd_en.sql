@@ -319,11 +319,11 @@ INSERT INTO "main"."namespace_store" ("namespace", "key", "value") VALUES ('flui
             "visible": true
         },
         {
-            "alias": "3mf2gcode",
+            "alias": "3MF_GCODE",
             "categoryId": "0077449b-cd10-4059-aebd-bf17be6cb270",
             "color": "",
             "disabledWhilePrinting": false,
-            "name": "3mf2gcode",
+            "name": "mf_gcode",
             "order": 18,
             "visible": true
         },
