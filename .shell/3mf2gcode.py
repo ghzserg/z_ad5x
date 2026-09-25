@@ -27,8 +27,7 @@ def convert_all_3mf(watch_dir):
         return
 
     for root, dirs, files in os.walk(watch_dir):
-        if any(x in root.split(os.sep) for x in ['.thumbs', '.mod', '.zmod']) or '/.' in root or '\\.' in root:
-            continue
+        dirs[:] = [d for d in dirs if d not in ['.thumbs', '.mod', '.zmod'] and not d.startswith('.')]
 
         for item in files:
             if item.endswith('.3mf') or item.endswith('.gcode.3mf'):
