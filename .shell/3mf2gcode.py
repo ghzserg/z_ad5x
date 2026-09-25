@@ -9,7 +9,7 @@ MOONRAKER_URL = "http://127.0.0.1:7125"
 
 def notify_moonraker(relative_filename):
     try:
-        url = f"{MOONRAKER_URL}/server/files/metadata"
+        url = f"{MOONRAKER_URL}/server/files/metascan"
         data = json.dumps({"filename": relative_filename}).encode('utf-8')
         req = urllib.request.Request(
             url, 
