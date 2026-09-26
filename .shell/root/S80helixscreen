@@ -22,9 +22,6 @@ LAUNCHER="${DAEMON_DIR}/bin/helix-launcher.sh"
 PIDFILE="/var/run/${NAME}.pid"
 LOGFILE="/opt/config/mod_data/log/helixscreen.log"
 
-source /usr/data/zmod/zmod/.shell/0.sh
-[ $C5PRO -eq 1 ] && export HELIX_TOUCH_SWAP_AXES=1
-
 # Override asset directory if ui_xml/assets/config are not under DAEMON_DIR
 # Export so helix-screen picks it up at startup
 # HELIX_DATA_DIR="/mnt/data/helixscreen"
