@@ -27,18 +27,15 @@ sed "s/    \"defaultLocale\": \"ru\",/    \"defaultLocale\": \"${ZLANG}\",/" /us
 cp /usr/data/zmod/zmod/.shell/.theme/sidebar-logo.svg /root/fluidd/logo_fluidd.svg
 
 start() {
-    if [ ${C5PRO} -eq 1 ] || [ ${AD5X} -eq 1 ] ; then
-        mkdir -p /root/nginx/client-body /root/nginx/proxy
-        cat /usr/data/zmod/zmod/.shell/root/nginx/nginx.conf | sed "s/fluidd/${CLIENT}/"| sed "s/mainsail/${CLIENT}/" >/root/nginx/nginx.conf
-        /usr/data/zmod/zmod/.shell/root/nginx/nginx -c /root/nginx/nginx.conf -e /opt/config/mod_data/log/nginx.log
-    else
-        # start busybox httpd
-        #if [ "$CLIENT" == "mainsail" ]; then
-            start-stop-daemon -S -b -m -p $PID_FILE --exec /usr/data/zmod/zmod/.shell/root/zmod_httpd -- $WEBROOT
-        #else
-        #    start-stop-daemon -S -b -m -p $PID_FILE --exec httpd -- -p 80 -f -h $WEBROOT -c /usr/data/zmod/zmod/.shell/root/httpd.conf
-        #fi
+    if [ "${C5PRO}" = "1" ] || [ "${AD5X}" = "1" ]; then
+        if ! grep -q "web_screen = 0" /opt/config/mod_data/variables.cfg; then
+            mkdir -p /root/nginx/client-body /root/nginx/proxy
+            sed -e "s/fluidd/${CLIENT}/g" -e "s/mainsail/${CLIENT}/g" /usr/data/zmod/zmod/.shell/root/nginx/nginx.conf > /root/nginx/nginx.conf
+            /usr/data/zmod/zmod/.shell/root/nginx/nginx -c /root/nginx/nginx.conf -e /opt/config/mod_data/log/nginx.log
+            exit 0
+        fi
     fi
+    start-stop-daemon -S -b -m -p $PID_FILE --exec /usr/data/zmod/zmod/.shell/root/zmod_httpd -- $WEBROOT
 }
 
 stop() {
