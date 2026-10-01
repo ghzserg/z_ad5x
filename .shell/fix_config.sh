@@ -553,6 +553,7 @@ unset LD_PRELOAD
     if [ ${C5PRO} -eq 1 ]; then
         check_link ${KLIPPER_DIR}/klippy/extras/zmod_color.py /usr/data/zmod/zmod/.shell/zmod_color.py
         grep -q "zmod 1.13" ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py || cp /usr/data/zmod/zmod/.shell/virtual_sdcard.py ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py
+        grep -q "M400" ${KLIPPER_DIR}/klippy/extras/filament_switch_sensor.py && sed -i "s/M400//" ${KLIPPER_DIR}/klippy/extras/filament_switch_sensor.py
     fi
     if [ ${AD5X} -eq 1 ]; then
         grep -q "zmod 1.12" ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py || cp /usr/data/zmod/zmod/.shell/virtual_sdcard.py ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py
