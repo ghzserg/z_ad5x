@@ -69,6 +69,8 @@ source /usr/data/zmod/zmod/.shell/0.sh
 source /usr/data/zmod/zmod/.shell/activate.sh
 mkdir -p /usr/data/zmod/klipper/ /usr/data/zmod/moonraker/ ${MOD_CONF}/mod
 
+if [ ${C5PRO} -eq 1 ]; then VER_FF=$(find /usr/prog/PROGRAM/software/ -type d | sed 's|/usr/prog/PROGRAM/software/||' | grep -v "/" | grep .); fi
+
 # Разблокировка
 china_razbl()
 {
@@ -131,7 +133,7 @@ restore_base()
     if [ ${C5PRO} -eq 1 ]; then
         rm -f ${KLIPPER_DIR}/klippy/extras/zmod_color.py
         check_link /usr/data/nginx/sites-enabled/mainsail /usr/data/nginx/sites-available/mainsail
-        grep -q zmod ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py && cp /usr/data/zmod/zmod/.shell/virtual_sdcard.py.orig ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py
+        grep -q zmod ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py && cp /usr/data/zmod/zmod/.shell/klipper/${VER_FF}_virtual_sdcard.py.orig ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py
     fi
     if [ ${AD5X} -eq 1 ]; then
         grep -q zmod ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py && cp /usr/data/zmod/zmod/.shell/virtual_sdcard.py.orig ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py
@@ -552,7 +554,7 @@ unset LD_PRELOAD
     fi
     if [ ${C5PRO} -eq 1 ]; then
         check_link ${KLIPPER_DIR}/klippy/extras/zmod_color.py /usr/data/zmod/zmod/.shell/zmod_color.py
-        grep -q "zmod 1.13" ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py || cp /usr/data/zmod/zmod/.shell/virtual_sdcard.py ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py
+        cp /usr/data/zmod/zmod/.shell/klipper/${VER_FF}_virtual_sdcard.py ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py
         grep -q "M400" ${KLIPPER_DIR}/klippy/extras/filament_switch_sensor.py && sed -i "s/M400//" ${KLIPPER_DIR}/klippy/extras/filament_switch_sensor.py
     fi
     if [ ${AD5X} -eq 1 ]; then
