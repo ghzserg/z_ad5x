@@ -393,6 +393,8 @@ fix_config()
 
     [ -f ${MOD_CONF}/.theme/custom.css ] || cp -a /usr/data/zmod/zmod/.shell/.theme ${MOD_CONF}/mod_data/
     check_link ${MOD_CONF}/.theme mod_data/.theme
+    [ -f ${MOD_CONF}/.fluidd-theme/custom.css ] || cp -a /usr/data/zmod/zmod/.shell/.fluidd-theme ${MOD_CONF}/mod_data/
+    check_link ${MOD_CONF}/.fluidd-theme mod_data/.fluidd-theme
 
     if [ ${AD5M} -eq 1 ]; then
         check_link ${MOD_CONF}/mod/switch_sensor.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5m_switch_sensor.cfg
