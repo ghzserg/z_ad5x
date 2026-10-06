@@ -52,6 +52,7 @@ remove_base()
 
     rm -f ${LOG_FILES}/zmod
     rm -rf ${MOD_CONF}/.theme/
+    rm -rf ${MOD_CONF}/.fluidd-theme/
     rm -rf /usr/data/zmod/
     sync
     reboot
