@@ -1272,6 +1272,8 @@ class zmod_color:
                     buttons_per_group = 3
                 if len(color_indexes) < 7:
                     buttons_per_group = 2
+                if len(color_indexes) < 5:
+                    buttons_per_group = 1
 
                 button_index = 0
 
@@ -1280,20 +1282,51 @@ class zmod_color:
                         continue
                     if button_index % buttons_per_group == 0:
                         gcmd.respond_raw("// action:prompt_button_group_start")
+
+                    # 1. Извлекаем данные о цвете и типе из self.file_colors для текущего tool_idx
+                    file_match = next((fc for fc in self.file_colors if fc[0] == tool_idx), None)
+                    file_color_hex = ""
+                    file_material = ""
+
+                    if file_match:
+                        raw_file_color = file_match[1].strip().replace("#", "").upper() if file_match[1] else ""
+                        if raw_file_color and len(raw_file_color) == 6:
+                            file_color_hex = raw_file_color
+                        file_material = file_match[2].strip().upper() if file_match[2] else ""
+
+                    # 2. Формируем текст и параметры цвета в зависимости от наличия данных из файла
+                    if file_color_hex:
+                        raw_color_name  = self.COLOR_MAPPING.get(file_color_hex.lower(), file_color_hex)
+                        file_color_name = raw_color_name.replace('_', '/', 1) if raw_color_name.startswith('_') else ''
+                        file_btn_color_param = f"|primary|{file_color_hex}"
+                    else:
+                        file_color_name = '?'
+                        file_btn_color_param = "|primary"
+
+                    if file_material:
+                        file_mat_display = file_material
+                    else:
+                        file_mat_display = '/?'
+
+                    file_btn_text = f"{file_mat_display}{file_color_name}"
+
                     for slot_info in result:
                         if int(slot_info['ID']) != tool_val:
                             continue
                         color_name = slot_info['Color'].replace('_', '/', 1) if slot_info['Color'].startswith('_') else ''
-
                         tool_name = f"T{tool_idx}" if not one_based_indexes else str(tool_idx+1)
 
+                        params = f"LEVELING={leveling} FILENAME=\"{fname}\" ALLOWED_TOOL_COUNT={allowed_tool_count} {current_tools_param_text}"
+
+                        gcmd.respond_raw(
+                            f"// action:prompt_button {tool_name}: {file_btn_text} ->|"
+                            f"CHANGE_T_ZCOLOR T={tool_idx} {params}{file_btn_color_param}"
+                        )
+
                         btn_text = (
-                            f"{tool_name} -> "
                             f"{slot_info['ID']}: "
                             f"{slot_info['Material']}{color_name}"
                         )
-                        params = f"LEVELING={leveling} FILENAME=\"{fname}\" ALLOWED_TOOL_COUNT={allowed_tool_count} {current_tools_param_text}"
-
                         gcmd.respond_raw(
                             f"// action:prompt_button {btn_text}|"
                             f"CHANGE_T_ZCOLOR T={tool_idx} {params}|primary|{slot_info['HEX']}"
