@@ -3,6 +3,18 @@
 
 source /usr/data/zmod/zmod/.shell/0.sh
 
+if [ -f /ZMOD ]; then
+    DIR="/usr/data/zmod/zmod/.shell/root"
+    if [ "$2" == "1" ]; then
+        /usr/data/zmod/zmod/.shell/zremote.sh /usr/data/zmod/zmod/.shell/zcheckmd5.sh "$1"
+        exit 0
+    fi
+else
+    DIR="/usr/data/zmod/zmod/.shell"
+fi
+
+STOCK="stock"
+
 if [ ${AD5X} -eq 1 ]; then
     export LD_LIBRARY_PATH=/usr/prog/qt-4.8.6/lib:$LD_LIBRARY_PATH
     export LD_LIBRARY_PATH=/usr/prog/openssl-1.0.2d/lib:$LD_LIBRARY_PATH
@@ -14,6 +26,8 @@ if [ ${AD5X} -eq 1 ]; then
     export LD_LIBRARY_PATH=/usr/prog/libzip-1.10.1/lib:$LD_LIBRARY_PATH
     export LD_LIBRARY_PATH=/usr/prog/nim/lib:$LD_LIBRARY_PATH
     export LD_LIBRARY_PATH=/usr/prog/Python-3.8.2/lib:$LD_LIBRARY_PATH
+    STOCK="stock5x"
+    export LD_LIBRARY_PATH=/usr/prog/curl-7.55.1-https/lib:$LD_LIBRARY_PATH
 fi
 if [ ${C5PRO} -eq 1 ]; then
     export LD_LIBRARY_PATH=/usr/prog/libffi-3.4.4/lib:$LD_LIBRARY_PATH
@@ -28,24 +42,9 @@ if [ ${C5PRO} -eq 1 ]; then
     export LD_LIBRARY_PATH=/usr/prog/libzip-1.10.1/lib:$LD_LIBRARY_PATH
     export LD_LIBRARY_PATH=/usr/prog/Python-3.8.2/lib:$LD_LIBRARY_PATH
     export LD_LIBRARY_PATH=/usr/prog/openssl-1.0.2d/lib:$LD_LIBRARY_PATH
-fi
-
-if [ -f /ZMOD ]; then
-    DIR="/usr/data/zmod/zmod/.shell/root"
-    if [ "$2" == "1" ]; then
-        /usr/data/zmod/zmod/.shell/zremote.sh /usr/data/zmod/zmod/.shell/zcheckmd5.sh "$1"
-        exit 0
-    fi
-else
-    DIR="/usr/data/zmod/zmod/.shell"
-fi
-
-if [ ${AD5X} -eq 1 ]; then
-    STOCK="stock5x"
+    STOCK="stockc5pro"
     export LD_LIBRARY_PATH=/usr/prog/curl-7.55.1-https/lib:$LD_LIBRARY_PATH
-fi
-if [ ${AD5M} -eq 1 ]; then
-    STOCK="stock"
+
 fi
 
 check_link()
@@ -87,8 +86,9 @@ fi
 
 echo "/"
 cd /
-[ ${AD5M} -eq 1 ] && FF_VERSION=$(cat /root/version 2>/dev/null)
-[ ${AD5X} -eq 1 ] && FF_VERSION=$(find /usr/prog/PROGRAM/software/ -type d 2>/dev/null | sed 's|/usr/prog/PROGRAM/software/||' | grep . 2>/dev/null)
+[ ${AD5M} -eq 1 ]  && FF_VERSION=$(cat /root/version 2>/dev/null)
+[ ${AD5X} -eq 1 ]  && FF_VERSION=$(find /usr/prog/PROGRAM/software/ -type d 2>/dev/null | sed 's|/usr/prog/PROGRAM/software/||' | grep -v "/" | grep . 2>/dev/null)
+[ ${C5PRO} -eq 1 ] && FF_VERSION=$(find /usr/prog/PROGRAM/software/ -type d 2>/dev/null | sed 's|/usr/prog/PROGRAM/software/||' | grep -v "/" | grep . 2>/dev/null)
 MIN_VERSION="3.1.3"
 MIN_VERSION_X="1.0.7"
 if [ ${AD5M} -eq 1 ] && ! [ -f /ZMOD ] && [ "${FF_VERSION//./}" -lt "${MIN_VERSION//./}" ]; then
@@ -102,6 +102,7 @@ else
         rm -f ${DIR}/md5sum_5x.list
     else
         md5sum -c ${DIR}/md5sum.list 2>/dev/null | grep -v -e "OK$" | tee /opt/config/mod_data/bad.list
+        [ -f ${DIR}/md5/${FF_VERSION}.list ] && echo ${FF_VERSION} && md5sum -c ${DIR}/md5/${FF_VERSION}.list 2>/dev/null | grep -v -e "OK$" | tee /opt/config/mod_data/bad.list
     fi
 fi
 
