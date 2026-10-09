@@ -1274,7 +1274,7 @@ class zmod_color:
                 gcmd.respond_raw("// action:prompt_button_group_start")
                 color = "006400" if leveling == 1 else "808080"
                 gcmd.respond_raw(f"// action:prompt_button {leveling_text}|SET_ZCOLOR SILENT={silent} FILENAME=\"{fname}\" LEVELING={int(not leveling)} ALLOWED_TOOL_COUNT={allowed_tool_count} {current_tools_param_text}| |{color}")
-                auto_prompt = f"// action:prompt_button {self._t('auto_select_colors')}|SET_ZCOLOR SILENT={silent} AUTO_ASSIGN=1 FILENAME=\"{fname}\" LEVELING={leveling} ALLOWED_TOOL_COUNT={allowed_tool_count} {current_tools_param_text}| "
+                auto_prompt = f"// action:prompt_button {self._t('auto_select_colors')}|SET_ZCOLOR SILENT={silent} AUTO_ASSIGN=1 FILENAME=\"{fname}\" LEVELING={leveling} ALLOWED_TOOL_COUNT=0 {current_tools_param_text}| "
                 color = "202020" if auto_assign == 0 else \
                         "EE0000" if (auto_result & AUTO_ASSIGN_ANY_SUCCESS) == 0 or (auto_result & (AUTO_ASSIGN_MATERIAL_FAILURE | AUTO_ASSIGN_COLOR_FAILURE)) != 0 else \
                         "AAAA00" if (auto_result & (AUTO_ASSIGN_COLOR_WEAK | AUTO_ASSIGN_DUPLICATE)) != 0 else \
