@@ -996,6 +996,10 @@ class zmod_color:
 
         fname = gcmd.get('FILENAME', '')
 
+        auto_assign = gcmd.get_int('AUTO_ASSIGN', 0)
+        if auto_assign == 1:
+            scan_files_setting = 1
+
         if scan_files_setting == 0 or fname.lower().endswith('.3mf'):
             tool_count = self.get_allowed_tool_count(gcmd)
             return (False, [(i, '', '') for i in range(tool_count)])
