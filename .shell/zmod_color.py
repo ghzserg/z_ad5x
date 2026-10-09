@@ -986,18 +986,20 @@ class zmod_color:
         return ((l1 - l2) ** 2 + (a1 - a2) ** 2 + (b1 - b2) ** 2) ** 0.5
 
     def get_used_colors(self, gcmd):
-        # Returns list of tuples. (tool ID, color, material)
+        # Return (Success_bool, list_of_tuples)
+        # list_of_tuples: (tool ID, color, material)
 
         save_variables = self.printer.lookup_object('save_variables', None)
         save_variables = {} if save_variables == None else save_variables.allVariables
 
         scan_files_setting = save_variables.get('scan_file_colors', 0)
 
-        if scan_files_setting == 0:
-            tool_count = self.get_allowed_tool_count(gcmd)
-            return [(i, '', '') for i in range(tool_count)]
-
         fname = gcmd.get('FILENAME', '')
+
+        if scan_files_setting == 0 or fname.lower().endswith('.3mf'):
+            tool_count = self.get_allowed_tool_count(gcmd)
+            return (False, [(i, '', '') for i in range(tool_count)])
+
         if fname == '':
             raise gcmd.error(self._t('error_no_filename'))
 
@@ -1007,6 +1009,7 @@ class zmod_color:
         filament_type_line = ''
 
         color_data_line = ''
+        found_data = False
 
         with open(f"/usr/data/gcodes/{fname}", 'r') as f:
             for line_raw in f:
@@ -1020,20 +1023,24 @@ class zmod_color:
                         if index not in result_colors:
                             result_colors += [index]
                         highest_result_color = max(highest_result_color, index)
+                        found_data = True
                     except:
                         pass
                 elif line[0] == ';':
                     if line.startswith('; filament_colour ='):
                         _, _, filament_color_line = line.partition('=')
+                        found_data = True
                     if line.startswith('; filament_type ='):
                         _, _, filament_type_line = line.partition('=')
+                        found_data = True
                     if line.startswith('; zmod_color_data ='):
                         _, _, color_data_line = line.partition('=')
+                        found_data = True
                         break
                     if line.startswith('; header_block_end'):
                         if scan_files_setting == 2:
                             tool_count = self.get_allowed_tool_count(gcmd)
-                            return [(i, '', '') for i in range(tool_count)]
+                            return (found_data, [(i, '', '') for i in range(tool_count)])
                         else:
                             gcmd.respond_raw(f"// {self._t('no_prepared_data_scanning')}")
 
@@ -1061,7 +1068,13 @@ class zmod_color:
             filament_colors = color_data_params[1].split(',')
             filament_types = color_data_params[2].split(',')
 
-        return sorted([(tool_index, filament_colors[tool_index], filament_types[tool_index]) for tool_index in result_colors])
+        sorted_colors = sorted([(tool_index, filament_colors[tool_index], filament_types[tool_index]) for tool_index in result_colors])
+
+        found_data = True
+        if len(result_colors) == 1 and result_colors[0] == 0 and filament_colors[0] == '' and filament_types[0] == '':
+            found_data = False
+
+        return (found_data, sorted_colors)
 
     def get_auto_tool_assignments(self, gcmd, orig_tools, raw_slots, output_text, one_based_indexes):
         if len(raw_slots) == 0:
@@ -1190,13 +1203,13 @@ class zmod_color:
         if leveling not in (0, 1):
             raise gcmd.error(self._t('error_leveling', leveling))
 
+        auto_assign_setting = 0
         if gcmd.get_int('ALLOWED_TOOL_COUNT', 0) == 0:
-            self.file_colors = self.get_used_colors(gcmd)
+            colors_found, self.file_colors = self.get_used_colors(gcmd)
             if self.display and any(file_color[0] > 3 for file_color in self.file_colors):
                 raise gcmd.error(self._t('error_native_screen_tool_count', len(self.file_colors)))
-            auto_assign_setting = save_variables.get('auto_assign_colors', 0)
-        else:
-            auto_assign_setting = 0
+            if colors_found:
+                auto_assign_setting = save_variables.get('auto_assign_colors', 0)
 
         auto_assign = gcmd.get_int('AUTO_ASSIGN', auto_assign_setting)
 
