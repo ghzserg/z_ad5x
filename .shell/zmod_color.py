@@ -1006,7 +1006,7 @@ class zmod_color:
 
         threading.Thread(target=_worker, daemon=True).start()
 
-    def _extract_3mf_gcode(self, fname):
+    def _extract_3mf_gcode(self, fname, gcmd):
         if not fname.lower().endswith('.3mf'):
             return fname
 
