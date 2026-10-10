@@ -3,6 +3,9 @@ import re
 import json
 import requests
 import logging
+import hashlib
+from zipfile import ZipFile
+from pathlib import Path
 import subprocess
 
 FFCONFIG='/usr/prog/config/Adventurer5M.json'
@@ -576,7 +579,6 @@ class zmod_color:
     def __init__(self, config):
         self.printer = config.get_printer()
         self.color_limit = 4
-        self.first_T = 0
 
         self.display = config.getboolean('display', True)
         self.lang = 'en'
@@ -986,6 +988,63 @@ class zmod_color:
         """Перцептуальное расстояние ΔE76"""
         return ((l1 - l2) ** 2 + (a1 - a2) ** 2 + (b1 - b2) ** 2) ** 0.5
 
+    def _extract_3mf_gcode(self, fname, gcmd):
+        if not fname.lower().endswith('.3mf'):
+            return fname
+
+        src_3mf_path = f"/usr/data/gcodes/{fname}"
+        p = Path(fname)
+        clean_name = p.stem if p.stem.lower().endswith('.gcode') else f"{p.stem}.gcode"
+        target_gcode_path = f"/usr/data/gcodes/3mf_print/{clean_name}"
+
+        os.makedirs(os.path.dirname(target_gcode_path), exist_ok=True)
+
+        try:
+            with ZipFile(src_3mf_path, 'r') as zip_ref:
+                file_list = zip_ref.namelist()
+
+                internal_gcode_names = [f for f in file_list if f.lower().endswith('.gcode')]
+                if not internal_gcode_names:
+                    raise ValueError("NO_GCODE")
+
+                internal_gcode_names.sort()
+                gcode_in_zip = internal_gcode_names[0]
+
+                expected_md5 = None
+                md5_file_path = gcode_in_zip + ".md5"
+                if md5_file_path in file_list:
+                    raw_md5_content = zip_ref.read(md5_file_path).decode('utf-8', errors='ignore').strip()
+                    if raw_md5_content:
+                        expected_md5 = raw_md5_content.split()[0].lower()
+
+                # Потоковое чтение и запись чанками по 16КБ для экономии ОЗУ
+                md5_hash = hashlib.md5()
+                with zip_ref.open(gcode_in_zip) as source, open(target_gcode_path, 'wb') as target:
+                    while True:
+                        chunk = source.read(16384)
+                        if not chunk:
+                            break
+                        target.write(chunk)
+                        md5_hash.update(chunk)
+
+                current_md5 = md5_hash.hexdigest().lower()
+
+                # Если хеш не совпал с тем, что в архиве — удаляем битый файл с диска
+                if expected_md5 and current_md5 != expected_md5:
+                    if os.path.exists(target_gcode_path):
+                        os.remove(target_gcode_path)
+                    raise ValueError("MD5_MISMATCH")
+
+            return f"3mf_print/{clean_name}"
+        except Exception as e:
+            if str(e) == "NO_GCODE":
+                err = "!! Ошибка 3MF: Внутри архива не найден файл G-кода" if self.lang == 'ru' else "!! 3MF Error: No G-code file found inside the archive"
+            elif str(e) == "MD5_MISMATCH":
+                err = "!! Ошибка MD5: Контрольная сумма gcode не совпадает с файлом .md5 в 3MF" if self.lang == 'ru' else "!! MD5 Error: Extracted G-code hash does not match the internal .md5 file"
+            else:
+                err = f"!! Ошибка распаковки архива 3MF: {str(e)}" if self.lang == 'ru' else f"!! 3MF unpack error: {str(e)}"
+            raise gcmd.error(err)
+
     def _parse_3mf_filament(self, file_path):
         """Парсит 3MF архив и извлекает данные о филаментах из метаданных Orca/Bambu Slicer."""
         from zipfile import ZipFile
@@ -1005,22 +1064,6 @@ class zmod_color:
                     # Читаем первый найденный файл плиты
                     xml_data = zip_ref.read(plate_cfgs[0])
                     root = ET.fromstring(xml_data)
-
-                    layer_lists = root.find(".//layer_filament_lists")
-                    if layer_lists is not None:
-                        first_layer = layer_lists.find("layer_filament_list")
-                        if first_layer is not None:
-                            fl_list = first_layer.attrib.get("filament_list", "").split()
-                            if fl_list:
-                                self.first_T = int(fl_list[0])
-
-                    if layer_lists is None:
-                        for meta in root.findall(".//metadata"):
-                            if meta.attrib.get("key") == "extruder_type":
-                                val = meta.attrib.get("value", "").split()
-                                if val:
-                                    self.first_T = int(val[0])
-                                break
 
                     # Извлекаем элементы <filament>
                     for fil in root.findall(".//filament"):
@@ -1491,10 +1534,6 @@ class zmod_color:
             gcmd.respond_raw(self._t('no_response', json.dumps(response_data)))
 
     def find_t_code(self, filename):
-        if filename.lower().endswith('.3mf'):
-            self.gcode.run_script_from_command(f"SET_CURRENT_PRUTOK CHANNEL={self.first_T}")
-            return
-
         pattern = re.compile(r'^T([1-9]?[0-9])')
 
         with open(f"{self.virtual_sd.sdcard_dirname}/{filename}", 'r', encoding='utf-8') as file:
@@ -1573,6 +1612,7 @@ class zmod_color:
                 with open(FILE_CONFIG, 'w') as file:
                     json.dump(tools, file, indent=2)
 
+                fname = self._extract_3mf_gcode(fname, gcmd)
                 self.find_t_code(fname)
                 self.gcode.run_script_from_command(f"SDCARD_PRINT_FILE FILENAME=\"{fname}\"")
         else:
