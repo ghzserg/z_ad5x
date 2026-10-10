@@ -576,6 +576,7 @@ class zmod_color:
     def __init__(self, config):
         self.printer = config.get_printer()
         self.color_limit = 4
+        self.first_T = 0
 
         self.display = config.getboolean('display', True)
         self.lang = 'en'
@@ -1004,6 +1005,25 @@ class zmod_color:
                     # Читаем первый найденный файл плиты
                     xml_data = zip_ref.read(plate_cfgs[0])
                     root = ET.fromstring(xml_data)
+
+                    layer_lists = root.find(".//layer_filament_lists")
+                    if layer_lists is not None:
+                        first_layer = layer_lists.find("layer_filament_list")
+                        if first_layer is not None:
+                            fl_list = first_layer.attrib.get("filament_list", "").split()
+                            if fl_list:
+                                first_tool_idx = int(fl_list[0])  # Получаем 0-based индекс (0, 1...)
+                                self.first_T = first_tool_idx
+
+                    if layer_lists is None:
+                        for meta in root.findall(".//metadata"):
+                            if meta.attrib.get("key") == "extruder_type":
+                                val = meta.attrib.get("value", "").split()
+                                if val:
+                                    first_tool_idx = int(val[0])
+                                    self.first_T = first_tool_idx
+                                break
+
 
                     # Извлекаем элементы <filament>
                     for fil in root.findall(".//filament"):
@@ -1474,6 +1494,10 @@ class zmod_color:
             gcmd.respond_raw(self._t('no_response', json.dumps(response_data)))
 
     def find_t_code(self, filename):
+        if filename.lower().endswith('.3mf'):
+            self.gcode.run_script_from_command(f"SET_CURRENT_PRUTOK CHANNEL={self.first_T}")
+            return
+
         pattern = re.compile(r'^T([1-9]?[0-9])')
 
         with open(f"{self.virtual_sd.sdcard_dirname}/{filename}", 'r', encoding='utf-8') as file:
