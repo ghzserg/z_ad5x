@@ -4,6 +4,9 @@ import json
 import requests
 import logging
 import hashlib
+import threading
+import urllib.parse
+import urllib.request
 from zipfile import ZipFile
 from pathlib import Path
 import subprocess
@@ -988,7 +991,22 @@ class zmod_color:
         """Перцептуальное расстояние ΔE76"""
         return ((l1 - l2) ** 2 + (a1 - a2) ** 2 + (b1 - b2) ** 2) ** 0.5
 
-    def _extract_3mf_gcode(self, fname, gcmd):
+    def update_metadata_async(filename):
+        """Запускает повторное сканирование метаданных в Moonraker, не блокируя реактор."""
+        encoded = urllib.parse.quote(filename, safe="")
+        url = "http://127.0.0.1:7125/server/files/metascan?filename=" + encoded
+
+        def _worker():
+            req = urllib.request.Request(url, method="POST")
+            try:
+                with urllib.request.urlopen(req, timeout=30):
+                    pass
+            except Exception:
+                pass
+
+        threading.Thread(target=_worker, daemon=True).start()
+
+    def _extract_3mf_gcode(self, fname):
         if not fname.lower().endswith('.3mf'):
             return fname
 
@@ -1034,6 +1052,8 @@ class zmod_color:
                     if os.path.exists(target_gcode_path):
                         os.remove(target_gcode_path)
                     raise ValueError("MD5_MISMATCH")
+
+                self.update_metadata_async(f"3mf_print/{clean_name}")
 
             return f"3mf_print/{clean_name}"
         except Exception as e:
