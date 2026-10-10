@@ -991,7 +991,7 @@ class zmod_color:
         """Перцептуальное расстояние ΔE76"""
         return ((l1 - l2) ** 2 + (a1 - a2) ** 2 + (b1 - b2) ** 2) ** 0.5
 
-    def update_metadata_async(filename):
+    def update_metadata_async(self, filename):
         """Запускает повторное сканирование метаданных в Moonraker, не блокируя реактор."""
         encoded = urllib.parse.quote(filename, safe="")
         url = "http://127.0.0.1:7125/server/files/metascan?filename=" + encoded
