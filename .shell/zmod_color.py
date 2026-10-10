@@ -1045,7 +1045,7 @@ class zmod_color:
             if sorted_colors:
                 return (True, sorted_colors)
 
-            scan_files_setting = 0:
+            scan_files_setting = 0
 
         if scan_files_setting == 0:
             tool_count = self.get_allowed_tool_count(gcmd)
