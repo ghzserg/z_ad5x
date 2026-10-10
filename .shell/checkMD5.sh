@@ -19,6 +19,7 @@ fi
 case "${FILE_NAME}" in
     *"3mf_print/"*)
         send_klipper 5
+        exit 0
         ;;
 esac
 
