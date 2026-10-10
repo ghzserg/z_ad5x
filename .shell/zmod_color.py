@@ -1012,18 +1012,15 @@ class zmod_color:
                         if first_layer is not None:
                             fl_list = first_layer.attrib.get("filament_list", "").split()
                             if fl_list:
-                                first_tool_idx = int(fl_list[0])  # Получаем 0-based индекс (0, 1...)
-                                self.first_T = first_tool_idx
+                                self.first_T = int(fl_list[0])
 
                     if layer_lists is None:
                         for meta in root.findall(".//metadata"):
                             if meta.attrib.get("key") == "extruder_type":
                                 val = meta.attrib.get("value", "").split()
                                 if val:
-                                    first_tool_idx = int(val[0])
-                                    self.first_T = first_tool_idx
+                                    self.first_T = int(val[0])
                                 break
-
 
                     # Извлекаем элементы <filament>
                     for fil in root.findall(".//filament"):
