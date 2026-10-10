@@ -14,8 +14,8 @@ if [ ${C5PRO} -eq 1 ]; then
     chroot ${MOD} python3 -c \
     "from PIL import Image; img = Image.frombytes('RGBA', (480, 800), open('/dev/fb0', 'rb').read(), 'raw', 'BGRA'); img.transpose(Image.ROTATE_270).convert('RGB').save('/opt/config/mod_data/screen.jpg', 'JPEG', quality=90)"
 else
-    WIDTH=480
-    HEIGHT=800
+    WIDTH=800
+    HEIGHT=480
 
     if [ ${AD5M} -eq 1 ]; then FFMPEG="/opt/ffmpeg-4.0.2/bin/ffmpeg"; fi
     if [ ${AD5X} -eq 1 ]; then FFMPEG="/usr/prog/ffmpeg-4.0.2/bin/ffmpeg"; fi
@@ -28,8 +28,7 @@ else
      -f image2 \
      -q:v 4 \
      "$OUT_FILE" \
-     -y
+     -y 2>/dev/null
 fi
-
 
 [ ${ZLANG} != 'ru' ] && echo "Printer screen shot: mod_data/screen.jpg" || echo "Скриншот экрана принтера: mod_data/screen.jpg"
