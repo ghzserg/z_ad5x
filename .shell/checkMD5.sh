@@ -16,6 +16,12 @@ elif [ ! -f "${FILE_NAME}" ]; then
     exit 2
 fi
 
+case "${FILE_NAME}" in
+    *"3mf_print/"*)
+        send_klipper 5
+        ;;
+esac
+
 DELETE_FILE=${2}
 if [ -z "${DELETE_FILE}" ]; then
     DELETE_FILE="false"
