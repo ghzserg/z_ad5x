@@ -5,7 +5,6 @@ import requests
 import logging
 import hashlib
 import threading
-import time
 import urllib.parse
 import urllib.request
 from zipfile import ZipFile
@@ -612,14 +611,6 @@ class zmod_color:
         else:
             self.hide_filament_types = [fil.strip() for fil in hide_filament_types.split(',')]
 
-        # With the stock screen, Flashforge's firmware drives the IFS and
-        # zmod_ifs does not run, so slot presence and the loaded slot are read
-        # from the firmware's /detail on a worker thread (get_status must not
-        # block on the network) and reported in get_status. 0 disables it.
-        self.display_status_interval = config.getfloat('display_status_interval', 3., minval=0.)
-        self._display_slots = None
-        self._display_stop = threading.Event()
-
     def _handle_ready(self):
         self.zmod = self.printer.lookup_object('zmod', None)
         if self.zmod is not None:
@@ -638,44 +629,6 @@ class zmod_color:
 
         if self.zmod_ifs:
             self.color_limit = self.zmod_ifs.color_limit
-
-        if self.display and self.display_status_interval > 0:
-            self.printer.register_event_handler("klippy:disconnect", self._display_stop.set)
-            threading.Thread(target=self._poll_display_status, daemon=True).start()
-
-    def _poll_display_status(self):
-        while not self._display_stop.is_set():
-            try:
-                status_code, response_data = self.zsend_post_request("/detail")
-                if status_code:
-                    detail = response_data.get('detail', {})
-                    info = detail.get('matlStationInfo', {})
-                    slots = {}
-                    for slot in info.get('slotInfos', []):
-                        slots[int(slot.get('slotId', 0))] = bool(slot.get('hasFilament', False))
-                    # currentLoadSlot: slot loaded into the head (0 if none);
-                    # currentSlot: the last selected one.
-                    channel = (int(info.get('currentLoadSlot', 0) or 0)
-                               or int(info.get('currentSlot', 0) or 0))
-                    self._display_slots = {
-                        'time': time.monotonic(),
-                        'ifs': bool(detail.get('hasMatlStation', False)),
-                        'slots': slots,
-                        'channel': channel,
-                    }
-            except Exception:
-                pass
-            self._display_stop.wait(self.display_status_interval)
-
-    def _get_display_slots(self):
-        # None until the firmware answers (it starts a few seconds after
-        # Klipper) or when its last answer is too old to trust.
-        data = self._display_slots
-        if data is None:
-            return None
-        if time.monotonic() - data['time'] > max(15., 5 * self.display_status_interval):
-            return None
-        return data
 
     def update_color_limit(self, new_limit):
         # Do not call this directly. Call zmod_ifs.update_color_limit instead and let it call this.
@@ -719,13 +672,6 @@ class zmod_color:
             'slots': []
         }
         zmod_ifs = getattr(self, 'zmod_ifs', None)
-        display_slots = self._get_display_slots() if self.display else None
-        # filament_known: hasFilament reflects the IFS (zmod_ifs without the
-        # stock screen, the firmware with it) rather than a placeholder False.
-        status['filament_known'] = display_slots is not None or (
-            not self.display and zmod_ifs is not None)
-        if display_slots is not None:
-            status['ifs'] = display_slots['ifs']
         if getattr(self, 'query_adc', None) is not None:
             try:
                 status['extruder_sensor'] = self.get_extruder_sensor()
@@ -735,10 +681,6 @@ class zmod_color:
         if ffm_info is not None:
             try:
                 status['channel'] = int(ffm_info.get("channel", 0))
-                if display_slots is not None:
-                    # Adventurer5M.json's channel is not kept current by the
-                    # stock firmware.
-                    status['channel'] = display_slots['channel']
                 color_mapping = getattr(self, 'COLOR_MAPPING', {})
                 for i in range(1, self.color_limit + 1):
                     hex_color = ffm_info.get(f"ffmColor{i}", "")
@@ -748,8 +690,7 @@ class zmod_color:
                         'Material': ffm_info.get(f"ffmType{i}", "?").upper(),
                         'Color': color_mapping.get(hex_color.lower(), hex_color),
                         'HEX': hex_color,
-                        'hasFilament': (display_slots['slots'].get(i, False) if display_slots is not None
-                                        else bool(zmod_ifs.get_port(i)) if zmod_ifs is not None else False)
+                        'hasFilament': bool(zmod_ifs.get_port(i)) if zmod_ifs is not None else False
                     })
             except Exception:
                 pass
