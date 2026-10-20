@@ -16,6 +16,7 @@ BYTESIZE = 8
 TIMEOUT = 0.2
 HOST_REPORT_TIME = 0.2
 DATA_TIMEOUT = 0.02
+REPLY_GAP = 2 * DATA_TIMEOUT  # silence that ends an IFS reply (reactor reader)
 OPROS_EXTRUDER = 0.1
 
 FFCONFIG='/usr/prog/config/Adventurer5M.json'
@@ -125,8 +126,9 @@ class zmod_ifs:
         self._ret_command_id = 0
 
         self.stop_thread = False
-        self.sensor_thread = threading.Thread(target=self._sensor_reader)
-        self.sensor_thread.daemon = True
+        self._io_timer = None
+        self._ser = None
+        self._fd_handle = None
 
         # Регистрация событий
         self.printer.register_event_handler("klippy:ready", self._handle_ready)
@@ -179,7 +181,7 @@ class zmod_ifs:
 
         self.get_lang()
         self.get_prutok_config(1)
-        self.sensor_thread.start()
+        self._start_io()
 
     def get_ifs_status(self):
         return self.ifs
@@ -348,8 +350,7 @@ class zmod_ifs:
 
     def _close(self):
         self.stop_thread = True
-        if self.sensor_thread.is_alive():
-            self.sensor_thread.join(timeout=2.0)
+        self._stop_io()
 
     def _respond_info(self, msg):
         self.reactor.register_async_callback(
@@ -1190,118 +1191,178 @@ class zmod_ifs:
             self.gcode.run_script_from_command(f"TEMPERATURE_WAIT SENSOR=extruder MINIMUM={config['temp']-2} MAXIMUM={config['temp']+4}")
         self.gcode.run_script_from_command(f"IFS_REMOVE_PRUTOK PRUTOK={prutok} FORCE=0 NEED_TRASH={need_trash}")
 
-    def _ifs_serial_read(self, ser, begin_timeout=HOST_REPORT_TIME, data_timeout=DATA_TIMEOUT):
-        cutoff_time = time.monotonic() + begin_timeout
-        result = b''
-        while True:
-            if ser.in_waiting > 0:
-                cutoff_time = time.monotonic() + data_timeout
-                result += ser.read_all()
-            if time.monotonic() >= cutoff_time:
-                break
-            time.sleep(data_timeout)
+    # Опрос IFS в реакторе Klipper (без отдельного потока).
+    # IFS polling runs in Klipper's reactor instead of a thread, so it never competes with
+    # Klippy's main loop for the GIL. One timer drives the cycle: send the current command,
+    # collect bytes as they arrive (fd callback), and treat REPLY_GAP without new bytes as the
+    # end of the reply -- the IFS sends no terminator. The thread polled every DATA_TIMEOUT, so
+    # it ended a reply after DATA_TIMEOUT..2*DATA_TIMEOUT of silence; keep the upper bound.
+    def _start_io(self):
+        self._ser = None
+        self._fd_handle = None
+        self._io_state = 'closed'
+        self._rx = b''
+        self._last_rx = 0.
+        self._read_start = 0.
+        self._cur_command = "F13"
+        self._cur_command_id = -1
+        self._io_timer = self.reactor.register_timer(self._io_event, self.reactor.NOW)
 
-        return result
+    def _stop_io(self):
+        if getattr(self, '_io_timer', None) is not None:
+            self.reactor.unregister_timer(self._io_timer)
+            self._io_timer = None
+        self._close_port()
 
-    def _sensor_reader(self):
-        while not self.stop_thread:
-            ser = None
-            logging.info("IFS: Starting connection attempt...")
+    def _open_port(self):
+        logging.info("IFS: Starting connection attempt...")
+        logging.info(f"IFS: {PORT} opening")
+        self._ser = serial.Serial(port=PORT, baudrate=BAUDRATE, parity=PARITY, stopbits=STOPBITS,
+                                  bytesize=BYTESIZE, timeout=0)
+        self._fd_handle = self.reactor.register_fd(self._ser.fileno(), self._io_readable)
+        self._rx = b''
+        logging.info(f"IFS: {PORT} open")
+
+    def _close_port(self):
+        if self._fd_handle is not None:
+            self.reactor.unregister_fd(self._fd_handle)
+            self._fd_handle = None
+        ser, self._ser = self._ser, None
+        self._io_state = 'closed'
+        if ser is not None and ser.is_open:
             try:
-                logging.info(f"IFS: {PORT} opening")
-                ser = serial.Serial(
-                    port=PORT,
-                    baudrate=BAUDRATE,
-                    parity=PARITY,
-                    stopbits=STOPBITS,
-                    bytesize=BYTESIZE,
-                    timeout=TIMEOUT
-                )
-                logging.info(f"IFS: {PORT} open")
-                while not self.stop_thread:
-                    with self._command_lock:
-                        current_command = self._command
-                    command_id = -1
-                    if '#' in current_command:
-                        command, command_id = current_command.split('#', 1)
-                        command_id = int(command_id)
-                    else:
-                        command = current_command
-
-                    ser.write((command + "\r\n").encode())
-                    if self.send_ff_terminator:
-                        time.sleep(0.2)
-                        ser.write(b'\xFF')
-
-                    response = self._ifs_serial_read(ser).decode('utf-8', errors='ignore').strip()
-                    #response = ser.readline().decode('utf-8', errors='ignore').strip()
-                    #self._respond_info(f"IN: {response}")
-                    if not response:
-                        if self.ifs:
-                            if self.lang == 'ru':
-                                logging.warning(f"Пустой ответ от устройства {current_command}")
-                                self._respond_info(f"Пустой ответ от устройства {current_command}")
-                                logging.warning("IFS не доступен")
-                                self._respond_info("IFS не доступен")
-                            else:
-                                logging.warning(f"Empty response from device {current_command}")
-                                self._respond_info(f"Empty response from device {current_command}")
-                                logging.warning("IFS is not available")
-                                self._respond_info("IFS is not available")
-                            self.reactor.register_async_callback(
-                                lambda eventtime: self._safe_run_script("_IFS_OFF")
-                            )
-                            self.ifs = False
-                        break
-                    if not self.ifs:
-                        if self.lang == 'ru':
-                            logging.warning("IFS доступен")
-                            self._respond_info("IFS доступен")
-                        else:
-                            logging.warning("IFS is available")
-                            self._respond_info("IFS is available")
-                        self.reactor.register_async_callback(
-                            lambda eventtime: self._safe_run_script("_IFS_ON")
-                        )
-                        self.ifs = True
-
-                    if command_id == -1:
-                        self.ifs_data.update_from_string(response)
-                        current_values = self.ifs_data.get_values()
-
-                        #self._respond_info(response)
-                        #self._respond_info(json.dumps(current_values))
-
-                        # Безопасная обработка события вставки
-                        if current_values['NeedInsert']:
-                            prutok = current_values['Insert']
-                            self.reactor.register_async_callback(
-                                lambda eventtime, p=prutok: self._safe_run_script(f"_IFS_AUTOINSERT PRUTOK={p}")
-                            )
-                    else:
-                        #self._respond_info(f"! {command} -> {response}")
-                        with self._ret_command_lock:
-                            self._ret_command_data = response
-                            self._ret_command_id = command_id
-                            with self._command_lock:
-                                if command_id == self._command_id: # Если текущая команда последняя, то переходим в режим опроса
-                                    self._command = "F13"
-
-                    time.sleep(self.next_cmd_delay)
-            except serial.SerialException as e:
-                logging.warning("IFS: Serial communication error: %s", e)
-                self._respond_info(f"IFS: sensor error: Serial communication error: {str(e)}")
+                ser.close()
+                logging.info(f"IFS: {PORT} closed")
             except Exception as e:
-                logging.exception("IFS: Error data")
-                self._respond_info(f"IFS: sensor error: Error data: {str(e)}")
-            finally:
-                if ser and hasattr(ser, 'is_open') and ser.is_open:
-                    try:
-                        ser.close()
-                        logging.info(f"IFS: {PORT} closed")
-                    except Exception as e:
-                        logging.warning("IFS: Error closing IFS serial port: %s", e)
-                time.sleep(1)
+                logging.warning("IFS: Error closing IFS serial port: %s", e)
+
+    def _io_error(self, e, eventtime):
+        if isinstance(e, serial.SerialException) or isinstance(e, OSError):
+            logging.warning("IFS: Serial communication error: %s", e)
+            self._respond_info(f"IFS: sensor error: Serial communication error: {str(e)}")
+        else:
+            logging.exception("IFS: Error data")
+            self._respond_info(f"IFS: sensor error: Error data: {str(e)}")
+        self._close_port()
+        return eventtime + 1.
+
+    def _io_readable(self, eventtime):
+        try:
+            data = self._ser.read(4096)
+        except Exception as e:
+            self.reactor.update_timer(self._io_timer, self._io_error(e, eventtime))
+            return
+        if data:
+            self._rx += data
+            self._last_rx = eventtime
+            if self._io_state == 'reading':
+                self.reactor.update_timer(self._io_timer, eventtime + REPLY_GAP)
+
+    def _io_event(self, eventtime):
+        if self.stop_thread:
+            self._close_port()
+            return self.reactor.NEVER
+        try:
+            if self._io_state == 'closed':
+                self._open_port()
+                self._io_state = 'idle'
+                return eventtime
+            if self._io_state == 'idle':
+                with self._command_lock:
+                    current_command = self._command
+                command_id = -1
+                if '#' in current_command:
+                    command, command_id = current_command.split('#', 1)
+                    command_id = int(command_id)
+                else:
+                    command = current_command
+                self._cur_command, self._cur_command_id = current_command, command_id
+                self._ser.write((command + "\r\n").encode())
+                if self.send_ff_terminator:
+                    self._io_state = 'terminator'
+                    return eventtime + 0.2
+                return self._begin_read(eventtime)
+            if self._io_state == 'terminator':
+                self._ser.write(b'\xFF')
+                return self._begin_read(eventtime)
+            # 'reading'
+            if self._rx:
+                if eventtime < self._last_rx + REPLY_GAP:
+                    return self._last_rx + REPLY_GAP
+            elif eventtime < self._read_start + HOST_REPORT_TIME:
+                return self._read_start + HOST_REPORT_TIME
+            response = self._rx.decode('utf-8', errors='ignore').strip()
+            self._rx = b''
+            self._io_state = 'idle'
+            if not self._handle_response(response, self._cur_command, self._cur_command_id):
+                self._close_port()
+                return eventtime + 1.
+            return eventtime + self.next_cmd_delay
+        except Exception as e:
+            return self._io_error(e, eventtime)
+
+    def _begin_read(self, eventtime):
+        self._io_state = 'reading'
+        self._read_start = eventtime
+        if self._rx:  # bytes already waiting: same as the thread's first in_waiting check
+            self._last_rx = eventtime
+            return eventtime + REPLY_GAP
+        return eventtime + HOST_REPORT_TIME
+
+    def _handle_response(self, response, current_command, command_id):
+        """Process one reply. Returns False when the port should be closed and reopened."""
+        #self._respond_info(f"IN: {response}")
+        if not response:
+            if self.ifs:
+                if self.lang == 'ru':
+                    logging.warning(f"Пустой ответ от устройства {current_command}")
+                    self._respond_info(f"Пустой ответ от устройства {current_command}")
+                    logging.warning("IFS не доступен")
+                    self._respond_info("IFS не доступен")
+                else:
+                    logging.warning(f"Empty response from device {current_command}")
+                    self._respond_info(f"Empty response from device {current_command}")
+                    logging.warning("IFS is not available")
+                    self._respond_info("IFS is not available")
+                self.reactor.register_async_callback(
+                    lambda eventtime: self._safe_run_script("_IFS_OFF")
+                )
+                self.ifs = False
+            return False
+        if not self.ifs:
+            if self.lang == 'ru':
+                logging.warning("IFS доступен")
+                self._respond_info("IFS доступен")
+            else:
+                logging.warning("IFS is available")
+                self._respond_info("IFS is available")
+            self.reactor.register_async_callback(
+                lambda eventtime: self._safe_run_script("_IFS_ON")
+            )
+            self.ifs = True
+
+        if command_id == -1:
+            self.ifs_data.update_from_string(response)
+            current_values = self.ifs_data.get_values()
+
+            #self._respond_info(response)
+            #self._respond_info(json.dumps(current_values))
+
+            # Безопасная обработка события вставки
+            if current_values['NeedInsert']:
+                prutok = current_values['Insert']
+                self.reactor.register_async_callback(
+                    lambda eventtime, p=prutok: self._safe_run_script(f"_IFS_AUTOINSERT PRUTOK={p}")
+                )
+        else:
+            #self._respond_info(f"! {current_command} -> {response}")
+            with self._ret_command_lock:
+                self._ret_command_data = response
+                self._ret_command_id = command_id
+                with self._command_lock:
+                    if command_id == self._command_id: # Если текущая команда последняя, то переходим в режим опроса
+                        self._command = "F13"
+        return True
 
 class IfsData:
     def __init__(self, color_limit = 4):
