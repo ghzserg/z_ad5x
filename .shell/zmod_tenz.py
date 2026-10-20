@@ -30,11 +30,16 @@ class zmod_tenz:
 
         self.temp_lock = threading.Lock()
 
-        self.stop_thread = False  # Флаг для остановки потока
-        self.sensor_thread = threading.Thread(target=self._sensor_reader)
+        self.stop_thread = False  # Флаг для остановки опроса
         self.ser = None
-        self.sensor_thread.daemon = True  # Поток завершится при выходе из программы
-        self.sensor_thread.start()
+        # Опрос датчика в реакторе Klipper (без отдельного потока)
+        self._fd_handle = None
+        self._mcu = None
+        self._io_state = 'closed'
+        self._rx = b''
+        self._deadline = 0.
+        self._cur_command_id = -1
+        self._io_timer = self.reactor.register_timer(self._io_event, self.reactor.NOW)
 
         self.zcontrol = 0
         self.zcommand = 2
@@ -74,14 +79,10 @@ class zmod_tenz:
 
     def close(self):
         self.stop_thread = True
-        if self.ser is not None and self.ser.is_open:
-            try:
-                self.ser.close()
-            except Exception:
-                pass
-
-        if self.sensor_thread.is_alive():
-            self.sensor_thread.join(timeout=2.0)
+        if self._io_timer is not None:
+            self.reactor.unregister_timer(self._io_timer)
+            self._io_timer = None
+        self._close_port()
 
     def _respond_info(self, msg):
         self.reactor.register_async_callback(
@@ -230,75 +231,121 @@ class zmod_tenz:
 
         self.reactor.register_async_callback(callback)
 
-    def _sensor_reader(self):
-        mcu = self.printer.lookup_object('mcu')
-        while not self.stop_thread:
+    # The load cell is polled from Klipper's reactor instead of a thread, so it never competes
+    # with Klippy's main loop for the GIL. One timer drives the cycle: clear stale input, send
+    # the current command, and handle the reply when its line end arrives (fd callback) or
+    # when READ_TIMEOUT passes -- the same as the thread's readline() with timeout=1.
+    READ_TIMEOUT = 1.05  # the thread's 50 ms pause before readline() plus its 1 s timeout
+
+    def _close_port(self):
+        if self._fd_handle is not None:
+            self.reactor.unregister_fd(self._fd_handle)
+            self._fd_handle = None
+        ser, self.ser = self.ser, None
+        self._io_state = 'closed'
+        if ser is not None and ser.is_open:
             try:
-                self.ser = serial.Serial(port, baudrate, timeout=1)
-                while not self.stop_thread:
-                    self.ser.reset_input_buffer()
-                    current_command = self.get_command()
-                    command_id = -1
-                    if '#' in current_command:
-                        command, command_id = current_command.split('#', 1)
-                        command_id = int(command_id)
-                    else:
-                        command = current_command
-
-                    self.ser.write(command.encode() + b'\n')
-                    time.sleep(0.05)
-
-                    response = self.ser.readline().decode('utf-8', errors='ignore').strip()
-                    if not response and command_id == -1:
-
-                        self._push_temp_to_klipper(mcu, -200.0)
-                        continue
-
-                    if not response:
-                        logging.warning("Empty response from device. Possible disconnect.")
-                        break
-
-                    with self._ret_command_lock:
-                        self._ret_command_id = command_id
-
-                    if command_id == -1:
-                        cur_temp = self.extract_last_value_before_g(response)
-                        if cur_temp > 5120:
-                            cur_temp = 1
-
-                        self._push_temp_to_klipper(mcu, cur_temp)
-
-                        if (self.max_temp != 2048 and
-                            self.zcontrol == 1 and
-                            cur_temp > self.max_temp):
-                            self._zcontrol(cur_temp)
-                    else:
-                        with self._ret_command_lock:
-                            self._ret_command_data = response
-                        with self._command_lock:
-                            self._command = "H7"
-                    time.sleep(HOST_REPORT_TIME)
-            except serial.SerialException as e:
-                logging.warning("Serial communication error: %s", e)
-                self._respond_info(f"cell_tare: Serial error: {str(e)}")
-
-                self._push_temp_to_klipper(mcu, -200.0)
-
+                ser.close()
+                logging.info(f"{port} closed")
             except Exception as e:
-                logging.exception("Sensor thread error: %s", e)
-                self._respond_info(f"cell_tare: Error data")
+                logging.warning("Error closing serial port: %s", e)
 
-                self._push_temp_to_klipper(mcu, -200.0)
+    def _io_readable(self, eventtime):
+        try:
+            data = self.ser.read(4096)
+        except Exception as e:
+            self.reactor.update_timer(self._io_timer, self._io_error(e, eventtime))
+            return
+        if data:
+            self._rx += data
+            if self._io_state == 'reading' and b'\n' in self._rx:
+                self.reactor.update_timer(self._io_timer, eventtime)
 
-            finally:
-                if self.ser is not None and self.ser.is_open:
-                    try:
-                        self.ser.close()
-                        logging.info(f"{port} closed")
-                        self.ser = None
-                    except Exception as e:
-                        logging.warning("Error closing serial port: %s", e)
-                time.sleep(0.5)
+    def _io_error(self, e, eventtime):
+        if isinstance(e, (serial.SerialException, OSError)):
+            logging.warning("Serial communication error: %s", e)
+            self._respond_info(f"cell_tare: Serial error: {str(e)}")
+        else:
+            logging.exception("Sensor thread error: %s", e)
+            self._respond_info(f"cell_tare: Error data")
+        if self._mcu is not None:
+            self._push_temp_to_klipper(self._mcu, -200.0)
+        self._close_port()
+        return eventtime + 0.5
+
+    def _io_event(self, eventtime):
+        if self.stop_thread:
+            self._close_port()
+            return self.reactor.NEVER
+        try:
+            if self._mcu is None:
+                self._mcu = self.printer.lookup_object('mcu')
+            if self._io_state == 'closed':
+                self.ser = serial.Serial(port, baudrate, timeout=0)
+                self._fd_handle = self.reactor.register_fd(self.ser.fileno(), self._io_readable)
+                self._io_state = 'idle'
+                return eventtime
+            if self._io_state == 'idle':
+                self.ser.reset_input_buffer()
+                self._rx = b''
+                current_command = self.get_command()
+                command_id = -1
+                if '#' in current_command:
+                    command, command_id = current_command.split('#', 1)
+                    command_id = int(command_id)
+                else:
+                    command = current_command
+                self._cur_command_id = command_id
+                self.ser.write(command.encode() + b'\n')
+                self._io_state = 'reading'
+                self._deadline = eventtime + self.READ_TIMEOUT
+                return self._deadline
+            # 'reading'
+            if b'\n' in self._rx:
+                line = self._rx[:self._rx.index(b'\n') + 1]
+            elif eventtime >= self._deadline:
+                line = self._rx
+            else:
+                return self._deadline
+            self._rx = b''
+            self._io_state = 'idle'
+            return self._handle_response(line.decode('utf-8', errors='ignore').strip(),
+                                         self._cur_command_id, eventtime)
+        except Exception as e:
+            return self._io_error(e, eventtime)
+
+    def _handle_response(self, response, command_id, eventtime):
+        """Process one reply; returns when the next cycle should start."""
+        mcu = self._mcu
+        if not response and command_id == -1:
+            self._push_temp_to_klipper(mcu, -200.0)
+            return eventtime
+
+        if not response:
+            logging.warning("Empty response from device. Possible disconnect.")
+            self._close_port()
+            return eventtime + 0.5
+
+        with self._ret_command_lock:
+            self._ret_command_id = command_id
+
+        if command_id == -1:
+            cur_temp = self.extract_last_value_before_g(response)
+            if cur_temp > 5120:
+                cur_temp = 1
+
+            self._push_temp_to_klipper(mcu, cur_temp)
+
+            if (self.max_temp != 2048 and
+                self.zcontrol == 1 and
+                cur_temp > self.max_temp):
+                self._zcontrol(cur_temp)
+        else:
+            with self._ret_command_lock:
+                self._ret_command_data = response
+            with self._command_lock:
+                self._command = "H7"
+        return eventtime + HOST_REPORT_TIME
 
     def setup_minmax(self, min_temp, max_temp):
         self.min_temp = min_temp
