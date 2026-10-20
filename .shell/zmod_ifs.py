@@ -381,6 +381,12 @@ class zmod_ifs:
             result = (value >= 0.72)
         return result
 
+    # Seconds since the last IFS status reply was parsed (inf before the first one)
+    def get_data_age(self):
+        with self.ifs_data.lock:
+            last = self.ifs_data.last_update
+        return time.monotonic() - last if last else float('inf')
+
     def get_ifs_sensor(self, port):
         return self.ifs_data.get_stall(port)
 
@@ -1369,6 +1375,7 @@ class IfsData:
         self.color_limit = color_limit
         self.lock = threading.Lock()
         self.cur_port = 0       # Текущий активный порт
+        self.last_update = 0.   # time.monotonic() of the last parsed status reply
         self.Ports = [False] * self.color_limit
         self.Silk = 0           # Загруженные порты
         self.Chan = 0           # Текущий активный порт
@@ -1451,6 +1458,7 @@ class IfsData:
             self.Chan = chan
             self.NeedInsert = insert != 0 and insert != self.Insert and state == FFS_STATUS_READY
             self.Insert = insert
+            self.last_update = time.monotonic()
 
     def set_cur_port(self, port):
         with self.lock:

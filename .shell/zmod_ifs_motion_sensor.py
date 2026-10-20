@@ -9,6 +9,9 @@ import inspect
 from . import filament_switch_sensor
 
 CHECK_RUNOUT_TIMEOUT = .250
+# IFS status older than this can't tell motion from no motion (polling was held up, e.g. while
+# Klippy's main loop was busy); extrusion during that time is not counted towards a runout.
+IFS_STALE_TIME = 1.0
 
 class ZmodIfsMotionSensor:
     def __init__(self, config):
@@ -99,6 +102,9 @@ class ZmodIfsMotionSensor:
         print_time = self.estimated_print_time(eventtime)
         return self.extruder.find_past_position(print_time)
     def _extruder_pos_update_event(self, eventtime):
+        if self.ifs.get_data_age() > IFS_STALE_TIME:
+            self._update_filament_runout_pos(eventtime)
+            return eventtime + CHECK_RUNOUT_TIMEOUT
         # Получаем статус филамента из zmod_ifs
         if self.ifs.get_ifs_sensor(self.port):
             self._update_filament_runout_pos(eventtime)
