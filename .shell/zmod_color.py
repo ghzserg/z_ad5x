@@ -1410,12 +1410,12 @@ class zmod_color:
                         gcmd.respond_raw("// action:prompt_button_group_end")
                     button_index += 1
 
+                gcmd.respond_raw(f"// action:prompt_footer_button {self._t('cancel')}|RESPOND TYPE=command MSG=action:prompt_end")
                 gcmd.respond_raw(
                     f"// action:prompt_footer_button {self._t('send_print')}|"
                     f"PRINT_ZCOLOR LEVELING={leveling} FILENAME=\"{fname}\" PLATE={plate} ALLOWED_TOOL_COUNT={allowed_tool_count} "
                     f"{current_tools_param_text}|red"
                 )
-                gcmd.respond_raw(f"// action:prompt_footer_button {self._t('cancel')}|RESPOND TYPE=command MSG=action:prompt_end")
                 gcmd.respond_raw("// action:prompt_show")
 
                 for line in auto_selection_output_text:
