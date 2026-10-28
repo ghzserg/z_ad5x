@@ -148,6 +148,9 @@ class zmod:
             return []
 
     def get_plate(self, gcmd, fname):
+        # Для не-3mf плата не имеет смысла: PLATE игнорируем (даже PLATE=0 или пустой)
+        if not fname.lower().endswith('.3mf'):
+            return 1
         requested = gcmd.get_int("PLATE", None)
         if requested is not None and requested < 1:
             raise gcmd.error("PLATE must be >= 1")
