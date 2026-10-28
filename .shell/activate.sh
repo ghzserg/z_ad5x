@@ -13,7 +13,7 @@ enable_zmod_ad5x_c5pro()
 
     # Активируем мод
     if ! grep -q prepare.sh /usr/prog/app_startup.sh; then
-        echo "Aktivate Z-Mod"
+        echo "Activate Z-Mod"
 
         cat /usr/prog/app_startup.sh >/tmp/startup.sh
 

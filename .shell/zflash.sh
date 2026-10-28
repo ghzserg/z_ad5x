@@ -52,7 +52,7 @@ MACHINE="Неизвестная машина"
 [ -f /usr/prog/app_startup.sh ] && grep -q "^MACHINE=Creator5Pro" /usr/prog/app_startup.sh && MACHINE=Creator5Pro
 
 if [ "${MACHINE}" == "Неизвестная машина" ]; then
-    [ "${ZLANG}" != 'ru' ] && echo "Failed to determine printer model" || echo "Не удалось определить модель принетра"
+    [ "${ZLANG}" != 'ru' ] && echo "Failed to determine printer model" || echo "Не удалось определить модель принтера"
     exit 1
 fi
 
