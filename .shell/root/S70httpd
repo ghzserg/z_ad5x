@@ -1,7 +1,7 @@
 #!/bin/sh
 # (C) 2024-2026 ghzserg https://github.com/ghzserg/zmod
 #
-# Starts busbox httpd
+# Starts busybox httpd
 #
 
 source /usr/data/zmod/zmod/.shell/0.sh

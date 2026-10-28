@@ -30,18 +30,18 @@ if [ $pid -ne 0 ]; then
 # All black magic is done in this GDB script.
 # Do not modify anything if you don't understand it!!!
 
-# Do not load all symbold from shared libraries, we do not need them all
+# Do not load all symbols from shared libraries, we do not need them all
 set auto-solib-add off
 
 # Attach to our process to perform manipulations
 attach $pid
 
-# Check that we have instanse of CancelDialog (means it is opened now)
+# Check that we have instance of CancelDialog (means it is opened now)
 if (_ZN12CancelDialog16instCancelDialogE != 0)
   call _ZN12CancelDialog13setStateClearEv(_ZN12CancelDialog16instCancelDialogE)
 end
 
-# Check that we have instanse of CompletePrintDialog (means it is opened now)
+# Check that we have instance of CompletePrintDialog (means it is opened now)
 if (_ZN19CompletePrintDialog23instCompletePrintDialogE != 0)
   call _ZN19CompletePrintDialog13setStateClearEv(_ZN19CompletePrintDialog23instCompletePrintDialogE)
 end

@@ -64,7 +64,7 @@ if [ $# -eq 2 ]; then
         if [ ${ZLANG} != 'ru' ]; then
             echo "RESPOND TYPE=error MSG=\"File $2 doesn't contain bed heating commands (M140/M190) or nozzle heating commands (M104/M109). They must be in first 1000 lines. G-code thumbnails 140x110/PNG\"" >/tmp/printer
         else
-            echo "RESPOND TYPE=error MSG=\"В файле $2 не найдены команды нагрева стола(M140/M190) или сопла(M104/M109). Они должны быть в первой 1000 строк. Эскизы G-кода 140x110/PNG\"" >/tmp/printer
+            echo "RESPOND TYPE=error MSG=\"В файле $2 не найдены команды нагрева стола (M140/M190) или сопла (M104/M109). Они должны быть в первых 1000 строках. Эскизы G-кода 140x110/PNG\"" >/tmp/printer
         fi
         exit 1
     else

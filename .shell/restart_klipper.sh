@@ -29,13 +29,13 @@ if [ $pid -ne 0 ]; then
 # All black magic is done in this GDB script.
 # Do not modify anything if you don't understand it!!!
 
-# Do not load all symbold from shared libraries, we do not need them all
+# Do not load all symbols from shared libraries, we do not need them all
 set auto-solib-add off
 
 # Attach to our process to perform manipulations
 attach $pid
 
-# Check that we have instanse of MainWindow
+# Check that we have instance of MainWindow
 if (_ZN10MainWindow14instMainWindowE != 0)
   # Open Settings screen
   call _ZN10MainWindow19on_settings_clickedEv(_ZN10MainWindow14instMainWindowE)
@@ -45,7 +45,7 @@ if (_ZN10MainWindow14instMainWindowE != 0)
     call _ZN8Settings7saveCfgEv(_ZN8Settings12instSettingsE)
   end
 
-  # Open Home screen afterall
+  # Open Home screen after all
   call _ZN10MainWindow15on_home_clickedEv(_ZN10MainWindow14instMainWindowE)
 end
 

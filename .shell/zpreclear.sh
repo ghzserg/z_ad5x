@@ -26,7 +26,7 @@ if [ "$M190" == "" ] || [ "$M109" == "" ]; then
         echo "RESPOND TYPE=error MSG=\"File $1 does not contain bed heating commands (M140/M190) or nozzle heating commands (M104/M109). They must be in the first $GLINES lines. G-code thumbnails 140x110/PNG\"" >/tmp/printer
         echo "RESPOND TYPE=error MSG=\"Printing cancelled\"" >/tmp/printer
     else
-        echo "RESPOND TYPE=error MSG=\"В файле $1 не найдены команды нагрева стола(M140/M190) или сопла(M104/M109). Они должны быть в первой $GLINES строк. Эскизы G-кода 140x110/PNG\"" >/tmp/printer
+        echo "RESPOND TYPE=error MSG=\"В файле $1 не найдены команды нагрева стола (M140/M190) или сопла (M104/M109). Они должны быть в первых $GLINES строках. Эскизы G-кода 140x110/PNG\"" >/tmp/printer
         echo "RESPOND TYPE=error MSG=\"Печать отменена\"" >/tmp/printer
     fi
     exit 1

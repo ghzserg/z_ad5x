@@ -21,7 +21,7 @@ else if [ -f "/usr/data/.mod/.zmod/root/printer_data/version.txt" ]; then
     fi
 fi
 
-[ ${ZLANG} != 'ru' ] && echo "Installed from USB: ${VER_MOD_FULL}. Update from Fluidd/Mainsail: ${VER_FF_FULL}" || echo "Установлено с флешки: ${VER_MOD_FULL}. Обновление с Fluidd/Mainsaill: ${VER_FF_FULL}"
+[ ${ZLANG} != 'ru' ] && echo "Installed from USB: ${VER_MOD_FULL}. Update from Fluidd/Mainsail: ${VER_FF_FULL}" || echo "Установлено с флешки: ${VER_MOD_FULL}. Обновление с Fluidd/Mainsail: ${VER_FF_FULL}"
 
 content=$(cat /opt/config/mod_data/plugins.cfg 2>/dev/null)
 if [ -z "$content" ] || ! echo "$content" | grep -q "include plugins"; then
