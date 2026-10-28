@@ -5,13 +5,13 @@ source /usr/data/zmod/zmod/.shell/0.sh
 set -x
 
 if [ ${C5PRO} -eq 1 ]; then
-    [ ${ZLANG} != 'ru' ] && echo "RESPOND TYPE=error MSG=\"Поддерживается только Klipper 12\"">/tmp/printer || echo "RESPOND TYPE=error MSG=\"Support only Klipper 12\"">/tmp/printer
+    [ ${ZLANG} != 'ru' ] && echo "RESPOND TYPE=error MSG=\"Support only Klipper 12\"">/tmp/printer || echo "RESPOND TYPE=error MSG=\"Поддерживается только Klipper 12\"">/tmp/printer
     exit 0
 fi
 
 if grep -q bambufy /opt/config/mod_data/plugins.cfg; then
     echo "RESPOND TYPE=command MSG=action:prompt_end" >/tmp/printer
-    [ ${ZLANG} != 'ru' ] && echo "RESPOND TYPE=error MSG=\"Отключите плагин Bambufy. DISABLE_PLUGIN name=bambufy\"">/tmp/printer || echo "RESPOND TYPE=error MSG=\"Disable plugin Bambufy. DISABLE_PLUGIN name=bambufy\"">/tmp/printer
+    [ ${ZLANG} != 'ru' ] && echo "RESPOND TYPE=error MSG=\"Disable plugin Bambufy. DISABLE_PLUGIN name=bambufy\"">/tmp/printer || echo "RESPOND TYPE=error MSG=\"Отключите плагин Bambufy. DISABLE_PLUGIN name=bambufy\"">/tmp/printer
     exit 0
 fi
 

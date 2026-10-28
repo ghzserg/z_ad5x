@@ -9,7 +9,7 @@ unset LD_PRELOAD
 source /usr/data/zmod/zmod/.shell/0.sh
 
 if [ -f /ZMOD ]; then
-    /usr/data/zmod/zmod/.shell/zremote.sh /usr/data/zmod/zmod/.shell/wifi_prepare.sh
+    /usr/data/zmod/zmod/.shell/zremote.sh /usr/data/zmod/zmod/.shell/wifi.sh
     exit
 fi
 

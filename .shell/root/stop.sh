@@ -7,8 +7,8 @@ source /usr/data/zmod/zmod/.shell/0.sh
 if grep -q "guppy = 1" /opt/config/mod_data/variables.cfg; then
     /usr/data/zmod/zmod/.shell/root/S80guppyscreen stop
 fi
-if grep -q "hellix = 1" /opt/config/mod_data/variables.cfg; then
-    /usr/data/zmod/zmod/.shell/root/S80hellixscreen stop
+if grep -q "helix = 1" /opt/config/mod_data/variables.cfg; then
+    /usr/data/zmod/zmod/.shell/root/S80helixscreen stop
 fi
 /usr/data/zmod/zmod/.shell/root/S65moonraker stop
 if [ ${AD5M} -eq 1 ]; then
