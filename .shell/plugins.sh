@@ -26,7 +26,7 @@ get_origin_from_config() {
   ' "$config_file"
 }
 
-if grep -q "[update_manager $1]" ${MOD_CONF}/moonraker.conf || grep -q "[update_manager $1]" ${MOD_CONF}/mod_data/user.moonraker.conf || grep -q "[update_manager $1]" ${MOD_CONF}/mod_data/extra_plugins.moonraker.conf; then
+if grep -q "^\[update_manager $1\]" ${MOD_CONF}/moonraker.conf || grep -q "^\[update_manager $1\]" ${MOD_CONF}/mod_data/user.moonraker.conf || grep -q "^\[update_manager $1\]" ${MOD_CONF}/mod_data/extra_plugins.moonraker.conf; then
     url=$(get_origin_from_config ${MOD_CONF}/moonraker.conf "$1")
     if [ "$url" == "" ]; then
         url=$(get_origin_from_config ${MOD_CONF}/mod_data/user.moonraker.conf "$1")
