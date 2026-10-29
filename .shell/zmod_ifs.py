@@ -529,7 +529,7 @@ class zmod_ifs:
             if filament_name not in existing_file_data:
                 this_filament = data[filament_name]
                 for key in this_filament.keys():
-                    if key in NO_EXCLUDE_FIELDS or this_filament[key] != new_data['default'][key]:
+                    if key in NO_EXCLUDE_FIELDS or key not in new_data['default'] or this_filament[key] != new_data['default'][key]:
                         new_filament[key] = this_filament[key]
             else:
                 this_filament = existing_file_data[filament_name]
