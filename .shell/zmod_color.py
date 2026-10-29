@@ -1076,7 +1076,11 @@ class zmod_color:
         color_data_line = ''
         found_data = False
 
-        with open(f"/usr/data/gcodes/{fname}", 'r') as f:
+        try:
+            f = open(f"/usr/data/gcodes/{fname}", 'r', encoding='utf-8', errors='ignore')
+        except OSError as e:
+            raise gcmd.error(f"Cannot read G-code file '{fname}': {e}")
+        with f:
             lines = 0
             self.zmod._throttle_reset()
             for line_raw in f:
@@ -1516,7 +1520,7 @@ class zmod_color:
     def find_t_code(self, filename):
         pattern = re.compile(r'^T([1-9]?[0-9])')
 
-        with open(f"{self.virtual_sd.sdcard_dirname}/{filename}", 'r', encoding='utf-8') as file:
+        with open(f"{self.virtual_sd.sdcard_dirname}/{filename}", 'r', encoding='utf-8', errors='ignore') as file:
             self.zmod._throttle_reset()
             code_lines = 0
             for i, line in enumerate(file):
