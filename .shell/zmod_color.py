@@ -10,11 +10,41 @@ import urllib.request
 from zipfile import ZipFile
 from pathlib import Path
 import subprocess
+import shutil
 
 FFCONFIG='/usr/prog/config/Adventurer5M.json'
 FILE_CONFIG='/usr/data/config/mod_data/file.json'
 THROTTLE_LINES = 32     # в циклах по строкам файла проверять время (zmod._throttle) раз в N строк
 SKIP_LINE_FIRST_CHARS = frozenset('GMXYZEFgmxyzef')
+
+def atomic_write(path, text):
+    path = os.path.realpath(path)
+    directory = os.path.dirname(path) or '.'
+    tmp_path = path + '.tmp'
+    try:
+        with open(tmp_path, 'w', encoding='utf-8') as f:
+            f.write(text)
+            f.flush()
+            os.fsync(f.fileno())
+        try:
+            shutil.copymode(path, tmp_path)
+        except OSError:
+            pass
+        os.replace(tmp_path, path)
+    except Exception:
+        try:
+            os.remove(tmp_path)
+        except OSError:
+            pass
+        raise
+    try:
+        dir_fd = os.open(directory, os.O_RDONLY)
+        try:
+            os.fsync(dir_fd)
+        finally:
+            os.close(dir_fd)
+    except OSError:
+        pass
 
 TRANSLATIONS = {
     'ru': {
@@ -819,11 +849,10 @@ class zmod_color:
             config["FFMInfo"][f"ffmColor{zslot}"] = zcolor
             config["FFMInfo"][f"ffmType{zslot}"] = ztype
 
-            with open(FFCONFIG, 'w', encoding='utf-8') as file:
-                json_string = json.dumps(config, indent='\t')
-                formatted_json_string = re.sub(r'(":)', r'" : ', json_string)
-                file.write(formatted_json_string)
-                return 200, formatted_json_string
+            json_string = json.dumps(config, indent='\t')
+            formatted_json_string = re.sub(r'(":)', r'" : ', json_string)
+            atomic_write(FFCONFIG, formatted_json_string)
+            return 200, formatted_json_string
 
         return 500, "Error"
 
@@ -913,11 +942,10 @@ class zmod_color:
                 config["FFMInfo"]["channel"] = zslot
                 self.zmod_ifs.set_cur_port(zslot)
 
-                with open(FFCONFIG, 'w', encoding='utf-8') as file:
-                    json_string = json.dumps(config, indent='\t')
-                    formatted_json_string = re.sub(r'(":)', r'" : ', json_string)
-                    file.write(formatted_json_string)
-                    gcmd.respond_raw(f"Extruder: {zslot}")
+                json_string = json.dumps(config, indent='\t')
+                formatted_json_string = re.sub(r'(":)', r'" : ', json_string)
+                atomic_write(FFCONFIG, formatted_json_string)
+                gcmd.respond_raw(f"Extruder: {zslot}")
 
     def cmd_GET_ZCOLOR(self, gcmd):
         silent = gcmd.get_int('SILENT', 0)
@@ -1569,8 +1597,7 @@ class zmod_color:
                 else:
                     gcmd.respond_raw(self._t('printing_error', response_data2))
             else:
-                with open(FILE_CONFIG, 'w') as file:
-                    json.dump(tools, file, indent=2)
+                atomic_write(FILE_CONFIG, json.dumps(tools, indent=2))
 
                 fname = self.zmod._extract_3mf_gcode(fname, gcmd)
                 self.find_t_code(fname)

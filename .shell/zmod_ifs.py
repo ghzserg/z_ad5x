@@ -7,6 +7,7 @@ import select
 import time
 import threading
 import logging
+from .zmod_color import atomic_write
 
 # Параметры порта
 PORT = '/dev/ttyS4'
@@ -539,9 +540,8 @@ class zmod_ifs:
                         new_filament[key] = data[filament_name][key]
             new_data[filament_name] = new_filament
 
-        with open(TYPECONFIG, 'w') as f:
-            json.dump(new_data, f, indent=4)
-            return new_data
+        atomic_write(TYPECONFIG, json.dumps(new_data, indent=4))
+        return new_data
 
     # Получить конфиг прутка по номеру прутка
     def get_prutok_config(self, prutok):
@@ -689,8 +689,7 @@ class zmod_ifs:
             ):
                 new_mapping = [i if x == prutok else x for x in mapping]
 
-                with open(FILE_CONFIG, 'w') as f:
-                    json.dump(new_mapping, f)
+                atomic_write(FILE_CONFIG, json.dumps(new_mapping))
 
                 self.gcode.run_script_from_command(f"_PRINT_HEAD INFO=1 CHANNEL={t_prutok}")
                 self.gcode.run_script_from_command(f"_A_CHANGE_FILAMENT CHANNEL={t_prutok} RESTORE_POSITION=0 RESTORE_TEMP=1")
