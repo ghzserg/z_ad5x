@@ -1156,6 +1156,23 @@ class zmod_color:
 
         return (found_data, sorted_colors, plates)
 
+    @staticmethod
+    def _parse_hex_color(value):
+        """'#RRGGBB', 'RRGGBB', '#RRGGBBAA', '#RGB' -> (r, g, b) или None."""
+        if not isinstance(value, str):
+            return None
+        v = value.strip().strip('"\'').lstrip('#')
+        if len(v) in (3, 4):
+            v = ''.join(c * 2 for c in v[:3])
+        elif len(v) in (6, 8):
+            v = v[:6]
+        else:
+            return None
+        try:
+            return int(v[0:2], 16), int(v[2:4], 16), int(v[4:6], 16)
+        except ValueError:
+            return None
+
     def get_auto_tool_assignments(self, gcmd, orig_tools, raw_slots, output_text, one_based_indexes):
         if len(raw_slots) == 0:
             return AUTO_ASSIGN_MATERIAL_FAILURE | AUTO_ASSIGN_COLOR_FAILURE
@@ -1197,7 +1214,8 @@ class zmod_color:
                         result_flags |= AUTO_ASSIGN_ANY_SUCCESS
                         this_material_failure = False
 
-                    if file_color[1] == '':
+                    file_rgb = self._parse_hex_color(file_color[1])
+                    if file_rgb is None:
                         result_flags |= AUTO_ASSIGN_COLOR_FAILURE
                         if not this_material_failure:
                             tools[iTool] = int(candidates[0]['ID'])
@@ -1208,9 +1226,7 @@ class zmod_color:
                     closest_slot_difference = float('inf')
 
                     # Преобразуем цвет файла в LAB один раз
-                    fc_r = int(file_color[1][1:3], 16)
-                    fc_g = int(file_color[1][3:5], 16)
-                    fc_b = int(file_color[1][5:7], 16)
+                    fc_r, fc_g, fc_b = file_rgb
                     fl, fa, fb = self.rgb_to_lab(fc_r, fc_g, fc_b)
 
                     for slot in candidates:
