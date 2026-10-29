@@ -1598,6 +1598,7 @@ class zmod_color:
                         "slotMaterialColor": f"#{slot_info['HEX']}"
                     })
 
+            self.gcode.run_script_from_command("M400")
             self.gcode.run_script_from_command(f"SAVE_VARIABLE VARIABLE=print_leveling VALUE={leveling}")
             if self.display:
                 if any(file_color[0] > 3 for file_color in self.file_colors):
