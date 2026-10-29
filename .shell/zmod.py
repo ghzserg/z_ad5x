@@ -351,7 +351,7 @@ class zmod:
                     return
 
                 x_min, y_min, x_max, y_max = float(bbox_all[0]), float(bbox_all[1]), float(bbox_all[2]), float(bbox_all[3])
-                if all(0 < coord < 256 for coord in (x_min, y_min, x_max, y_max)):
+                if all(0 <= coord <= 256 for coord in (x_min, y_min, x_max, y_max)):
                     exclude_cmd = (
                         f"_SET_FAST_KAMP "
                         f"X_START={x_min:.4f} Y_START={y_min:.4f} "
