@@ -101,7 +101,7 @@ up() {
     >/opt/config/mod_data/log/cam/mjpg_streamer.log
     >/opt/config/mod_data/log/cam/ustreamer.log
 
-    if [ $START != "on" ]; then
+    if [ "$START" != "on" ]; then
         [ ${ZLANG} != 'ru' ] && echo "Camera off" >>/opt/config/mod_data/log/cam/cam.log || echo "Камера отключена" >>${MOD_CONF}/mod_data/log/cam/cam.log
         return 0
     fi
