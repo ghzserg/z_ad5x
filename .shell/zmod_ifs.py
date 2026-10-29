@@ -81,6 +81,7 @@ class zmod_ifs:
 
         self.lang = 'en'
         self.ifs = False
+        self._recovering = False    # идёт восстановление IFS (F112+F18), см. _recover
         self.zmod = self.printer.lookup_object('zmod', None)
         self.zmod_color = self.printer.lookup_object('zmod_color', None)
 
@@ -262,8 +263,7 @@ class zmod_ifs:
                 else:
                     error_msg = f"Timeout waiting for response from command {command}#{command_id}"
                 self.info(error_msg)
-                self.gcode.run_script_from_command("IFS_F112")
-                self.gcode.run_script_from_command("IFS_F18")
+                self._recover()
                 raise self.gcode.error(error_msg)
                 return None
         return None
@@ -331,8 +331,7 @@ class zmod_ifs:
                 else:
                     error_msg = f"IFS: Timeout waiting for status {check_state}|{FFS_STATUS_READY}, received {state}"
                 self.info(error_msg)
-                self.gcode.run_script_from_command("IFS_F112")
-                self.gcode.run_script_from_command("IFS_F18")
+                self._recover()
                 raise self.gcode.error(error_msg)
                 return False, RET_TIMEOUT, current_values
 
@@ -393,13 +392,25 @@ class zmod_ifs:
             return False
         return self.ifs_data.get_port(port)
 
+    def _recover(self):
+        if self._recovering:
+            return
+        self._recovering = True
+        try:
+            for cmd in ("IFS_F112", "IFS_F18"):
+                try:
+                    self.gcode.run_script_from_command(cmd)
+                except Exception:
+                    logging.exception("IFS: recover %s", cmd)
+        finally:
+            self._recovering = False
+
     def print_str(self, string, info=True):
         if info:
             self.gcode.respond_info(string)
         else:
             self.info(string)
-            self.gcode.run_script_from_command("IFS_F112")
-            self.gcode.run_script_from_command("IFS_F18")
+            self._recover()
             raise self.gcode.error(string)
 
     # Получить текущий активный пруток из конфига
