@@ -874,7 +874,7 @@ press_gcode:
             # Удаляем controller_fan driver_fan
             cd ${MOD_CONF}
             sed -e '/^\[controller_fan driver_fan/,/^\[/d' ${PRINTER_BASE} >printer.base.tmp
-            diff -u printer.base.cfg printer.base.tmp | grep -v "printer.base.cfg" |grep "^-" | cut -b 2- >heater_bed.txt
+            diff -u ${PRINTER_BASE} printer.base.tmp | grep -v "printer.base.cfg" |grep "^-" | cut -b 2- >heater_bed.txt
             sed -i '$d' heater_bed.txt
             num=$(wc -l heater_bed.txt|cut  -d " " -f1)
             num=$(($num-1))
