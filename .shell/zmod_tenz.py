@@ -179,6 +179,7 @@ class zmod_tenz:
         except Exception as e:
             z_pos = 0
         if self.zcommand == 1 or (self.zcommand == 2 and z_pos >= self.z):
+            self.zcontrol = 0   # сразу, чтобы следующий опрос (через 0.2с) не поставил паузу повторно
             self.reactor.register_async_callback(
                 lambda e: self._async_zcontrol_action(cur_temp)
             )
