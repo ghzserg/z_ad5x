@@ -16,6 +16,65 @@ CONF_OUT = MOD_DATA + "/extra_plugins.moonraker.conf"
 MR = "http://127.0.0.1:7125"
 ON, OFF = "2E7D32", "616161"
 
+LANG_CFG = MOD_DATA + "/lang.cfg"                # язык Z-Mod (language: ru)
+
+# key: plugins, upd_on, upd_off, save, ok, download, clone, disabled, installed, restart, error
+T = {
+    "en": ["Plugins ({printer})", "Update: On", "Update: Off", "Save (Moonraker restart)", "Ok",
+           "Download {name}...", "Clone {name}...", "{name}: Disabled", "{name}: Installed",
+           ". Klipper restart, run PLUGINS", "Error {name}: {e}"],
+    "ru": ["Плагины ({printer})", "Обновление: Вкл", "Обновление: Выкл", "Сохранить (перезапуск Moonraker)", "Ок",
+           "Загрузка {name}...", "Клонирование {name}...", "{name}: отключён", "{name}: установлен",
+           ". Перезапуск Klipper, затем выполните PLUGINS", "Ошибка {name}: {e}"],
+    "de": ["Plugins ({printer})", "Update: An", "Update: Aus", "Speichern (Moonraker-Neustart)", "OK",
+           "{name} wird heruntergeladen...", "{name} wird geklont...", "{name}: Deaktiviert", "{name}: Installiert",
+           ". Klipper-Neustart, danach PLUGINS ausführen", "Fehler {name}: {e}"],
+    "fr": ["Plugins ({printer})", "Mise à jour : On", "Mise à jour : Off", "Enregistrer (redémarrage de Moonraker)", "OK",
+           "Téléchargement de {name}...", "Clonage de {name}...", "{name} : désactivé", "{name} : installé",
+           ". Redémarrage de Klipper, puis lancez PLUGINS", "Erreur {name} : {e}"],
+    "es": ["Plugins ({printer})", "Actualización: Sí", "Actualización: No", "Guardar (reinicio de Moonraker)", "OK",
+           "Descargando {name}...", "Clonando {name}...", "{name}: desactivado", "{name}: instalado",
+           ". Reinicio de Klipper, luego ejecute PLUGINS", "Error {name}: {e}"],
+    "it": ["Plugin ({printer})", "Aggiornamento: On", "Aggiornamento: Off", "Salva (riavvio di Moonraker)", "OK",
+           "Download di {name}...", "Clonazione di {name}...", "{name}: disattivato", "{name}: installato",
+           ". Riavvio di Klipper, poi esegui PLUGINS", "Errore {name}: {e}"],
+    "pt": ["Plugins ({printer})", "Atualização: Ligada", "Atualização: Desligada", "Guardar (reinício do Moonraker)", "OK",
+           "A descarregar {name}...", "A clonar {name}...", "{name}: desativado", "{name}: instalado",
+           ". Reinício do Klipper, depois execute PLUGINS", "Erro {name}: {e}"],
+    "cs": ["Pluginy ({printer})", "Aktualizace: Zap", "Aktualizace: Vyp", "Uložit (restart Moonraker)", "OK",
+           "Stahování {name}...", "Klonování {name}...", "{name}: vypnuto", "{name}: nainstalováno",
+           ". Restart Klipperu, poté spusťte PLUGINS", "Chyba {name}: {e}"],
+    "tr": ["Eklentiler ({printer})", "Güncelleme: Açık", "Güncelleme: Kapalı", "Kaydet (Moonraker yeniden başlatılır)", "Tamam",
+           "{name} indiriliyor...", "{name} klonlanıyor...", "{name}: devre dışı", "{name}: yüklendi",
+           ". Klipper yeniden başlatılıyor, ardından PLUGINS çalıştırın", "Hata {name}: {e}"],
+    "ja": ["プラグイン ({printer})", "更新: オン", "更新: オフ", "保存 (Moonraker再起動)", "OK",
+           "{name} をダウンロード中...", "{name} をクローン中...", "{name}: 無効", "{name}: インストール済み",
+           "。Klipperを再起動します。その後PLUGINSを実行してください", "エラー {name}: {e}"],
+    "ko": ["플러그인 ({printer})", "업데이트: 켬", "업데이트: 끔", "저장 (Moonraker 재시작)", "확인",
+           "{name} 다운로드 중...", "{name} 복제 중...", "{name}: 비활성화됨", "{name}: 설치됨",
+           ". Klipper 재시작 후 PLUGINS를 실행하세요", "오류 {name}: {e}"],
+    "zh": ["插件 ({printer})", "更新：开启", "更新：关闭", "保存（重启 Moonraker）", "确定",
+           "正在下载 {name}...", "正在克隆 {name}...", "{name}：已禁用", "{name}：已安装",
+           "。Klipper 将重启，然后运行 PLUGINS", "错误 {name}：{e}"],
+}
+KEYS = ["plugins", "upd_on", "upd_off", "save", "ok", "download", "clone",
+        "disabled", "installed", "restart", "error"]
+
+def get_lang():
+    try:
+        with open(LANG_CFG, encoding="utf-8") as f:
+            m = re.search(r"^\s*language:\s*(\w+)", f.read(), re.M)
+            if m and m.group(1) in T:
+                return m.group(1)
+    except Exception:
+        pass
+    return "en"
+
+LANG = get_lang()
+
+def tr(key, **kw):
+    return T[LANG][KEYS.index(key)].format(**kw)
+
 def jload(path, default):
     try:
         with open(path) as f:
@@ -41,7 +100,7 @@ def api(method, url, payload=None):
     return urllib.request.urlopen(req, timeout=30).read()
 
 def gcode(*lines):
-    with open("/tmp/printer", "w") as f:
+    with open("/tmp/printer", "w", encoding="utf-8") as f:
         for l in lines:
             f.write(l + "\n")
             f.flush()
@@ -231,7 +290,7 @@ def btn(label, cmd, color):
 
 def menu(printer, override=None):
     override = override or {}
-    out = [f"action:prompt_begin Plugins ({printer})"]
+    out = ["action:prompt_begin " + tr("plugins", printer=printer)]
     for name, p in my_plugins(printer).items():
         act = override.get(name, is_active(name, p))
         st = sec_state(name)
@@ -241,11 +300,11 @@ def menu(printer, override=None):
         u = st == "on"
         out.append("action:prompt_button_group_start")
         out.append(btn(name, f"_PLUGIN_TOGGLE NAME={name}", ON if act else OFF))
-        out.append(btn("Update: " + ("On" if u else "Off"),
+        out.append(btn(tr("upd_on") if u else tr("upd_off"),
                        f"_PLUGIN_UPD NAME={name}", ON if u else OFF))
         out.append("action:prompt_button_group_end")
-    out.append("action:prompt_footer_button Save (Moonraker restart)|_PLUGINS_APPLY|" + ON)
-    out.append("action:prompt_footer_button Ok|RESPOND TYPE=command MSG=action:prompt_end")
+    out.append("action:prompt_footer_button " + tr("save") + "|_PLUGINS_APPLY|" + ON)
+    out.append("action:prompt_footer_button " + tr("ok") + "|RESPOND TYPE=command MSG=action:prompt_end")
     out.append("action:prompt_show")
     gcode(*[f'RESPOND TYPE=command MSG="{l}"' for l in out])
 
@@ -266,19 +325,19 @@ def toggle(printer, name):
                 final = lambda: zmod_set(name, False)
             elif p.get("var"):
                 setvar, new_state = (p["var"], 0), False
-            text = f"{name}: Disabled"
+            text = tr("disabled", name=name)
         else:
             unmark_remove(path)          # плагин включается - каталог не удалять
             if web:
                 if not os.path.isdir(path):
-                    say(f"Download {name}...")
+                    say(tr("download", name=name))
                     web_install(name, p)
                     sh(p.get("start_cmd"))
                 if p.get("var"):
                     setvar, new_state = (p["var"], 1), True
             else:
                 if not os.path.isdir(path):
-                    say(f"Clone {name}...")
+                    say(tr("clone", name=name))
                     os.makedirs(PLUGINS_DIR, exist_ok=True)
                     r = subprocess.run(["git", "clone", "-b", p["branch"], p["url"], path],
                                        capture_output=True, text=True)
@@ -287,10 +346,10 @@ def toggle(printer, name):
                 final = lambda: zmod_set(name, True)
             if sec_state(name) is None:     # если обновления не выключали вручную - дописываем запись
                 set_sec(name, p, "on")
-            text = f"{name}: Installed"
-        say(text + (". Klipper restart, run PLUGINS" if final else ""))
+            text = tr("installed", name=name)
+        say(text + (tr("restart") if final else ""))
     except Exception as e:
-        say(f"Ошибка {name}: {e}")
+        say(tr("error", name=name, e=e))
         return
     if final:
         final()
