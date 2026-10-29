@@ -1490,12 +1490,17 @@ class zmod_color:
 
         with open(f"{self.virtual_sd.sdcard_dirname}/{filename}", 'r', encoding='utf-8') as file:
             self.zmod._throttle_reset()
+            code_lines = 0
             for i, line in enumerate(file):
-                if i > 3000:
-                    break;
                 if i % THROTTLE_LINES == 0:
                     self.zmod._throttle()
                 stripped_line = line.strip()
+                # Комментарии (миниатюры, шапка слайсера) в лимит не входят
+                if not stripped_line or stripped_line[0] == ';':
+                    continue
+                code_lines += 1
+                if code_lines > 3000:
+                    break
                 match = pattern.match(stripped_line)
                 if match:
                     channel_num = match.group(1)
