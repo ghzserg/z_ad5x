@@ -134,7 +134,7 @@ restore_base()
     if [ ${C5PRO} -eq 1 ]; then
         rm -f ${KLIPPER_DIR}/klippy/extras/zmod_color.py
         check_link /usr/data/nginx/sites-enabled/mainsail /usr/data/nginx/sites-available/mainsail
-        grep -q zmod ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py && cat /usr/data/zmod/zmod/.shell/klipper/${VER_FF}_virtual_sdcard.py.orig >${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py
+        grep -q zmod ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py && [ -f /usr/data/zmod/zmod/.shell/klipper/${VER_FF}_virtual_sdcard.py.orig ] && cat /usr/data/zmod/zmod/.shell/klipper/${VER_FF}_virtual_sdcard.py.orig >${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py
     fi
     if [ ${AD5X} -eq 1 ]; then
         grep -q zmod ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py && cp /usr/data/zmod/zmod/.shell/virtual_sdcard.py.orig ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py
