@@ -29,6 +29,7 @@ class zmod:
     def __init__(self, config):
         self.printer = config.get_printer()
         self.lang = config.get('language', 'en')
+        self.ff5m = config.getboolean('ff5m', False)
         self.ad5x = config.getboolean('ad5x', False)
         self.c5pro = config.getboolean('c5pro', False)
         self.screen = config.getboolean('screen', True)
@@ -351,7 +352,22 @@ class zmod:
                     return
 
                 x_min, y_min, x_max, y_max = float(bbox_all[0]), float(bbox_all[1]), float(bbox_all[2]), float(bbox_all[3])
-                if all(0 <= coord <= 256 for coord in (x_min, y_min, x_max, y_max)):
+
+                if self.c5pro:
+                    limit_x_min, limit_y_min = 0.0, 0.0
+                    limit_x_max, limit_y_max = 256.0, 256.0
+                elif self.ad5x:
+                    limit_x_min, limit_y_min = 0.0, 0.0
+                    limit_x_max, limit_y_max = 220.0, 220.0
+                elif self.ff5m:
+                    limit_x_min, limit_y_min = -110.0, -110.0
+                    limit_x_max, limit_y_max = 110.0, 110.0
+                else:
+                    limit_x_min, limit_y_min = 0.0, 0.0
+                    limit_x_max, limit_y_max = 256.0, 256.0
+
+                if (limit_x_min <= x_min <= limit_x_max and limit_x_min <= x_max <= limit_x_max and
+                    limit_y_min <= y_min <= limit_y_max and limit_y_min <= y_max <= limit_y_max):
                     exclude_cmd = (
                         f"_SET_FAST_KAMP "
                         f"X_START={x_min:.4f} Y_START={y_min:.4f} "
