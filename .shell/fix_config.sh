@@ -57,6 +57,7 @@ if ! [ -f /usr/data/zmod/zmod/.shell/0.sh ]; then
         mv /usr/data/config/base/klipper/ /usr/data/zmod/
         mv /usr/data/config/base/moonraker/ /usr/data/zmod/
 
+        source /usr/data/config/mod/.shell/activate.sh
         enable_zmod_ad5x_c5pro
         sync
         mv /usr/data/config/mod/ /usr/data/zmod/zmod/ 
