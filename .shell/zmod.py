@@ -351,6 +351,7 @@ class zmod:
                     gcmd.respond_raw(f"ZEXCLUDE_MF: 'bbox_all' valid data not found in Metadata/plate_{plate_num}.json")
                     return
 
+                x_min, y_min, x_max, y_max = float(bbox_all[0]), float(bbox_all[1]), float(bbox_all[2]), float(bbox_all[3])
                 if self.c5pro:
                     lo, hi = 0, 256
                 elif self.ad5x:
