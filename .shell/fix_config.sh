@@ -931,7 +931,10 @@ stepper: stepper_x, stepper_y, stepper_z
         if grep -q "klipper13 = 1" ${MOD_CONF}/mod_data/variables.cfg; then
             grep -q '^\[include ./mod/klipper11.cfg\]' ${PRINTER_CFG} && sed -i '/^\[include \.\/mod\/klipper11\.cfg\]$/d' ${PRINTER_CFG} && NEED_REBOOT=1
         else
-            grep -q '^\[include ./mod/klipper11.cfg\]' ${PRINTER_CFG} || sed -i '/\[include printer\.base\.cfg\]/a [include ./mod/klipper11.cfg]' ${PRINTER_CFG} && NEED_REBOOT=1
+            if ! grep -q '^\[include ./mod/klipper11.cfg\]' ${PRINTER_CFG}; then
+                sed -i '/\[include printer\.base\.cfg\]/a [include ./mod/klipper11.cfg]' ${PRINTER_CFG}
+                NEED_REBOOT=1
+            fi
         fi
 
         ! grep -q "motion_sensor" ${MOD_CONF}/mod_data/variables.cfg && sed -i '2 i\motion_sensor = 0' ${MOD_CONF}/mod_data/variables.cfg
