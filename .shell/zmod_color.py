@@ -811,7 +811,7 @@ class zmod_color:
             response_data["detail"]["hasMatlStation"] = self.zmod_ifs.get_ifs_status()
             response_data["detail"]["indepMatlInfo"] = {
                 "materialName": ffm_info.get("ffmType0", "N/A"),
-                "materialColor": ffm_info["ffmColor0"]
+                "materialColor": ffm_info.get("ffmColor0", "#FFFFFF")
             }
 
             for i in range(0, self.color_limit + 1):
