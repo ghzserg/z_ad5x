@@ -60,7 +60,7 @@ check_link()
 restore_file()
 {
     fname="$1"
-    [ ${ZLANG} != 'ru' ] && /bin/echo -n "Recovering file" || /bin/echo -n "Восстанавливаю файл $fname: "
+    [ ${ZLANG} != 'ru' ] && /bin/echo -n "Recovering file $fname: " || /bin/echo -n "Восстанавливаю файл $fname: "
     if ${CURL} --create-dirs -s -k -H 'Accept: application/vnd.github.v3.raw' -o "$fname" -L "https://api.github.com/repos/ghzserg/FF/contents/${STOCK}${fname}"; then
         chmod 777 "$fname"
         [ ${ZLANG} != 'ru' ] && echo "Ok" || echo "Успешно"

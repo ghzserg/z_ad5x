@@ -272,14 +272,17 @@ if [ ! -f /opt/config/mod_data/guppyconfig.json ]; then
     fi
 fi
 
+# VERSION_CODENAME="AD5X 3.1.7"
 VER="$3 $2"
 grep -q VERSION_CODENAME /etc/os-release || echo "VERSION_CODENAME=\"${VER}\"" >>/etc/os-release
 grep -q "VERSION_CODENAME=\"${VER}\"" /etc/os-release || sed -i "s|VERSION_CODENAME=.*|VERSION_CODENAME=\"${VER}\"|" /etc/os-release
 
+# PRETTY_NAME="zmod 1.7.2 -> 1.7.5-11"
 V1=$(cat /etc/os-release|grep PRETTY_NAME| cut  -d '"' -f2| awk '{print $1" "$2}')
+[ -z "$V1" ] && V1="zmod 0.0.0"
 V2=$(cat ${VER_FULL})
 
-grep -q PRETTY_NAME /etc/os-release || echo "VERSION_CODENAME=\"${V1} -> ${V2}\"" >>/etc/os-release
+grep -q PRETTY_NAME /etc/os-release || echo "PRETTY_NAME=\"${V1} -> ${V2}\"" >>/etc/os-release
 grep -q "PRETTY_NAME=\"${V1} -> ${V2}\"" /etc/os-release || sed -i "s|PRETTY_NAME=.*|PRETTY_NAME=\"${V1} -> ${V2}\"|" /etc/os-release
 
 mkdir -p ${DATA_GCODES}/tmp

@@ -41,7 +41,7 @@ LOG_FILE=/opt/config/mod_data/log/ssh.log
 export HOME='/root'
 
 start() {
-    if [ $START = "on" ]; then
+    if [ "$START" = "on" ]; then
         if ! test_running; then
             nstr=$(cat $LOG_FILE 2>/dev/null| wc -l)
             date >> ${LOG_FILE}
@@ -80,7 +80,7 @@ test_running() {
 }
 
 reload() {
-    if [ $START = "on" ]; then
+    if [ "$START" = "on" ]; then
         if ! test_running; then
             restart; 
         fi

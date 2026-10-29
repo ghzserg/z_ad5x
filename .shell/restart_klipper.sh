@@ -21,7 +21,7 @@ export PATH="$PATH:/opt/bin:/opt/sbin"
 
 pid=$(ps | grep [f]irmwareExe | awk '{print $1}')
 
-if [ $pid -ne 0 ]; then
+if [ -n "$pid" ]; then
 
     echo Screen executable PID is $pid, calling GDB to perform manipulations...
 

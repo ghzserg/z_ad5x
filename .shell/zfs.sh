@@ -5,7 +5,13 @@ source /usr/data/zmod/zmod/.shell/0.sh
 
 # Более точный замер времени - Alexander
 if [ $# -ne 2 ] && [ $# -ne 3 ] && [ $# -ne 4 ]; then
-    [ ${ZLANG} != 'ru' ] && echo "Use $0 SIZE [SYNC] [FLASH] [RANDOM]\nhttps://wiki.zmod.link/System/#test_emmc" || echo "Используйте $0 SIZE [SYNC] [FLASH] [RANDOM]\nhttps://wiki.zmod.link/ru/System/#test_emmc"
+    if [ ${ZLANG} != 'ru' ]; then
+        echo "Use $0 SIZE [SYNC] [FLASH] [RANDOM]"
+        echo "https://wiki.zmod.link/System/#test_emmc"
+    else
+        echo "Используйте $0 SIZE [SYNC] [FLASH] [RANDOM]"
+        echo "https://wiki.zmod.link/ru/System/#test_emmc"
+    fi
     exit 1
 fi
 
@@ -14,8 +20,14 @@ FILE="${DATA_GCODES}"
 INFILE="/dev/zero"
 t3=0
 
-[ "$3" == "1" ] && FILE="/media" && [ ${ZLANG} != 'ru' ] && echo "Testing USB FLASH" || echo "Тестирование USB FLASH"
-[ "$3" == "2" ] && FILE="/tmp" && [ ${ZLANG} != 'ru' ] && echo "Testing RAM" || echo "Тестирование RAM"
+if [ "$3" == "1" ]; then
+    FILE="/media"
+    [ ${ZLANG} != 'ru' ] && echo "Testing USB FLASH" || echo "Тестирование USB FLASH"
+fi
+if [ "$3" == "2" ]; then
+    FILE="/tmp"
+    [ ${ZLANG} != 'ru' ] && echo "Testing RAM" || echo "Тестирование RAM"
+fi
 
 if [ "$FILE" == "${DATA_GCODES}" ]; then
     life=$(cat /sys/block/mmcblk0/device/life_time | awk '{print $1}'| while read a; do printf "%d0" $a; done;)

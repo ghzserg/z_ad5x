@@ -57,6 +57,7 @@ if ! [ -f /usr/data/zmod/zmod/.shell/0.sh ]; then
         mv /usr/data/config/base/klipper/ /usr/data/zmod/
         mv /usr/data/config/base/moonraker/ /usr/data/zmod/
 
+        source /usr/data/config/mod/.shell/activate.sh
         enable_zmod_ad5x_c5pro
         sync
         mv /usr/data/config/mod/ /usr/data/zmod/zmod/ 
@@ -647,7 +648,7 @@ unset LD_PRELOAD
 
     # Заменяем mod.cfg на display_off.cfg и обратно
     if grep -q "display_off = 1" ${MOD_CONF}/mod_data/variables.cfg; then
-        grep -q '^\[include ./mod_data/mod.cfg\]' ${PRINTER_CFG} && sed -i 's|\[include ./mod/mod.cfg\]|\[include ./mod/display_off.cfg\]|' ${PRINTER_CFG} && NEED_REBOOT=1
+        grep -q '^\[include ./mod/mod.cfg\]' ${PRINTER_CFG} && sed -i 's|\[include ./mod/mod.cfg\]|\[include ./mod/display_off.cfg\]|' ${PRINTER_CFG} && NEED_REBOOT=1
     else
         grep -q '^\[include ./mod/display_off.cfg\]' ${PRINTER_CFG} && sed -i 's|\[include ./mod/display_off.cfg\]|\[include ./mod/mod.cfg\]|' ${PRINTER_CFG} && NEED_REBOOT=1
     fi
@@ -874,7 +875,7 @@ press_gcode:
             # Удаляем controller_fan driver_fan
             cd ${MOD_CONF}
             sed -e '/^\[controller_fan driver_fan/,/^\[/d' ${PRINTER_BASE} >printer.base.tmp
-            diff -u printer.base.cfg printer.base.tmp | grep -v "printer.base.cfg" |grep "^-" | cut -b 2- >heater_bed.txt
+            diff -u ${PRINTER_BASE} printer.base.tmp | grep -v "printer.base.cfg" |grep "^-" | cut -b 2- >heater_bed.txt
             sed -i '$d' heater_bed.txt
             num=$(wc -l heater_bed.txt|cut  -d " " -f1)
             num=$(($num-1))
@@ -931,7 +932,10 @@ stepper: stepper_x, stepper_y, stepper_z
         if grep -q "klipper13 = 1" ${MOD_CONF}/mod_data/variables.cfg; then
             grep -q '^\[include ./mod/klipper11.cfg\]' ${PRINTER_CFG} && sed -i '/^\[include \.\/mod\/klipper11\.cfg\]$/d' ${PRINTER_CFG} && NEED_REBOOT=1
         else
-            grep -q '^\[include ./mod/klipper11.cfg\]' ${PRINTER_CFG} || sed -i '/\[include printer\.base\.cfg\]/a [include ./mod/klipper11.cfg]' ${PRINTER_CFG} && NEED_REBOOT=1
+            if ! grep -q '^\[include ./mod/klipper11.cfg\]' ${PRINTER_CFG}; then
+                sed -i '/\[include printer\.base\.cfg\]/a [include ./mod/klipper11.cfg]' ${PRINTER_CFG}
+                NEED_REBOOT=1
+            fi
         fi
 
         ! grep -q "motion_sensor" ${MOD_CONF}/mod_data/variables.cfg && sed -i '2 i\motion_sensor = 0' ${MOD_CONF}/mod_data/variables.cfg
