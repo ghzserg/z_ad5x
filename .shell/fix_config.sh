@@ -647,7 +647,7 @@ unset LD_PRELOAD
 
     # Заменяем mod.cfg на display_off.cfg и обратно
     if grep -q "display_off = 1" ${MOD_CONF}/mod_data/variables.cfg; then
-        grep -q '^\[include ./mod_data/mod.cfg\]' ${PRINTER_CFG} && sed -i 's|\[include ./mod/mod.cfg\]|\[include ./mod/display_off.cfg\]|' ${PRINTER_CFG} && NEED_REBOOT=1
+        grep -q '^\[include ./mod/mod.cfg\]' ${PRINTER_CFG} && sed -i 's|\[include ./mod/mod.cfg\]|\[include ./mod/display_off.cfg\]|' ${PRINTER_CFG} && NEED_REBOOT=1
     else
         grep -q '^\[include ./mod/display_off.cfg\]' ${PRINTER_CFG} && sed -i 's|\[include ./mod/display_off.cfg\]|\[include ./mod/mod.cfg\]|' ${PRINTER_CFG} && NEED_REBOOT=1
     fi
