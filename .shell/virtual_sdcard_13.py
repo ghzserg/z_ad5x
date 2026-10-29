@@ -329,8 +329,17 @@ class VirtualSD:
                     if self.print_channel != self.load_channel:
                         self.gcode.run_script("M400")
                         self.change_filament = True
-                        # zmod 1.12
-                        self.gcode.run_script(f"_A_CHANGE_FILAMENT CHANNEL={self.print_channel} RESTORE_POSITION=1 RESTORE_TEMP=1")
+                        # zmod 1.13
+                        try:
+                            self.gcode.run_script(f"_A_CHANGE_FILAMENT CHANNEL={self.print_channel} RESTORE_POSITION=1 RESTORE_TEMP=1")
+                        except Exception as e:
+                            logging.exception("virtual_sdcard change filament")
+                            self.change_filament = False
+                            self.gcode.respond_raw(f"!! Filament change error T{self.print_channel}: {e}")
+                            if not self.must_pause_work:
+                                self.printer.lookup_object('pause_resume').send_pause_command()
+                                self.gcode.run_script("PAUSE")
+                            break
                         while True:
                             if not self.change_filament:
                                 break
