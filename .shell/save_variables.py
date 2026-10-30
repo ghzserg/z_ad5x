@@ -4,6 +4,7 @@
 # Copyright (C) 2016-2020  Kevin O'Connor <kevin@koconnor.net>
 #
 # This file may be distributed under the terms of the GNU GPLv3 license.
+# zmod save_variables 2
 import os, logging, ast, configparser
 
 class SaveVariables:
@@ -44,6 +45,9 @@ class SaveVariables:
             value = ast.literal_eval(value)
         except ValueError as e:
             raise gcmd.error("Unable to parse '%s' as a literal" % (value,))
+        old = self.allVariables.get(varname)
+        if varname in self.allVariables and type(old) is type(value) and old == value:
+            return
         newvars = dict(self.allVariables)
         newvars[varname] = value
         # Write file
