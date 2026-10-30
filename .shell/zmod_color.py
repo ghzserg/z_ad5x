@@ -1622,6 +1622,7 @@ class zmod_color:
 
                 fname = self.zmod._extract_3mf_gcode(fname, gcmd)
                 self.find_t_code(fname)
+                self.gcode.run_script_from_command("M400")
                 self.gcode.run_script_from_command(f"SDCARD_PRINT_FILE FILENAME=\"{fname}\"")
         else:
             gcmd.respond_raw(self._t('no_response', json.dumps(response_data)))
