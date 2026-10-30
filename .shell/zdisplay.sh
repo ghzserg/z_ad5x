@@ -14,7 +14,7 @@ native_wifi_off()
         grep -q '"isManual" : false' "$FFCONFIG" && \
         grep -q '"isUdhcpc" : true' "$FFCONFIG" && \
         grep -q '"ethernetStatus" : false' "$FFCONFIG" && \
-        grep -q "disabled=1" ${WPA_CONFIG}; then
+        grep '^[[:space:]]*ssid=' ${WPA_CONFIG} | grep -qv 'ssid="flashforge_5G"'; then
             killall firmwareExe
             if grep -q '"wifiStationStatus" : true' "$FFCONFIG"; then
                 echo "Z-Mod disabled wifiStationStatus on native screen"
@@ -37,7 +37,7 @@ native_wifi_on()
         grep -q '"isManual" : false' "$FFCONFIG" && \
         grep -q '"isUdhcpc" : true' "$FFCONFIG" && \
         grep -q '"ethernetStatus" : false' "$FFCONFIG" && \
-        grep -q "disabled=1" ${WPA_CONFIG}; then
+        grep '^[[:space:]]*ssid=' ${WPA_CONFIG} | grep -qv 'ssid="flashforge_5G"'; then
             echo "Z-Mod enabled wifiStationStatus on native screen"
             killall firmwareExe
             grep -q '"wifiStationStatus" : false' "$FFCONFIG" && sed -i 's/"wifiStationStatus" : false/"wifiStationStatus" : true/' "$FFCONFIG"

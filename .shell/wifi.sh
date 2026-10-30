@@ -53,7 +53,7 @@ wifi_fix()
         return 0
     fi
 
-    if ! grep -q "disabled=1" ${WPA_CONFIG}; then
+    if ! grep '^[[:space:]]*ssid=' ${WPA_CONFIG} | grep -qv 'ssid="flashforge_5G"'; then
         echo "Wi-Fi not configured"
         return 0
     fi
