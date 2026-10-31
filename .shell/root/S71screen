@@ -13,7 +13,7 @@ fi
 
 start() {
 #    start-stop-daemon -S -b -m -p $PID_FILE --exec /usr/data/zmod/zmod/.shell/root/screen.py -- "-ad5x$AD5X"
-    start-stop-daemon -S -b -m -p $PID_FILE --exec /usr/data/zmod/zmod/.shell/root/screen -- "-ad5x$AD5X -ad5m$AD5M"
+    start-stop-daemon -S -b -m -p $PID_FILE --exec /usr/data/zmod/zmod/.shell/root/screen -- "-ad5x$AD5X" "-ad5m$AD5M"
 }
 
 stop() {
