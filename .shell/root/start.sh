@@ -172,7 +172,7 @@ prepare_chroot()
     check_link /etc/init.d/S80guppyscreen /usr/data/zmod/zmod/.shell/root/S80guppyscreen
     check_link /etc/init.d/S65moonraker /usr/data/zmod/zmod/.shell/root/S65moonraker
     check_link /etc/init.d/S70httpd /usr/data/zmod/zmod/.shell/root/S70httpd
-    [ ${AD5M} -eq 0 ] && check_link /etc/init.d/S71screen /usr/data/zmod/zmod/.shell/root/S71screen
+    check_link /etc/init.d/S71screen /usr/data/zmod/zmod/.shell/root/S71screen
 
     [ -L /etc/init.d/S35tslib ] && rm -f /etc/init.d/S35tslib
 
@@ -355,9 +355,7 @@ if [ -f /usr/data/zmod/moonraker/moonraker.py ]; then
     MOONRAKER=1
 fi
 
-if [ ${AD5M} -eq 0 ]; then
-    /usr/data/zmod/zmod/.shell/root/S71screen start
-fi
+/usr/data/zmod/zmod/.shell/root/S71screen start
 
 date -s "2026-01-01 00:00:00"
 
