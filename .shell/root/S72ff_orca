@@ -6,10 +6,6 @@
 
 PID_FILE=/run/ff_orca.pid
 
-if grep -q "ff_orca = 0" /opt/config/mod_data/variables.cfg || \
-   grep -q "display_off = 0" /opt/config/mod_data/variables.cfg; then
-    exit 0
-fi
 
 start() {
     start-stop-daemon -S -b -m -p $PID_FILE --exec /usr/data/zmod/zmod/.shell/root/ff_orca.py
@@ -24,6 +20,7 @@ restart() {
     start
 }
 
+if grep -q "ff_orca = 1" /opt/config/mod_data/variables.cfg && grep -q "display_off = 1" /opt/config/mod_data/variables.cfg; then
 case "$1" in
   start)
         start
@@ -38,5 +35,6 @@ case "$1" in
         echo "Usage: $0 {start|stop|restart}"
         exit 1
 esac
+fi
 
 exit $?
