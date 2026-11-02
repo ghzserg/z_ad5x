@@ -254,6 +254,7 @@ class Config:
 
         self.ip_addr = c.get('ip_addr').strip() or detect_ip()
         self.mac_addr = c.get('mac_addr').strip() or detect_mac()
+        self.camera_url = self.camera_url.strip() or f'http://{self.ip_addr}:8080/?action=stream'
 
         tmp = c.get('tmp_dir').strip()
         if not tmp:
@@ -476,19 +477,6 @@ class State:
             self.total_print_min = int(float(t.get('total_print_time', 0)) / 60)
         except Exception as e:
             log.debug('history totals: %s', e)
-        if not self.cfg.camera_url:
-            try:
-                cams = self.mr.get('/server/webcams/list').get('webcams', [])
-                url = ''
-                for cam in cams:
-                    if cam.get('enabled', True) and cam.get('stream_url'):
-                        url = cam['stream_url']
-                        break
-                if url.startswith('/'):
-                    url = f'http://{self.cfg.ip_addr}{url}'
-                self.camera_url = url
-            except Exception as e:
-                log.debug('webcams: %s', e)
 
 
 # ---------------------------------------------------------------- multipart
