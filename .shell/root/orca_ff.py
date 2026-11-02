@@ -960,11 +960,23 @@ class App:
         args = payload.get('args') or {}
         log.info('control: %s %s', cmd, json.dumps(args, ensure_ascii=False))
 
-        if cmd == 'msConfig_cmd':
+        if cmd in ('ms_cmd', 'ipdMs_cmd'):
+            # Загрузка (action=0) / выгрузка (action=1); ipdMs_cmd — внешняя катушка (слот 0, AD5X)
             st, zc = self._zmod()
-            slot = to_int(args.get('slot'), 0)
+            slot = to_int(args.get('slot'), 0) if cmd == 'ms_cmd' else 0
+            napr = to_int(args.get('action'), -1)
+            ad5x = self.cfg.model == 'AD5X'
+            if napr not in (0, 1) or not (0 if ad5x else 1) <= slot <= to_int(zc.get('color_limit'), 4):
+                raise ApiError(f'Invalid slot {slot} or action {napr}')
+            self.run_async(f'IN_ZCOLOR SLOT={slot} NAPR={napr}' if ad5x
+                           else f'_T_IN_ZCOLOR SLOT={slot} NAPR={napr} HIDE=1', timeout=600)
+            return {}
+
+        if cmd in ('msConfig_cmd', 'ipdMsConfig_cmd'):
+            st, zc = self._zmod()
+            slot = to_int(args.get('slot'), 0) if cmd == 'msConfig_cmd' else 0
             limit = to_int(zc.get('color_limit'), 4)
-            if not 1 <= slot <= limit:
+            if not (0 if self.cfg.model == 'AD5X' else 1) <= slot <= limit:
                 raise ApiError(f'Invalid slot {slot}')
             mt = str(args.get('mt') or '').strip().upper()
             valid = [t.upper() for t in zc.get('valid_types', [])]
