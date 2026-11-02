@@ -8,6 +8,8 @@ GUPPYSCREEN=/root/guppyscreen/guppyscreen
 PID_FILE=/run/guppyscreen.pid
 NICENESS=10
 
+/etc/init.d/S72orca_ff "$1"
+
 start() {
     set -x
     source /usr/data/zmod/zmod/.shell/0.sh
