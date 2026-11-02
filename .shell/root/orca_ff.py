@@ -25,8 +25,7 @@ import zlib
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, quote, urlencode, urlsplit
 
-FFCONFIG = '/usr/data/firmwareRes/config/'
-AD5X_JSON = '/opt/config/rw/Adventurer5M.json'
+RW_DIR = '/opt/config/rw/'
 OS_RELEASE = '/etc/os-release'
 DEFAULT_CONFIG = '/opt/config/mod_data/ff_orca.cfg'
 DEFAULT_LOG = '/opt/config/mod_data/log/ff_orca.log'
@@ -84,10 +83,6 @@ DEFAULTS = {
 def read_json_file(path):
     with open(path, 'r', encoding='utf-8') as f:
         return json.loads(re.sub(r'/\*.*?\*/', '', f.read(), flags=re.DOTALL))
-
-
-def read_ff_json(name):
-    return read_json_file(FFCONFIG + name)
 
 
 def to_bool(value, default=False):
@@ -218,23 +213,23 @@ class Config:
         fw = {}
         if self.model == 'AD5X':
             try:
-                g = read_json_file(AD5X_JSON).get('general', {})
+                g = read_json_file(RW_DIR + 'Adventurer5M.json').get('general', {})
                 fw = {'serial': g.get('printerSerialNumber'), 'code': g.get('lanCode'),
                       'name': g.get('printerName'), 'location': g.get('localName'),
                       'nozzle': g.get('extruderTypeInfo')}
             except Exception as e:
-                log.warning('%s: %s', AD5X_JSON, e)
+                log.warning('%sAdventurer5M.json: %s', RW_DIR, e)
         else:
             try:
-                g = read_ff_json('general.json')
-                fw = {'serial': g.get('serialNumber'), 'name': g.get('printerName'),
+                g = read_json_file(RW_DIR + 'general.json')
+                fw = {'serial': g.get('serialNumber'), 'name': g.get('machineName'),
                       'location': g.get('localName'), 'nozzle': g.get('extruderTypeInfo')}
             except Exception as e:
-                log.warning('%sgeneral.json: %s', FFCONFIG, e)
+                log.warning('%sgeneral.json: %s', RW_DIR, e)
             try:
-                fw['code'] = read_ff_json('network.json').get('lanModeCode')
+                fw['code'] = read_json_file(RW_DIR + 'network.json').get('lanModeCode')
             except Exception as e:
-                log.warning('%snetwork.json: %s', FFCONFIG, e)
+                log.warning('%snetwork.json: %s', RW_DIR, e)
 
         def pick(key, *alts):
             v = c.get(key).strip()
