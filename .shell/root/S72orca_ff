@@ -1,14 +1,13 @@
 #!/bin/sh
 # (C) 2026 ghzserg https://github.com/ghzserg/zmod
 #
-# Starts FF_Orca service
+# Starts orca_ff service
 #
 
-PID_FILE=/run/ff_orca.pid
-
+PID_FILE=/run/orca_ff.pid
 
 start() {
-    start-stop-daemon -S -b -m -p $PID_FILE --exec /usr/data/zmod/zmod/.shell/root/ff_orca.py
+    start-stop-daemon -S -b -m -p $PID_FILE --exec /usr/data/zmod/zmod/.shell/root/orca_ff.py
 }
 
 stop() {
@@ -20,7 +19,7 @@ restart() {
     start
 }
 
-if grep -q "ff_orca = 1" /opt/config/mod_data/variables.cfg && grep -q "display_off = 1" /opt/config/mod_data/variables.cfg; then
+if grep -q "orca_ff = 1" /opt/config/mod_data/variables.cfg && grep -q "display_off = 1" /opt/config/mod_data/variables.cfg; then
 case "$1" in
   start)
         start
