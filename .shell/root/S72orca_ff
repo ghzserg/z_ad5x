@@ -4,6 +4,8 @@
 # Starts orca_ff service
 #
 
+set -x
+
 PID_FILE=/run/orca_ff.pid
 
 start() {
