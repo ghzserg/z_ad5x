@@ -357,7 +357,6 @@ if [ -f /usr/data/zmod/moonraker/moonraker.py ]; then
 fi
 
 /usr/data/zmod/zmod/.shell/root/S71screen start
-/usr/data/zmod/zmod/.shell/root/S72orca_ff start
 
 date -s "2026-01-01 00:00:00"
 
