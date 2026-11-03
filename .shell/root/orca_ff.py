@@ -68,7 +68,7 @@ DEFAULTS = {
     'model': '',
     'serial_number': '',
     'check_code': '',
-    'check_auth': 'true',
+    'check_auth': 'false',
     'printer_name': '',
     'firmware_version': '',
     'pid': '',
