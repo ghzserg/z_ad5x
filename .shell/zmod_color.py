@@ -11,6 +11,7 @@ from zipfile import ZipFile
 from pathlib import Path
 import subprocess
 import shutil
+import time
 
 FFCONFIG='/usr/prog/config/Adventurer5M.json'
 FILE_CONFIG='/usr/data/config/mod_data/file.json'
@@ -630,6 +631,7 @@ class zmod_color:
         self.file_plates = [1]      # Нарезанные платы 3mf; для обычного gcode [1]
 
         self.display = config.getboolean('display', True)
+        self.orca_lanes = config.getboolean('orca_lanes', True)
         self.lang = 'en'
         self.ifs = False
         self.valid_types = ['PLA', 'ABS', 'PETG', 'TPU', 'PLA-CF', 'PETG-CF', 'SILK', '?']
@@ -675,6 +677,11 @@ class zmod_color:
 
         if self.zmod_ifs:
             self.color_limit = self.zmod_ifs.color_limit
+
+        if not self.display:
+            ffm = self._read_ffm_info_cached() or {}
+            self._publish_lanes({i: (ffm.get(f"ffmType{i}", "?").upper(), ffm.get(f"ffmColor{i}", "#FFFFFF"))
+                                 for i in range(1, self.color_limit + 1)})
 
     def update_color_limit(self, new_limit):
         # Do not call this directly. Call zmod_ifs.update_color_limit instead and let it call this.
@@ -852,9 +859,36 @@ class zmod_color:
             json_string = json.dumps(config, indent='\t')
             formatted_json_string = re.sub(r'(":)', r'" : ', json_string)
             atomic_write(FFCONFIG, formatted_json_string)
+            if not self.display and zslot >= 1:
+                self._publish_lanes({zslot: (ztype, zcolor)})
             return 200, formatted_json_string
 
         return 500, "Error"
+
+    # Слоты -> Moonraker lane_data для синхронизации OrcaSlicer (без родного экрана)
+    def _publish_lanes(self, slots):
+        save_variables = self.printer.lookup_object('save_variables', None)
+        save_variables = {} if save_variables == None else save_variables.allVariables
+        if not self.orca_lanes or save_variables.get('helix', 0) == 1:
+            return
+
+        def worker():
+            url = 'http://127.0.0.1:7125/server/database/item'
+            for attempt in range(12):
+                try:
+                    for zslot, (ztype, zcolor) in slots.items():
+                        key = f'lane{zslot - 1}'
+                        if ztype in ('', '?'):
+                            requests.delete(url, params={'namespace': 'lane_data', 'key': key}, timeout=5)
+                        else:
+                            requests.post(url, json={'namespace': 'lane_data', 'key': key, 'value': {
+                                'lane': str(zslot - 1), 'material': ztype, 'color': zcolor.upper(), 'name': ztype}},
+                                timeout=5).raise_for_status()
+                    return
+                except Exception as e:
+                    logging.info(f"zmod_color: lane_data: {e}")
+                    time.sleep(5)
+        threading.Thread(target=worker, daemon=True).start()
 
     def zsend_post_request(self, api, payload=None, send_data=None):
         base_ip = self.get_printer_ip()
