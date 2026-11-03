@@ -2,7 +2,7 @@
 # (C) 2026 ghzserg https://github.com/ghzserg/zmod
 # (C) 2026 Claude (Anthropic) — соавтор
 #
-# ff_orca — эмулятор HTTP API родного экрана FlashForge (AD5X, Creator 5/5 Pro)
+# orca_ff — эмулятор HTTP API родного экрана FlashForge (AD5X, Adventurer 5M/5M Pro, Creator 5/5 Pro)
 # для Flash Studio / OrcaSlicer поверх Moonraker и zmod_color.
 # Требует display: False в zmod_color.
 
@@ -25,23 +25,26 @@ import zlib
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, quote, urlencode, urlsplit
 
-FFCONFIG = '/usr/data/firmwareRes/config/'
-AD5X_JSON = '/opt/config/rw/Adventurer5M.json'
+RW_DIR = '/opt/config/rw/'
+AD5M_JSON = '/opt/config/Adventurer5M.json'
+CREATOR_DIR = '/opt/config/json/config/'
 OS_RELEASE = '/etc/os-release'
-DEFAULT_CONFIG = '/opt/config/mod_data/ff_orca.cfg'
-DEFAULT_LOG = '/opt/config/mod_data/log/ff_orca.log'
+DEFAULT_CONFIG = '/opt/config/mod_data/orca_ff.cfg'
+DEFAULT_LOG = '/opt/config/mod_data/log/orca_ff.log'
 
 MODELS = {
     'AD5X':        {'name': 'AD5X',          'pid': 0x0026, 'nozzle_count': 1, 'measure': '220X220X220'},
     'Creator5':    {'name': 'Creator 5',     'pid': 0x0028, 'nozzle_count': 4, 'measure': '256X256X256'},
     'Creator5Pro': {'name': 'Creator 5 Pro', 'pid': 0x0029, 'nozzle_count': 4, 'measure': '256X256X256'},
+    'Adventurer5M':    {'name': 'Adventurer 5M',     'pid': 0x0023, 'nozzle_count': 1, 'measure': '220X220X220'},
+    'Adventurer5MPro': {'name': 'Adventurer 5M Pro', 'pid': 0x0024, 'nozzle_count': 1, 'measure': '220X220X220'},
 }
 GCODE_EXT = ('.gcode', '.gco', '.g', '.3mf')
 MAX_TOOLS = 98                  # как MAX_COLOR в zmod_color
 MAX_JSON_BODY = 1024 * 1024
 READ_CHUNK = 64 * 1024
 
-log = logging.getLogger('ff_orca')
+log = logging.getLogger('orca_ff')
 
 DEFAULTS = {
     'listen_host': '0.0.0.0',
@@ -64,6 +67,7 @@ DEFAULTS = {
     'camera_url': '',
     'light_object': 'led',
     'fan_object': 'fan_generic FanM106',
+    'chamber_object': '',
     'light_on_gcode': 'LED_ON',
     'light_off_gcode': 'LED_OFF',
     'tmp_dir': '',
@@ -84,10 +88,6 @@ DEFAULTS = {
 def read_json_file(path):
     with open(path, 'r', encoding='utf-8') as f:
         return json.loads(re.sub(r'/\*.*?\*/', '', f.read(), flags=re.DOTALL))
-
-
-def read_ff_json(name):
-    return read_json_file(FFCONFIG + name)
 
 
 def to_bool(value, default=False):
@@ -178,11 +178,12 @@ def detect_mac():
 class Config:
     def __init__(self, path):
         cp = configparser.ConfigParser(interpolation=None, inline_comment_prefixes=('#',))
-        cp.read_dict({'ff_orca': DEFAULTS})
+        cp.read_dict({'orca_ff': DEFAULTS})
         if path and os.path.exists(path):
             cp.read(path, encoding='utf-8')
-        c = cp['ff_orca']
+        c = cp['orca_ff']
         self.path = path
+        self.warnings = []              # логирование ещё не настроено
         self.listen_host = c.get('listen_host')
         self.listen_port = c.getint('listen_port')
         self.moonraker_url = c.get('moonraker_url')
@@ -191,6 +192,7 @@ class Config:
         self.camera_url = c.get('camera_url')
         self.light_object = c.get('light_object').strip()
         self.fan_object = c.get('fan_object').strip()
+        self.chamber_object = c.get('chamber_object').strip()
         self.light_on_gcode = c.get('light_on_gcode').replace('\\n', '\n')
         self.light_off_gcode = c.get('light_off_gcode').replace('\\n', '\n')
         self.max_files = c.getint('max_files')
@@ -212,29 +214,34 @@ class Config:
                 os_model, os_fw = (parts + ['', ''])[:2]
         except OSError:
             pass
-        self.model = c.get('model').strip() or os_model or 'AD5X'
+        is_ad5x = os.path.exists(RW_DIR + 'Adventurer5M.json')
+        is_ad5m = not is_ad5x and os.path.exists(AD5M_JSON)
+        self.model = c.get('model').strip() or (os_model if os_model in MODELS else '') \
+            or ('AD5X' if is_ad5x else 'Adventurer5M' if is_ad5m else 'Creator5Pro')
+        self.colors = not self.model.startswith('Adventurer5M')     # 5M/5M Pro: без zmod_color
         prof = MODELS.get(self.model, MODELS['AD5X'])
 
         fw = {}
-        if self.model == 'AD5X':
+        if is_ad5x or is_ad5m:
+            path = RW_DIR + 'Adventurer5M.json' if is_ad5x else AD5M_JSON
             try:
-                g = read_json_file(AD5X_JSON).get('general', {})
+                g = read_json_file(path).get('general', {})
                 fw = {'serial': g.get('printerSerialNumber'), 'code': g.get('lanCode'),
                       'name': g.get('printerName'), 'location': g.get('localName'),
                       'nozzle': g.get('extruderTypeInfo')}
             except Exception as e:
-                log.warning('%s: %s', AD5X_JSON, e)
+                self.warnings.append(f'{path}: {e}')
         else:
             try:
-                g = read_ff_json('general.json')
-                fw = {'serial': g.get('serialNumber'), 'name': g.get('printerName'),
-                      'location': g.get('localName'), 'nozzle': g.get('extruderTypeInfo')}
+                g = read_json_file(CREATOR_DIR + 'general.json')
+                fw = {'serial': g.get('serialNumber'), 'name': g.get('machineName'),
+                      'location': g.get('location'), 'nozzle': g.get('extruderTypeInfo')}
             except Exception as e:
-                log.warning('%sgeneral.json: %s', FFCONFIG, e)
+                self.warnings.append(f'{CREATOR_DIR}general.json: {e}')
             try:
-                fw['code'] = read_ff_json('network.json').get('lanModeCode')
+                fw['code'] = read_json_file(CREATOR_DIR + 'network.json').get('lanModeCode')
             except Exception as e:
-                log.warning('%snetwork.json: %s', FFCONFIG, e)
+                self.warnings.append(f'{CREATOR_DIR}network.json: {e}')
 
         def pick(key, *alts):
             v = c.get(key).strip()
@@ -251,6 +258,8 @@ class Config:
         self.pid = to_int(pick('pid', prof['pid']), 0)
         self.nozzle_count = to_int(pick('nozzle_count', prof['nozzle_count']), 1)
         self.measure = pick('measure', prof['measure'])
+        if not self.chamber_object and self.model.startswith('Creator'):
+            self.chamber_object = 'heater_generic chamber_heater'
 
         self.ip_addr = c.get('ip_addr').strip() or detect_ip()
         self.mac_addr = c.get('mac_addr').strip() or detect_mac()
@@ -433,9 +442,10 @@ class State:
             objs = [o for o in self.OBJECTS if o in avail]
             if self.cfg.light_object and self.cfg.light_object in avail:
                 objs.append(self.cfg.light_object)
-            if self.cfg.fan_object and self.cfg.fan_object in avail:
-                objs.append(self.cfg.fan_object)
-            if 'zmod_color' not in avail:
+            for extra in (self.cfg.fan_object, self.cfg.chamber_object):
+                if extra and extra in avail:
+                    objs.append(extra)
+            if self.cfg.colors and 'zmod_color' not in avail:
                 log.warning('Объект zmod_color не найден в Klipper')
             self.objects = objs
             log.info('Опрашиваемые объекты: %s', ', '.join(objs))
@@ -605,7 +615,7 @@ def parse_multipart(reader, boundary, tmp_dir, max_field=MAX_JSON_BODY):
             size = 0
             path = None
             if filename is not None:
-                fd, path = tempfile.mkstemp(dir=tmp_dir, prefix='ff_orca_', suffix='.part')
+                fd, path = tempfile.mkstemp(dir=tmp_dir, prefix='orca_ff_', suffix='.part')
                 out = os.fdopen(fd, 'wb')
                 files[name] = (filename, path, 0)
 
@@ -761,6 +771,8 @@ class App:
         st, online = self.state.snapshot()
         if not online:
             raise ApiError('Moonraker offline')
+        if not self.cfg.colors:
+            raise ApiError('Not supported on this model')
         zc = st.get('zmod_color')
         if zc is None:
             raise ApiError('zmod_color not loaded')
@@ -866,7 +878,7 @@ class App:
         if 'xyz' not in str(th.get('homed_axes') or ''):
             pos = [10000.0, 10000.0, 10000.0]
 
-        return {
+        d = {
             'autoShutdown': 'close',
             'autoShutdownTime': 30,
             'camera': 1 if self.state.camera_url else 0,
@@ -940,10 +952,45 @@ class App:
             'tvoc': 0,
             'zAxisCompensation': round(float(homing[2] if len(homing) > 2 else 0), 3),
         }
+        if cfg.model.startswith('Creator'):
+            self.creator_detail(d, st)
+        elif not cfg.colors:
+            for k in ('coordinate', 'moveCtrl', 'extrudeCtrl', 'clearFanStatus', 'coolingFanLeftSpeed',
+                      'hasLeftFilament', 'hasRightFilament', 'hasMatlStation', 'indepMatlInfo',
+                      'matlStationInfo'):
+                d.pop(k, None)
+        return d
+
+    def creator_detail(self, d, st):
+        """Поля /detail как у родного экрана Creator 5/5 Pro (4 сопла, без IFS AD5X)."""
+        cfg = self.cfg
+        for k in ('coordinate', 'moveCtrl', 'extrudeCtrl', 'clearFanStatus', 'coolingFanLeftSpeed',
+                  'hasLeftFilament', 'hasRightFilament', 'hasMatlStation', 'indepMatlInfo'):
+            d.pop(k, None)
+        names = ['extruder'] + [f'extruder{i}' for i in range(1, cfg.nozzle_count)]
+        temps = [int(round(float(st.get(n, {}).get('temperature') or 0))) for n in names]
+        targets = [int(round(float(st.get(n, {}).get('target') or 0))) for n in names]
+        d.update({
+            'lidar': 1,
+            'model': MODELS.get(cfg.model, {}).get('name', cfg.model),
+            'nozzleModel': ';'.join([cfg.nozzle_model] * cfg.nozzle_count),
+            'nozzleTemps': temps,
+            'nozzleTargetTemps': targets,
+            'rightTemp': temps[0], 'rightTargetTemp': targets[0],
+            'leftTemp': temps[1] if len(temps) > 1 else 0,
+            'leftTargetTemp': targets[1] if len(targets) > 1 else 0,
+        })
+        if cfg.chamber_object:
+            ch = st.get(cfg.chamber_object, {})
+            d['chamberTemp'] = int(round(float(ch.get('temperature') or 0)))
+            d['chamberTargetTemp'] = int(round(float(ch.get('target') or 0)))
+        for slot in d['matlStationInfo']['slotInfos']:
+            if not slot['hasFilament']:
+                slot['materialColor'] = slot['materialName'] = ''
 
     def api_product(self, body):
         return {'product': {
-            'chamberTempCtrlState': 0,
+            'chamberTempCtrlState': 1 if self.cfg.model.startswith('Creator') else 0,
             'externalFanCtrlState': 0,
             'internalFanCtrlState': 0,
             'lightCtrlState': 1 if (self.cfg.light_on_gcode or self.cfg.light_object) else 0,
@@ -960,11 +1007,23 @@ class App:
         args = payload.get('args') or {}
         log.info('control: %s %s', cmd, json.dumps(args, ensure_ascii=False))
 
-        if cmd == 'msConfig_cmd':
+        if cmd in ('ms_cmd', 'ipdMs_cmd'):
+            # Загрузка (action=0) / выгрузка (action=1); ipdMs_cmd — внешняя катушка (слот 0, AD5X)
             st, zc = self._zmod()
-            slot = to_int(args.get('slot'), 0)
+            slot = to_int(args.get('slot'), 0) if cmd == 'ms_cmd' else 0
+            napr = to_int(args.get('action'), -1)
+            ad5x = self.cfg.model == 'AD5X'
+            if napr not in (0, 1) or not (0 if ad5x else 1) <= slot <= to_int(zc.get('color_limit'), 4):
+                raise ApiError(f'Invalid slot {slot} or action {napr}')
+            self.run_async(f'IN_ZCOLOR SLOT={slot} NAPR={napr}' if ad5x
+                           else f'_T_IN_ZCOLOR SLOT={slot} NAPR={napr} HIDE=1', timeout=600)
+            return {}
+
+        if cmd in ('msConfig_cmd', 'ipdMsConfig_cmd'):
+            st, zc = self._zmod()
+            slot = to_int(args.get('slot'), 0) if cmd == 'msConfig_cmd' else 0
             limit = to_int(zc.get('color_limit'), 4)
-            if not 1 <= slot <= limit:
+            if not (0 if self.cfg.model == 'AD5X' else 1) <= slot <= limit:
                 raise ApiError(f'Invalid slot {slot}')
             mt = str(args.get('mt') or '').strip().upper()
             valid = [t.upper() for t in zc.get('valid_types', [])]
@@ -1041,6 +1100,9 @@ class App:
                 script.append(f'M140 S{float(args["platform"]):.1f}')
             if 'leftJet' in args:
                 script.append(f'M104 S{float(args["leftJet"]):.1f}')
+            if 'chamber' in args and self.cfg.chamber_object.startswith('heater_generic '):
+                script.append(f'SET_HEATER_TEMPERATURE HEATER={self.cfg.chamber_object.split()[1]} '
+                              f'TARGET={float(args["chamber"]):.1f}')
             if script:
                 self.run_async('\n'.join(script))
             return {}
@@ -1109,7 +1171,7 @@ class App:
                 'gcodeToolDatas': info['tools'],
                 'printingTime': info['printingTime'],
                 'totalFilamentWeight': info['weight'],
-                'useMatlStation': True,
+                'useMatlStation': self.cfg.colors,
             })
         return {'gcodeList': names, 'gcodeListDetail': details}
 
@@ -1168,7 +1230,10 @@ class App:
         return []
 
     def start_print(self, fname, leveling, autopa, use_ms, mappings, tool_cnt):
-        st, zc = self._zmod()
+        if self.cfg.colors:
+            st, zc = self._zmod()
+        else:
+            st, zc = self.state.snapshot()[0], {}
         ps = st.get('print_stats', {}).get('state')
         with self.job_lock:
             if self.job_active or ps in ('printing', 'paused'):
@@ -1191,6 +1256,9 @@ class App:
                     parts.append(f'ALLOWED_TOOL_COUNT={need}')
                 parts += [f'T{t}={s}' for t, s in sorted(tmap.items())]
             script = ' '.join(parts)
+            if not self.cfg.colors:
+                script = (f'SAVE_VARIABLE VARIABLE=print_leveling VALUE={1 if leveling else 0}\n'
+                          f'_ZSDCARD_PRINT_FILE FILENAME="{fname.replace(chr(34), "")}"')
         except Exception:
             self.job_active = False
             raise
@@ -1248,7 +1316,7 @@ class App:
 
 class Handler(BaseHTTPRequestHandler):
     protocol_version = 'HTTP/1.1'
-    server_version = 'ff_orca'
+    server_version = 'orca_ff'
     sys_version = ''
 
     ROUTES = {
@@ -1559,9 +1627,11 @@ def main():
         return 0
 
     setup_logging(cfg, args.debug)
+    for w in cfg.warnings:
+        log.warning(w)
     if not cfg.serial_number or not cfg.check_code:
         log.warning('serialNumber/checkCode не заданы')
-    log.info('ff_orca: %s:%d -> %s, ip=%s, model=%s, fw=%s, name=%s, sn=%s, pid=%d',
+    log.info('orca_ff: %s:%d -> %s, ip=%s, model=%s, fw=%s, name=%s, sn=%s, pid=%d',
              cfg.listen_host, cfg.listen_port, cfg.moonraker_url, cfg.ip_addr,
              cfg.model, cfg.firmware_version, cfg.printer_name, cfg.serial_number, cfg.pid)
 
