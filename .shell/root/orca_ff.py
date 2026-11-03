@@ -34,15 +34,24 @@ AD5M_FW = '/opt/config/Adventurer5M.json'
 CREATOR_FW = '/usr/data/config/rw/'
 MODELS = {
     'AD5X':            {'name': 'AD5X',              'pid': 0x0026, 'nozzle_count': 1,
-                        'measure': '220X220X220', 'fw': AD5X_FW},
+                        'measure': '220X220X220', 'fw': AD5X_FW,
+                        'light': 'led chamber_led', 'fan': 'fan_generic fanM106'},
     'Adventurer5M':    {'name': 'Adventurer 5M',     'pid': 0x0023, 'nozzle_count': 1,
-                        'measure': '220X220X220', 'fw': AD5M_FW},
+                        'measure': '220X220X220', 'fw': AD5M_FW,
+                        'light': 'led chamber_led', 'fan': 'fan_generic fanM106',
+                        'chamber_fan': 'fan_generic chamber_fan'},
     'Adventurer5MPro': {'name': 'Adventurer 5M Pro', 'pid': 0x0024, 'nozzle_count': 1,
-                        'measure': '220X220X220', 'fw': AD5M_FW},
+                        'measure': '220X220X220', 'fw': AD5M_FW,
+                        'light': 'led chamber_led', 'fan': 'fan_generic fanM106',
+                        'chamber_fan': 'fan_generic chamber_fan'},
     'Creator5':        {'name': 'Creator 5',         'pid': 0x0028, 'nozzle_count': 4,
-                        'measure': '256X256X256', 'fw': CREATOR_FW},
+                        'measure': '256X256X256', 'fw': CREATOR_FW,
+                        'light': 'led chamber_led', 'fan': 'fan_generic fanM106',
+                        'chamber_fan': 'fan_generic chamber_loop_fan'},
     'Creator5Pro':     {'name': 'Creator 5 Pro',     'pid': 0x0029, 'nozzle_count': 4,
-                        'measure': '256X256X256', 'fw': CREATOR_FW},
+                        'measure': '256X256X256', 'fw': CREATOR_FW,
+                        'light': 'led chamber_led', 'fan': 'fan_generic fanM106',
+                        'chamber_fan': 'fan_generic chamber_loop_fan'},
 }
 GCODE_EXT = ('.gcode', '.gco', '.g', '.3mf')
 MAX_TOOLS = 98
@@ -70,8 +79,9 @@ DEFAULTS = {
     'ip_addr': '',
     'mac_addr': '',
     'camera_url': '',
-    'light_object': 'led',
-    'fan_object': 'fan_generic FanM106',
+    'light_object': '',
+    'fan_object': '',
+    'chamber_fan_object': '',
     'chamber_object': '',
     'light_on_gcode': 'LED_ON',
     'light_off_gcode': 'LED_OFF',
@@ -194,6 +204,7 @@ class Config:
         self.light_object = c.get('light_object').strip()
         self.fan_object = c.get('fan_object').strip()
         self.chamber_object = c.get('chamber_object').strip()
+        self.chamber_fan_object = c.get('chamber_fan_object').strip()
         self.light_on_gcode = c.get('light_on_gcode').replace('\\n', '\n')
         self.light_off_gcode = c.get('light_off_gcode').replace('\\n', '\n')
         self.max_files = c.getint('max_files')
@@ -260,6 +271,9 @@ class Config:
         self.measure = pick('measure', prof['measure'])
         if not self.chamber_object and self.model.startswith('Creator'):
             self.chamber_object = 'heater_generic chamber_heater'
+        self.light_object = self.light_object or prof.get('light', 'led')
+        self.fan_object = self.fan_object or prof.get('fan', 'fan_generic FanM106')
+        self.chamber_fan_object = self.chamber_fan_object or prof.get('chamber_fan', '')
 
         self.ip_addr = c.get('ip_addr').strip() or detect_ip()
         self.mac_addr = c.get('mac_addr').strip() or detect_mac()
@@ -435,10 +449,15 @@ class State:
     def _poll(self):
         if self.objects is None:
             avail = set(self.mr.get('/printer/objects/list')['objects'])
+            lower = {o.lower(): o for o in avail}
+            for attr in ('light_object', 'fan_object', 'chamber_object', 'chamber_fan_object'):
+                name = getattr(self.cfg, attr)
+                if name and name not in avail and name.lower() in lower:
+                    setattr(self.cfg, attr, lower[name.lower()])
             objs = [o for o in self.OBJECTS if o in avail]
             if self.cfg.light_object and self.cfg.light_object in avail:
                 objs.append(self.cfg.light_object)
-            for extra in (self.cfg.fan_object, self.cfg.chamber_object):
+            for extra in (self.cfg.fan_object, self.cfg.chamber_object, self.cfg.chamber_fan_object):
                 if extra and extra in avail:
                     objs.append(extra)
             if self.cfg.colors and 'zmod_color' not in avail:
@@ -810,8 +829,8 @@ class App:
             return 'ready'                  # нет экрана, где нажать «Очистить»: сбрасываем сами
         return 'completed' if ps == 'complete' else 'cancel'
 
-    def fan_speed(self, st):
-        obj = st.get(self.cfg.fan_object) or st.get('fan') or {}
+    def fan_speed(self, st, name=None):
+        obj = (st.get(name) or {}) if name else (st.get(self.cfg.fan_object) or st.get('fan') or {})
         return float(obj.get('speed', obj.get('value')) or 0)
 
     def light_on(self, st):
@@ -874,7 +893,8 @@ class App:
             'autoShutdownTime': 30,
             'camera': 1 if self.state.camera_url else 0,
             'cameraStreamUrl': self.state.camera_url or '',
-            'chamberFanSpeed': 0,
+            'chamberFanSpeed': int(round(self.fan_speed(st, cfg.chamber_fan_object) * 100))
+            if cfg.chamber_fan_object else 0,
             'chamberTargetTemp': 0,
             'chamberTemp': 0,
             'clearFanStatus': 'close',
@@ -1072,6 +1092,10 @@ class App:
                 cur = int(round(self.fan_speed(st) * 100))
                 if v != cur:
                     script.append(f'M106 S{int(round(v * 2.55))}')
+            if 'chamberFan' in args and self.cfg.chamber_fan_object:
+                v = max(0, min(100, to_int(args.get('chamberFan'), 0)))
+                if v != int(round(self.fan_speed(st, self.cfg.chamber_fan_object) * 100)):
+                    script.append(f'M106 P2 S{int(round(v * 2.55))}')
             if 'zAxisCompensation' in args:
                 try:
                     v = float(args.get('zAxisCompensation'))
