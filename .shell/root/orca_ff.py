@@ -25,22 +25,27 @@ import zlib
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, quote, urlencode, urlsplit
 
-RW_DIR = '/opt/config/rw/'
-AD5M_JSON = '/opt/config/Adventurer5M.json'
-CREATOR_DIR = '/opt/config/json/config/'
 OS_RELEASE = '/etc/os-release'
 DEFAULT_CONFIG = '/opt/config/mod_data/orca_ff.cfg'
 DEFAULT_LOG = '/opt/config/mod_data/log/orca_ff.log'
 
+AD5X_FW = '/opt/config/rw/Adventurer5M.json'
+AD5M_FW = '/opt/config/Adventurer5M.json'
+CREATOR_FW = '/usr/data/config/rw/'
 MODELS = {
-    'AD5X':        {'name': 'AD5X',          'pid': 0x0026, 'nozzle_count': 1, 'measure': '220X220X220'},
-    'Creator5':    {'name': 'Creator 5',     'pid': 0x0028, 'nozzle_count': 4, 'measure': '256X256X256'},
-    'Creator5Pro': {'name': 'Creator 5 Pro', 'pid': 0x0029, 'nozzle_count': 4, 'measure': '256X256X256'},
-    'Adventurer5M':    {'name': 'Adventurer 5M',     'pid': 0x0023, 'nozzle_count': 1, 'measure': '220X220X220'},
-    'Adventurer5MPro': {'name': 'Adventurer 5M Pro', 'pid': 0x0024, 'nozzle_count': 1, 'measure': '220X220X220'},
+    'AD5X':            {'name': 'AD5X',              'pid': 0x0026, 'nozzle_count': 1,
+                        'measure': '220X220X220', 'fw': AD5X_FW},
+    'Adventurer5M':    {'name': 'Adventurer 5M',     'pid': 0x0023, 'nozzle_count': 1,
+                        'measure': '220X220X220', 'fw': AD5M_FW},
+    'Adventurer5MPro': {'name': 'Adventurer 5M Pro', 'pid': 0x0024, 'nozzle_count': 1,
+                        'measure': '220X220X220', 'fw': AD5M_FW},
+    'Creator5':        {'name': 'Creator 5',         'pid': 0x0028, 'nozzle_count': 4,
+                        'measure': '256X256X256', 'fw': CREATOR_FW},
+    'Creator5Pro':     {'name': 'Creator 5 Pro',     'pid': 0x0029, 'nozzle_count': 4,
+                        'measure': '256X256X256', 'fw': CREATOR_FW},
 }
 GCODE_EXT = ('.gcode', '.gco', '.g', '.3mf')
-MAX_TOOLS = 98                  # как MAX_COLOR в zmod_color
+MAX_TOOLS = 98
 MAX_JSON_BODY = 1024 * 1024
 READ_CHUNK = 64 * 1024
 
@@ -82,8 +87,6 @@ DEFAULTS = {
     'discovery_flags': '0000',      # байты 144-145 ответа: 0000 = подключение без входа в аккаунт
 }
 
-
-# ---------------------------------------------------------------- утилиты
 
 def read_json_file(path):
     with open(path, 'r', encoding='utf-8') as f:
@@ -142,7 +145,7 @@ def safe_filename(name):
 def detect_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
-        s.connect(('8.8.8.8', 80))      # пакет не отправляется
+        s.connect(('8.8.8.8', 80))
         return s.getsockname()[0]
     except OSError:
         try:
@@ -173,8 +176,6 @@ def detect_mac():
     return ''
 
 
-# ---------------------------------------------------------------- конфиг
-
 class Config:
     def __init__(self, path):
         cp = configparser.ConfigParser(interpolation=None, inline_comment_prefixes=('#',))
@@ -183,7 +184,7 @@ class Config:
             cp.read(path, encoding='utf-8')
         c = cp['orca_ff']
         self.path = path
-        self.warnings = []              # логирование ещё не настроено
+        self.warnings = []
         self.listen_host = c.get('listen_host')
         self.listen_port = c.getint('listen_port')
         self.moonraker_url = c.get('moonraker_url')
@@ -214,16 +215,15 @@ class Config:
                 os_model, os_fw = (parts + ['', ''])[:2]
         except OSError:
             pass
-        is_ad5x = os.path.exists(RW_DIR + 'Adventurer5M.json')
-        is_ad5m = not is_ad5x and os.path.exists(AD5M_JSON)
         self.model = c.get('model').strip() or (os_model if os_model in MODELS else '') \
-            or ('AD5X' if is_ad5x else 'Adventurer5M' if is_ad5m else 'Creator5Pro')
-        self.colors = not self.model.startswith('Adventurer5M')     # 5M/5M Pro: без zmod_color
+            or next((m for m in ('AD5X', 'Adventurer5M', 'Creator5Pro')
+                     if os.path.exists(MODELS[m]['fw'])), 'AD5X')
+        self.colors = not self.model.startswith('Adventurer5M')
         prof = MODELS.get(self.model, MODELS['AD5X'])
 
         fw = {}
-        if is_ad5x or is_ad5m:
-            path = RW_DIR + 'Adventurer5M.json' if is_ad5x else AD5M_JSON
+        path = prof['fw']
+        if path.endswith('.json'):
             try:
                 g = read_json_file(path).get('general', {})
                 fw = {'serial': g.get('printerSerialNumber'), 'code': g.get('lanCode'),
@@ -233,15 +233,15 @@ class Config:
                 self.warnings.append(f'{path}: {e}')
         else:
             try:
-                g = read_json_file(CREATOR_DIR + 'general.json')
+                g = read_json_file(path + 'general.json')
                 fw = {'serial': g.get('serialNumber'), 'name': g.get('machineName'),
                       'location': g.get('location'), 'nozzle': g.get('extruderTypeInfo')}
             except Exception as e:
-                self.warnings.append(f'{CREATOR_DIR}general.json: {e}')
+                self.warnings.append(f'{path}general.json: {e}')
             try:
-                fw['code'] = read_json_file(CREATOR_DIR + 'network.json').get('lanModeCode')
+                fw['code'] = read_json_file(path + 'network.json').get('lanModeCode')
             except Exception as e:
-                self.warnings.append(f'{CREATOR_DIR}network.json: {e}')
+                self.warnings.append(f'{path}network.json: {e}')
 
         def pick(key, *alts):
             v = c.get(key).strip()
@@ -271,8 +271,6 @@ class Config:
         os.makedirs(tmp, exist_ok=True)
         self.tmp_dir = tmp
 
-
-# ---------------------------------------------------------------- Moonraker
 
 class MoonrakerError(Exception):
     pass
@@ -382,8 +380,6 @@ class Moonraker:
         return (res.get('item') or {}).get('path') or fname
 
 
-# ---------------------------------------------------------------- состояние
-
 class State:
     OBJECTS = ['webhooks', 'print_stats', 'virtual_sdcard', 'heater_bed',
                'extruder', 'extruder1', 'extruder2', 'extruder3',
@@ -489,8 +485,6 @@ class State:
             log.debug('history totals: %s', e)
 
 
-# ---------------------------------------------------------------- multipart
-
 class BodyReader:
 
     def __init__(self, rfile, length=None, chunked=False):
@@ -545,7 +539,6 @@ class BodyReader:
 
 
 def parse_multipart(reader, boundary, tmp_dir, max_field=MAX_JSON_BODY):
-    """-> (fields {name: str}, files {name: (filename, path, size)})"""
     delim = b'\r\n--' + boundary
     keep = len(delim) - 1
     st = {'buf': b'\r\n', 'eof': False}
@@ -659,8 +652,6 @@ def parse_multipart(reader, boundary, tmp_dir, max_field=MAX_JSON_BODY):
     return fields, files
 
 
-# ---------------------------------------------------------------- логика
-
 def blank_png(size=1):
     def chunk(t, d):
         return len(d).to_bytes(4, 'big') + t + d + zlib.crc32(t + d).to_bytes(4, 'big')
@@ -671,7 +662,7 @@ def blank_png(size=1):
 
 
 def png_to_bmp(data):
-    """PNG -> BMP 24 бит без альфы, байт-в-байт как /getThum родного экрана."""
+    """Без альфы — байт-в-байт как /getThum родного экрана."""
     if data[:8] != b'\x89PNG\r\n\x1a\n':
         raise ValueError('not png')
     pos, idat, w = 8, bytearray(), 0
@@ -716,7 +707,7 @@ def png_to_bmp(data):
         prev = line
     pad = (4 - (w * 3) % 4) % 4
     out = bytearray()
-    for line in reversed(rows):                  # BMP хранит строки снизу вверх
+    for line in reversed(rows):
         for x in range(w):
             px = line[x * bpp:(x + 1) * bpp]
             if bpp >= 3:
@@ -750,7 +741,7 @@ class App:
         self.meta_cache = {}
         self.job_file = ''
         self.job_bound = None
-        self.pending = None             # (pause|resume|cancel, время)
+        self.pending = None
         self.done_since = None
 
     def check_auth(self, serial, code):
@@ -962,7 +953,6 @@ class App:
         return d
 
     def creator_detail(self, d, st):
-        """Поля /detail как у родного экрана Creator 5/5 Pro (4 сопла, без IFS AD5X)."""
         cfg = self.cfg
         for k in ('coordinate', 'moveCtrl', 'extrudeCtrl', 'clearFanStatus', 'coolingFanLeftSpeed',
                   'hasLeftFilament', 'hasRightFilament', 'hasMatlStation', 'indepMatlInfo'):
@@ -1119,7 +1109,6 @@ class App:
         raise ApiError(f'Unsupported command {cmd}')
 
     def display_file(self, ps):
-        """.3mf, запущенный через сервис, вместо извлечённого zmod G-code."""
         ps_fn = ps.get('filename') or ''
         if self.job_file:
             if self.job_bound is None and ps_fn and ps.get('state') in ('printing', 'paused'):
@@ -1311,8 +1300,6 @@ class App:
                              opts.get('gcodeToolCnt'))
         return {}
 
-
-# ---------------------------------------------------------------- HTTP
 
 class Handler(BaseHTTPRequestHandler):
     protocol_version = 'HTTP/1.1'
@@ -1575,8 +1562,6 @@ class Server(ThreadingHTTPServer):
         super().__init__(addr, Handler)
         self.app = app
 
-
-# ---------------------------------------------------------------- запуск
 
 def setup_logging(cfg, debug):
     level = logging.DEBUG if debug else getattr(logging, cfg.log_level, logging.INFO)
