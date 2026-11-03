@@ -415,36 +415,32 @@ class State:
         self.cur_meta = {}
         self.light_state = False
         self.display_warned = False
-        self._stop = threading.Event()
-        self._last_slow = 0.0
-
-    def start(self):
-        threading.Thread(target=self._loop, name='poller', daemon=True).start()
-
-    def stop(self):
-        self._stop.set()
+        self.refresh_lock = threading.Lock()
+        self._last_poll = self._last_slow = -1e9
 
     def snapshot(self):
+        """Состояние опрашивается только по запросу слайсера, с кэшем на poll_interval."""
+        with self.refresh_lock:
+            now = time.monotonic()
+            if now - self._last_poll >= self.cfg.poll_interval:
+                self._last_poll = now
+                self._refresh(now)
         with self.lock:
             return dict(self.status), self.online
 
-    def _loop(self):
-        while not self._stop.is_set():
-            try:
-                self._poll()
-            except Exception as e:
-                with self.lock:
-                    if self.online:
-                        log.warning('Moonraker недоступен: %s', e)
-                    self.online = False
-                self.objects = None
-                self._stop.wait(3.0)
-                continue
-            now = time.monotonic()
-            if now - self._last_slow >= self.cfg.slow_poll_interval:
-                self._last_slow = now
-                self._slow_poll()
-            self._stop.wait(self.cfg.poll_interval)
+    def _refresh(self, now):
+        try:
+            self._poll()
+        except Exception as e:
+            with self.lock:
+                if self.online:
+                    log.warning('Moonraker недоступен: %s', e)
+                self.online = False
+            self.objects = None
+            return
+        if now - self._last_slow >= self.cfg.slow_poll_interval:
+            self._last_slow = now
+            self._slow_poll()
 
     def _poll(self):
         if self.objects is None:
@@ -1651,14 +1647,12 @@ def main():
         log.error('Не удалось открыть порт %d: %s (занят родным экраном?)', cfg.listen_port, e)
         return 1
 
-    app.state.start()
     disc = Discovery(cfg)
     if cfg.discovery:
         disc.start()
 
     def stop(signum, frame):
         log.info('Остановка (сигнал %d)', signum)
-        app.state.stop()
         disc.stop()
         threading.Thread(target=server.shutdown, daemon=True).start()
 
