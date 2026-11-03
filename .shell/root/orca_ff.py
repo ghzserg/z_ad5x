@@ -2,7 +2,7 @@
 # (C) 2026 ghzserg https://github.com/ghzserg/zmod
 # (C) 2026 Claude (Anthropic) — соавтор
 #
-# orca_ff — эмулятор HTTP API родного экрана FlashForge (AD5X, Creator 5/5 Pro)
+# orca_ff — эмулятор HTTP API родного экрана FlashForge (AD5X, Adventurer 5M/5M Pro, Creator 5/5 Pro)
 # для Flash Studio / OrcaSlicer поверх Moonraker и zmod_color.
 # Требует display: False в zmod_color.
 
@@ -26,6 +26,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, quote, urlencode, urlsplit
 
 RW_DIR = '/opt/config/rw/'
+AD5M_JSON = '/opt/config/Adventurer5M.json'
 CREATOR_DIR = '/opt/config/json/config/'
 OS_RELEASE = '/etc/os-release'
 DEFAULT_CONFIG = '/opt/config/mod_data/orca_ff.cfg'
@@ -35,6 +36,8 @@ MODELS = {
     'AD5X':        {'name': 'AD5X',          'pid': 0x0026, 'nozzle_count': 1, 'measure': '220X220X220'},
     'Creator5':    {'name': 'Creator 5',     'pid': 0x0028, 'nozzle_count': 4, 'measure': '256X256X256'},
     'Creator5Pro': {'name': 'Creator 5 Pro', 'pid': 0x0029, 'nozzle_count': 4, 'measure': '256X256X256'},
+    'Adventurer5M':    {'name': 'Adventurer 5M',     'pid': 0x0023, 'nozzle_count': 1, 'measure': '220X220X220'},
+    'Adventurer5MPro': {'name': 'Adventurer 5M Pro', 'pid': 0x0024, 'nozzle_count': 1, 'measure': '220X220X220'},
 }
 GCODE_EXT = ('.gcode', '.gco', '.g', '.3mf')
 MAX_TOOLS = 98                  # как MAX_COLOR в zmod_color
@@ -212,19 +215,22 @@ class Config:
         except OSError:
             pass
         is_ad5x = os.path.exists(RW_DIR + 'Adventurer5M.json')
+        is_ad5m = not is_ad5x and os.path.exists(AD5M_JSON)
         self.model = c.get('model').strip() or (os_model if os_model in MODELS else '') \
-            or ('AD5X' if is_ad5x else 'Creator5Pro')
+            or ('AD5X' if is_ad5x else 'Adventurer5M' if is_ad5m else 'Creator5Pro')
+        self.colors = not self.model.startswith('Adventurer5M')     # 5M/5M Pro: без zmod_color
         prof = MODELS.get(self.model, MODELS['AD5X'])
 
         fw = {}
-        if is_ad5x:
+        if is_ad5x or is_ad5m:
+            path = RW_DIR + 'Adventurer5M.json' if is_ad5x else AD5M_JSON
             try:
-                g = read_json_file(RW_DIR + 'Adventurer5M.json').get('general', {})
+                g = read_json_file(path).get('general', {})
                 fw = {'serial': g.get('printerSerialNumber'), 'code': g.get('lanCode'),
                       'name': g.get('printerName'), 'location': g.get('localName'),
                       'nozzle': g.get('extruderTypeInfo')}
             except Exception as e:
-                self.warnings.append(f'{RW_DIR}Adventurer5M.json: {e}')
+                self.warnings.append(f'{path}: {e}')
         else:
             try:
                 g = read_json_file(CREATOR_DIR + 'general.json')
@@ -439,7 +445,7 @@ class State:
             for extra in (self.cfg.fan_object, self.cfg.chamber_object):
                 if extra and extra in avail:
                     objs.append(extra)
-            if 'zmod_color' not in avail:
+            if self.cfg.colors and 'zmod_color' not in avail:
                 log.warning('Объект zmod_color не найден в Klipper')
             self.objects = objs
             log.info('Опрашиваемые объекты: %s', ', '.join(objs))
@@ -765,6 +771,8 @@ class App:
         st, online = self.state.snapshot()
         if not online:
             raise ApiError('Moonraker offline')
+        if not self.cfg.colors:
+            raise ApiError('Not supported on this model')
         zc = st.get('zmod_color')
         if zc is None:
             raise ApiError('zmod_color not loaded')
@@ -946,6 +954,11 @@ class App:
         }
         if cfg.model.startswith('Creator'):
             self.creator_detail(d, st)
+        elif not cfg.colors:
+            for k in ('coordinate', 'moveCtrl', 'extrudeCtrl', 'clearFanStatus', 'coolingFanLeftSpeed',
+                      'hasLeftFilament', 'hasRightFilament', 'hasMatlStation', 'indepMatlInfo',
+                      'matlStationInfo'):
+                d.pop(k, None)
         return d
 
     def creator_detail(self, d, st):
@@ -1158,7 +1171,7 @@ class App:
                 'gcodeToolDatas': info['tools'],
                 'printingTime': info['printingTime'],
                 'totalFilamentWeight': info['weight'],
-                'useMatlStation': True,
+                'useMatlStation': self.cfg.colors,
             })
         return {'gcodeList': names, 'gcodeListDetail': details}
 
@@ -1217,7 +1230,10 @@ class App:
         return []
 
     def start_print(self, fname, leveling, autopa, use_ms, mappings, tool_cnt):
-        st, zc = self._zmod()
+        if self.cfg.colors:
+            st, zc = self._zmod()
+        else:
+            st, zc = self.state.snapshot()[0], {}
         ps = st.get('print_stats', {}).get('state')
         with self.job_lock:
             if self.job_active or ps in ('printing', 'paused'):
@@ -1240,6 +1256,9 @@ class App:
                     parts.append(f'ALLOWED_TOOL_COUNT={need}')
                 parts += [f'T{t}={s}' for t, s in sorted(tmap.items())]
             script = ' '.join(parts)
+            if not self.cfg.colors:
+                script = (f'SAVE_VARIABLE VARIABLE=print_leveling VALUE={1 if leveling else 0}\n'
+                          f'_ZSDCARD_PRINT_FILE FILENAME="{fname.replace(chr(34), "")}"')
         except Exception:
             self.job_active = False
             raise
