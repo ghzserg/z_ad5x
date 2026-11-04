@@ -312,7 +312,7 @@ update_plugins /opt/config/mod_data/user.moonraker.conf
 
 if ! [ -f /usr/data/zmod/klipper/klippy/klippy.py ]; then
     branch="main"
-    url="https://github.com/ghzserg/zmod_klipper.git"
+    [ ${C5PRO} -eq 1 ] && url="https://github.com/ghzserg/zmod_klipper_c5.git" || url="https://github.com/ghzserg/zmod_klipper.git"
     a="klippy"
     sqlite3 /opt/config/mod_data/database/moonraker-sql.db \
     "DELETE FROM namespace_store WHERE namespace = 'update_manager' AND key = '$a'; \
