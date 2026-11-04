@@ -147,9 +147,9 @@ def as_list(value):
 
 
 def safe_filename(name):
-    name = os.path.basename(str(name or '').replace('\\', '/'))
-    name = re.sub(r'[\x00-\x1f"]', '', name).strip()
-    return name
+    # Каталог сохраняется (Tmp/file.gcode), без абсолютных путей и '..'
+    parts = [re.sub(r'[\x00-\x1f"]', '', p).strip() for p in str(name or '').replace('\\', '/').split('/')]
+    return '/'.join(p for p in parts if p not in ('', '.', '..'))
 
 
 def detect_ip():
@@ -352,10 +352,13 @@ class Moonraker:
 
     def upload(self, local_path, filename, timeout=600.0):
         boundary = uuid.uuid4().hex
-        fname = filename.replace('"', '')
+        subdir, fname = os.path.split(filename.replace('"', ''))
         pre = (f'--{boundary}\r\n'
                f'Content-Disposition: form-data; name="root"\r\n\r\n'
                f'gcodes\r\n'
+               + (f'--{boundary}\r\n'
+                  f'Content-Disposition: form-data; name="path"\r\n\r\n'
+                  f'{subdir}\r\n' if subdir else '') +
                f'--{boundary}\r\n'
                f'Content-Disposition: form-data; name="file"; filename="{fname}"\r\n'
                f'Content-Type: application/octet-stream\r\n\r\n').encode('utf-8')
@@ -391,7 +394,7 @@ class Moonraker:
             msg = err.get('message') if isinstance(err, dict) else err
             raise MoonrakerError(f'upload: {msg or resp.status}')
         res = j.get('result', j)
-        return (res.get('item') or {}).get('path') or fname
+        return (res.get('item') or {}).get('path') or filename
 
 
 class State:
