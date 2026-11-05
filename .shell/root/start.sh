@@ -310,13 +310,20 @@ update_plugins /opt/config/moonraker.conf
 update_plugins /opt/config/mod_data/extra_plugins.moonraker.conf
 update_plugins /opt/config/mod_data/user.moonraker.conf
 
+if [ ${C5PRO} -eq 1 ]; then
+    klipper_url="https://github.com/ghzserg/zmod_klipper_c5.git"
+    grep -q zmod_klipper_c5 /usr/data/zmod/klipper/.git/config || rm -rf /usr/data/zmod/klipper/
+    mkdir -p /usr/data/zmod/klipper/
+else
+    klipper_url="https://github.com/ghzserg/zmod_klipper.git"
+fi
+
 if ! [ -f /usr/data/zmod/klipper/klippy/klippy.py ]; then
     branch="main"
-    [ ${C5PRO} -eq 1 ] && url="https://github.com/ghzserg/zmod_klipper_c5.git" || url="https://github.com/ghzserg/zmod_klipper.git"
     a="klippy"
     sqlite3 /opt/config/mod_data/database/moonraker-sql.db \
     "DELETE FROM namespace_store WHERE namespace = 'update_manager' AND key = '$a'; \
-     INSERT INTO namespace_store (namespace, key, value) VALUES ('update_manager', '$a', '{\"last_config_hash\":\"?\",\"last_refresh_time\":0.0,\"is_valid\":false,\"pip_version_info\":null,\"repo_valid\":false,\"git_owner\":\"none\",\"git_repo_name\":\"$a\",\"git_remote\":\"origin\",\"git_branch\":\"$branch\",\"current_version\":\"0.0.0.0\",\"upstream_version\":\"0.0.0.0\",\"current_commit\":\"?\",\"upstream_commit\":\"?\",\"rollback_commit\":\"?\",\"rollback_branch\":\"$branch\",\"rollback_version\":\"0.0.0.0\",\"upstream_url\":\"$url\",\"recovery_url\":\"$url\",\"branches\":[\"$branch\"],\"head_detached\":false,\"git_messages\":[],\"commits_behind\":[],\"cbh_count\":0,\"diverged\":false,\"corrupt\":true,\"modified_files\":[],\"untracked_files\":[],\"pinned_commit_valid\":true}');"
+     INSERT INTO namespace_store (namespace, key, value) VALUES ('update_manager', '$a', '{\"last_config_hash\":\"?\",\"last_refresh_time\":0.0,\"is_valid\":false,\"pip_version_info\":null,\"repo_valid\":false,\"git_owner\":\"none\",\"git_repo_name\":\"$a\",\"git_remote\":\"origin\",\"git_branch\":\"$branch\",\"current_version\":\"0.0.0.0\",\"upstream_version\":\"0.0.0.0\",\"current_commit\":\"?\",\"upstream_commit\":\"?\",\"rollback_commit\":\"?\",\"rollback_branch\":\"$branch\",\"rollback_version\":\"0.0.0.0\",\"upstream_url\":\"${klipper_url}\",\"recovery_url\":\"${klipper_url}\",\"branches\":[\"$branch\"],\"head_detached\":false,\"git_messages\":[],\"commits_behind\":[],\"cbh_count\":0,\"diverged\":false,\"corrupt\":true,\"modified_files\":[],\"untracked_files\":[],\"pinned_commit_valid\":true}');"
 else
     CUR_DIR=$(pwd)
     cd /usr/data/zmod/klipper
@@ -412,7 +419,7 @@ date
 cd /usr/data/zmod/
 # Klipper
 if ! [ -f klipper/klippy/klippy.py ]; then
-    git clone https://github.com/ghzserg/zmod_klipper klipper
+    git clone ${klipper_url} klipper
 fi
 if [ -f klipper/klippy/klippy.py ] && [ "${KLIPPER}" -eq 0 ]; then
     start_klipper
