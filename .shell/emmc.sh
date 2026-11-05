@@ -234,7 +234,15 @@ clk=$(awk '/^clock:/ {print $2}' "$IOS" 2>/dev/null)
 timing=$(awk '/^timing spec:/ {print $3}' "$IOS" 2>/dev/null)
 errors=$(mmc_errors)
 mhz=$(( ${clk:-0} / 1000000 ))
-log "загрузка: частота ${mhz} МГц, dtb=$mf timing=$timing ошибки=$errors state=$state fails=$fails" "boot: clock ${mhz} MHz, dtb=$mf timing=$timing errors=$errors state=$state fails=$fails"
+# zmod_emmc50 в cmdline: U-Boot выполнил boot_zmod
+marker=0
+grep -q 'zmod_emmc50' /proc/cmdline && marker=1
+if [ "$bootcmd" = "$ARMED_BOOTCMD" ]; then
+    bc=armed
+else
+    bc=stock
+fi
+log "загрузка: частота ${mhz} МГц, dtb=$mf timing=$timing ошибки=$errors boot_zmod=$marker bootcmd=$bc state=$state fails=$fails" "boot: clock ${mhz} MHz, dtb=$mf timing=$timing errors=$errors boot_zmod=$marker bootcmd=$bc state=$state fails=$fails"
 
 if [ "$mf" = "02faf080" ]; then
     rm -f "$DIR/armed.txt"
@@ -268,6 +276,10 @@ if [ "$mf" = "02faf080" ]; then
         fi
     fi
 else
+    if [ "$marker" = "1" ]; then
+        fail "boot_zmod выполнен, но dtb не изменён (U-Boot не применил fdt)" "boot_zmod ran but dtb was not patched (U-Boot did not apply fdt)"
+        exit 0
+    fi
     if [ -z "$state" ]; then
         set_state trial
         set_fails 0
