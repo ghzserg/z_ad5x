@@ -90,6 +90,7 @@ start_moon()
 
     # Запуск камеры
     #[ ${AD5M} -eq 1 ] && /usr/data/zmod/zmod/.shell/S99camera init
+    /usr/data/zmod/zmod/.shell/emmc.sh
 
     chroot ${MOD} /usr/data/zmod/zmod/.shell/root/start.sh "$SWAP" "$VER" "$MACHINE" &
 
