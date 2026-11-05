@@ -65,16 +65,40 @@ else
     read up rest </proc/uptime; t2="${up%.*}${up#*.}"
     TIME_W=$(( 10*(t2-t1-t3) ))
 
+    if [ "$INFILE" == "/dev/zero" ]; then
+        HASH_W=$(dd if=/dev/zero bs=1M count=${SIZE} status=none | sha256sum | cut -d' ' -f1)
+    else
+        HASH_W=$(sha256sum $FILE | cut -d' ' -f1)
+    fi
+    sync
+    echo 3 > /proc/sys/vm/drop_caches
+
     read up rest </proc/uptime; t1="${up%.*}${up#*.}"
     dd if=$FILE of=/dev/null bs=1M count=${SIZE} conv=fsync status=none 2>/dev/null
     read up rest </proc/uptime; t2="${up%.*}${up#*.}"
     TIME_R=$(( 10*(t2-t1) ))
 
+    echo 3 > /proc/sys/vm/drop_caches
+    HASH_R=$(sha256sum $FILE | cut -d' ' -f1)
     rm -f $FILE
 
     if [ ${ZLANG} != 'ru' ]; then
         awk "BEGIN {print \"Written $SIZE MB. Write speed: \" ($SIZE * 1000 / $TIME_W) \" MB/s. Read speed: \" ($SIZE * 1000 / $TIME_R) \" MB/s.\"}"
     else
         awk "BEGIN {print \"Записано $SIZE MB. Запись: \" ($SIZE * 1000 / $TIME_W) \" MB/s. Чтение: \" ($SIZE * 1000 / $TIME_R) \" MB/s.\"}"
+    fi
+
+    if [ "$HASH_W" == "$HASH_R" ]; then
+        if [ ${ZLANG} != 'ru' ]; then
+            echo "Checksum OK: $HASH_R"
+        else
+            echo "Контрольная сумма совпала: $HASH_R"
+        fi
+    else
+        if [ ${ZLANG} != 'ru' ]; then
+            echo "CHECKSUM ERROR: written $HASH_W, read $HASH_R"
+        else
+            echo "ОШИБКА КОНТРОЛЬНОЙ СУММЫ: записано $HASH_W, прочитано $HASH_R"
+        fi
     fi
 fi
