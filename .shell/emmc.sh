@@ -71,6 +71,14 @@ arm() {
     fi
 }
 
+disarm() {
+    rm -f "$DIR/armed.txt"
+    sync
+    if [ "$(getenv bootcmd)" = "$ARMED_BOOTCMD" ]; then
+        fw_setenv bootcmd "$STOCK_BOOTCMD"
+    fi
+}
+
 fail() {
     set_state fail
     rm -f "$DIR/armed.txt"
@@ -79,6 +87,30 @@ fail() {
         fw_setenv bootcmd "$STOCK_BOOTCMD"
     fi
     log "FAIL: $1. Попытки загрузки на 50 МГц прекращены" "FAIL: $2. 50 MHz boot attempts stopped"
+}
+
+# Свободное место для теста. 0 - достаточно
+has_space() {
+    free=$(df -k /data | awk 'NR==2 {print $4}')
+    if [ -z "$free" ]; then
+        log "тест: не удалось определить свободное место в /data" "test: cannot determine free space in /data"
+        return 1
+    fi
+    if [ "$free" -lt $((TEST_MB * 1024 * 2)) ]; then
+        log "тест: мало места в /data (${free} КБ)" "test: not enough space in /data (${free} KB)"
+        return 1
+    fi
+    return 0
+}
+
+# Непроверенная загрузка на 50 МГц включается, только если тест сможет выполниться
+arm_trial() {
+    if [ "$state" = "ok" ] || has_space; then
+        arm
+    else
+        disarm
+        log "разовая загрузка 50 МГц не включена: тест невозможен" "one-shot 50 MHz boot not armed: test not possible"
+    fi
 }
 
 drop_caches() {
@@ -92,13 +124,7 @@ mmc_errors() {
 
 # Тест чтения и записи. 0 - успех, 1 - ошибка, 2 - тест невозможен
 emmc_test() {
-    free=$(df -k /data | awk 'NR==2 {print $4}')
-    if [ -z "$free" ]; then
-        log "тест: не удалось определить свободное место в /data" "test: cannot determine free space in /data"
-        return 2
-    fi
-    if [ "$free" -lt $((TEST_MB * 1024 * 2)) ]; then
-        log "тест: мало места в /data (${free} КБ)" "test: not enough space in /data (${free} KB)"
+    if ! has_space; then
         return 2
     fi
 
@@ -236,8 +262,7 @@ if [ "$mf" = "02faf080" ]; then
             arm
         elif [ "$result" = "2" ]; then
             set_state trial
-            log "тест отложен до следующей загрузки" "test postponed to next boot"
-            arm
+            log "тест невозможен, разовая загрузка 50 МГц не включена" "test not possible, one-shot 50 MHz boot not armed"
         else
             fail "тест чтения/записи не пройден" "read/write test failed"
         fi
@@ -247,7 +272,7 @@ else
         set_state trial
         set_fails 0
         log "первый запуск, тестовая загрузка при следующей перезагрузке" "first run, test boot on next reboot"
-        arm
+        arm_trial
     elif [ -f "$DIR/armed.txt" ]; then
         fails=$((fails + 1))
         set_fails $fails
@@ -255,11 +280,11 @@ else
         if [ "$fails" -ge "$MAX_FAILS" ]; then
             fail "$MAX_FAILS неудачных загрузок подряд" "$MAX_FAILS failed boots in a row"
         else
-            arm
+            arm_trial
         fi
     else
         log "разовая загрузка не была включена, включаю" "one-shot boot was not armed, arming"
-        arm
+        arm_trial
     fi
 fi
 
