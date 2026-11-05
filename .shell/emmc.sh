@@ -1,7 +1,7 @@
 #!/bin/sh
 # (C) 2024-2026 ghzserg https://github.com/ghzserg/zmod
 # eMMC 50 МГц (HS52) для AD5M: только разовая загрузка, постоянный bootcmd не прописывается
-# Повторный тест: удалить все файлы из $DIR.
+# Повторный тест: удалить все файлы из $DIR. Отключить: создать $DIR/disable.txt
 
 source /usr/data/zmod/zmod/.shell/0.sh
 
@@ -143,6 +143,16 @@ mkdir -p "$DIR"
 
 # Файлы первой версии
 rm -f "$DIR/state" "$DIR/fails" "$DIR/armed" "$DIR/boot_id"
+
+if [ -f "$DIR/disable.txt" ]; then
+    rm -f "$DIR/armed.txt"
+    if [ "$(getenv bootcmd)" = "$ARMED_BOOTCMD" ]; then
+        fw_setenv bootcmd "$STOCK_BOOTCMD"
+        log "disable.txt: разовая загрузка 50 МГц отключена" "disable.txt: one-shot 50 MHz boot disabled"
+    fi
+    sync
+    exit 0
+fi
 
 boot_id=$(cat /proc/sys/kernel/random/boot_id)
 if [ "$(read_file "$DIR/boot_id.txt")" = "$boot_id" ]; then
