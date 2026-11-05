@@ -15,6 +15,7 @@ IOS=/sys/kernel/debug/mmc0/ios
 TEST_FILE=/data/.emmc_test.bin
 TEST_MB=128
 MAX_FAILS=3
+VERSION=2
 
 STOCK_BOOTCMD='run setargs_mmc boot_dsp0 boot_uImage'
 ARMED_BOOTCMD='setenv bootcmd run setargs_mmc boot_dsp0 boot_uImage;saveenv;run setargs_mmc boot_dsp0 boot_zmod'
@@ -187,11 +188,14 @@ fi
 echo "$boot_id" > "$DIR/boot_id.txt"
 rotate_log
 
-if ! getenv boot_zmod | grep -q 'zmod_emmc_50'; then
+version=$(read_file "$DIR/version.txt")
+if [ "${version:-0}" -lt "$VERSION" ]; then
     if [ -f "$DIR/state.txt" ]; then
-        log "boot_zmod старой версии, тест заново" "old boot_zmod version, retesting"
+        log "алгоритм обновлён (версия ${version:-0} -> $VERSION), тест заново" "algorithm updated (version ${version:-0} -> $VERSION), retesting"
     fi
     rm -f "$DIR/state.txt" "$DIR/fails.txt" "$DIR/armed.txt"
+    echo "$VERSION" > "$DIR/version.txt"
+    sync
 fi
 
 state=$(read_file "$DIR/state.txt")
@@ -277,6 +281,11 @@ if [ "$mf" = "02faf080" ]; then
     if [ "$state" = "ok" ]; then
         set_fails 0
         arm
+    elif [ "$marker" != "1" ]; then
+        set_state trial
+        set_fails 0
+        log "загрузка не через текущий boot_zmod, тест при следующей перезагрузке" "boot not via current boot_zmod, test on next reboot"
+        arm_trial
     else
         emmc_test
         result=$?
