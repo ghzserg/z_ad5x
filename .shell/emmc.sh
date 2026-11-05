@@ -27,9 +27,9 @@ BOOT_UIMAGE='part list mmc 0;fatload mmc 0:1 0x43000000 uImage;fatload mmc 0:1 0
 # log "русский текст" "english text"
 log() {
     if [ "${ZLANG}" == "ru" ]; then
-        echo "$(date '+%d.%m.%Y %H:%M:%S') $1" >> "$LOG"
+        echo "$1" >> "$LOG"
     else
-        echo "$(date '+%Y-%m-%d %H:%M:%S') $2" >> "$LOG"
+        echo "$2" >> "$LOG"
     fi
 }
 
