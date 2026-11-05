@@ -7,6 +7,8 @@
 
 source /usr/data/zmod/zmod/.shell/0.sh
 
+[ ${AD5M} -eq 0 ] && exit
+
 DIR=${MOD_CONF}/mod_data/emmc
 LOG_DIR=${MOD_CONF}/mod_data/log/emmc
 LOG=${LOG_DIR}/emmc.log
