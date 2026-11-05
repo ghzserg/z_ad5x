@@ -18,7 +18,7 @@ MAX_FAILS=3
 
 STOCK_BOOTCMD='run setargs_mmc boot_dsp0 boot_uImage'
 ARMED_BOOTCMD='setenv bootcmd run setargs_mmc boot_dsp0 boot_uImage;saveenv;run setargs_mmc boot_dsp0 boot_zmod'
-BOOT_ZMOD='fdt rm /soc@3000000/sdmmc@4020000 mmc-hs200-1_8v;fdt rm /soc@3000000/sdmmc@4020000 mmc-ddr-1_8v;fdt set /soc@3000000/sdmmc@4020000 max-frequency <0x2faf080>;run boot_uImage'
+BOOT_ZMOD='part list mmc 0;fatload mmc 0:1 0x43000000 uImage;fatload mmc 0:1 0x44864e70 sunxi.dtb;fdt addr 0x44864e70;fdt resize;fdt rm /soc@3000000/sdmmc@4020000 mmc-hs200-1_8v;fdt rm /soc@3000000/sdmmc@4020000 mmc-ddr-1_8v;fdt set /soc@3000000/sdmmc@4020000 max-frequency <0x2faf080>;setenv bootargs ${bootargs} zmod_emmc50;bootm 0x43000000 - 0x44864e70'
 BOOT_UIMAGE='part list mmc 0;fatload mmc 0:1 0x43000000 uImage;fatload mmc 0:1 0x44864e70 sunxi.dtb;fdt resize;bootm 0x43000000 - 0x44864e70'
 
 # log "русский текст" "english text"
@@ -71,6 +71,14 @@ arm() {
     fi
 }
 
+disarm() {
+    rm -f "$DIR/armed.txt"
+    sync
+    if [ "$(getenv bootcmd)" = "$ARMED_BOOTCMD" ]; then
+        fw_setenv bootcmd "$STOCK_BOOTCMD"
+    fi
+}
+
 fail() {
     set_state fail
     rm -f "$DIR/armed.txt"
@@ -79,6 +87,30 @@ fail() {
         fw_setenv bootcmd "$STOCK_BOOTCMD"
     fi
     log "FAIL: $1. Попытки загрузки на 50 МГц прекращены" "FAIL: $2. 50 MHz boot attempts stopped"
+}
+
+# Свободное место для теста. 0 - достаточно
+has_space() {
+    free=$(df -k /data | awk 'NR==2 {print $4}')
+    if [ -z "$free" ]; then
+        log "тест: не удалось определить свободное место в /data" "test: cannot determine free space in /data"
+        return 1
+    fi
+    if [ "$free" -lt $((TEST_MB * 1024 * 2)) ]; then
+        log "тест: мало места в /data (${free} КБ)" "test: not enough space in /data (${free} KB)"
+        return 1
+    fi
+    return 0
+}
+
+# Непроверенная загрузка на 50 МГц включается, только если тест сможет выполниться
+arm_trial() {
+    if [ "$state" = "ok" ] || has_space; then
+        arm
+    else
+        disarm
+        log "разовая загрузка 50 МГц не включена: тест невозможен" "one-shot 50 MHz boot not armed: test not possible"
+    fi
 }
 
 drop_caches() {
@@ -92,13 +124,7 @@ mmc_errors() {
 
 # Тест чтения и записи. 0 - успех, 1 - ошибка, 2 - тест невозможен
 emmc_test() {
-    free=$(df -k /data | awk 'NR==2 {print $4}')
-    if [ -z "$free" ]; then
-        log "тест: не удалось определить свободное место в /data" "test: cannot determine free space in /data"
-        return 2
-    fi
-    if [ "$free" -lt $((TEST_MB * 1024 * 2)) ]; then
-        log "тест: мало места в /data (${free} КБ)" "test: not enough space in /data (${free} KB)"
+    if ! has_space; then
         return 2
     fi
 
@@ -171,10 +197,6 @@ if [ "$state" = "fail" ]; then
     exit 0
 fi
 
-if [ "${AD5M}" != "1" ]; then
-    log "не AD5M, выход" "not AD5M, exit"
-    exit 0
-fi
 if [ ! -f "$NODE/max-frequency" ]; then
     log "нет узла $NODE, выход" "node $NODE not found, exit"
     exit 0
@@ -208,12 +230,24 @@ clk=$(awk '/^clock:/ {print $2}' "$IOS" 2>/dev/null)
 timing=$(awk '/^timing spec:/ {print $3}' "$IOS" 2>/dev/null)
 errors=$(mmc_errors)
 mhz=$(( ${clk:-0} / 1000000 ))
-log "загрузка: частота ${mhz} МГц, dtb=$mf timing=$timing ошибки=$errors state=$state fails=$fails" "boot: clock ${mhz} MHz, dtb=$mf timing=$timing errors=$errors state=$state fails=$fails"
+# zmod_emmc50 в cmdline: U-Boot выполнил boot_zmod
+marker=0
+grep -q 'zmod_emmc50' /proc/cmdline && marker=1
+if [ "$bootcmd" = "$ARMED_BOOTCMD" ]; then
+    bc=armed
+else
+    bc=stock
+fi
+log "загрузка: частота ${mhz} МГц, dtb=$mf timing=$timing ошибки=$errors boot_zmod=$marker bootcmd=$bc state=$state fails=$fails" "boot: clock ${mhz} MHz, dtb=$mf timing=$timing errors=$errors boot_zmod=$marker bootcmd=$bc state=$state fails=$fails"
 
 if [ "$mf" = "02faf080" ]; then
     rm -f "$DIR/armed.txt"
     sync
 
+    if [ -z "$clk" ]; then
+        fail "не удалось прочитать $IOS (debugfs)" "cannot read $IOS (debugfs)"
+        exit 0
+    fi
     if [ "$clk" != "50000000" ]; then
         fail "частота ${mhz} МГц вместо 50 МГц (чип не поддерживает HS52)" "clock ${mhz} MHz instead of 50 MHz (chip does not support HS52)"
         exit 0
@@ -236,18 +270,21 @@ if [ "$mf" = "02faf080" ]; then
             arm
         elif [ "$result" = "2" ]; then
             set_state trial
-            log "тест отложен до следующей загрузки" "test postponed to next boot"
-            arm
+            log "тест невозможен, разовая загрузка 50 МГц не включена" "test not possible, one-shot 50 MHz boot not armed"
         else
             fail "тест чтения/записи не пройден" "read/write test failed"
         fi
     fi
 else
+    if [ "$marker" = "1" ]; then
+        fail "boot_zmod выполнен, но dtb не изменён (U-Boot не применил fdt)" "boot_zmod ran but dtb was not patched (U-Boot did not apply fdt)"
+        exit 0
+    fi
     if [ -z "$state" ]; then
         set_state trial
         set_fails 0
         log "первый запуск, тестовая загрузка при следующей перезагрузке" "first run, test boot on next reboot"
-        arm
+        arm_trial
     elif [ -f "$DIR/armed.txt" ]; then
         fails=$((fails + 1))
         set_fails $fails
@@ -255,11 +292,11 @@ else
         if [ "$fails" -ge "$MAX_FAILS" ]; then
             fail "$MAX_FAILS неудачных загрузок подряд" "$MAX_FAILS failed boots in a row"
         else
-            arm
+            arm_trial
         fi
     else
         log "разовая загрузка не была включена, включаю" "one-shot boot was not armed, arming"
-        arm
+        arm_trial
     fi
 fi
 
