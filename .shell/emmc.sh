@@ -18,7 +18,9 @@ MAX_FAILS=3
 
 STOCK_BOOTCMD='run setargs_mmc boot_dsp0 boot_uImage'
 ARMED_BOOTCMD='setenv bootcmd run setargs_mmc boot_dsp0 boot_uImage;saveenv;run setargs_mmc boot_dsp0 boot_zmod'
-BOOT_ZMOD='part list mmc 0;fatload mmc 0:1 0x43000000 uImage;fatload mmc 0:1 0x44864e70 sunxi.dtb;fdt addr 0x44864e70;fdt resize;fdt rm /soc@3000000/sdmmc@4020000 mmc-hs200-1_8v;fdt rm /soc@3000000/sdmmc@4020000 mmc-ddr-1_8v;fdt set /soc@3000000/sdmmc@4020000 max-frequency <0x2faf080>;setenv bootargs ${bootargs} zmod_emmc50;bootm 0x43000000 - 0x44864e70'
+EMMC_FDT='fdt rm /soc@3000000/sdmmc@4020000 mmc-hs200-1_8v;fdt rm /soc@3000000/sdmmc@4020000 mmc-ddr-1_8v;fdt set /soc@3000000/sdmmc@4020000 max-frequency <0x2faf080>;setenv bootargs ${bootargs} zmod_emmc_50'
+BOOT_ZMOD_A="${EMMC_FDT};run boot_uImage"
+BOOT_ZMOD_B="part list mmc 0;fatload mmc 0:1 0x43000000 uImage;fatload mmc 0:1 0x44864e70 sunxi.dtb;fdt addr 0x44864e70;fdt resize;${EMMC_FDT};bootm 0x43000000 - 0x44864e70"
 BOOT_UIMAGE='part list mmc 0;fatload mmc 0:1 0x43000000 uImage;fatload mmc 0:1 0x44864e70 sunxi.dtb;fdt resize;bootm 0x43000000 - 0x44864e70'
 
 # log "русский текст" "english text"
@@ -89,7 +91,6 @@ fail() {
     log "FAIL: $1. Попытки загрузки на 50 МГц прекращены" "FAIL: $2. 50 MHz boot attempts stopped"
 }
 
-# Свободное место для теста. 0 - достаточно
 has_space() {
     free=$(df -k /data | awk 'NR==2 {print $4}')
     if [ -z "$free" ]; then
@@ -103,7 +104,6 @@ has_space() {
     return 0
 }
 
-# Непроверенная загрузка на 50 МГц включается, только если тест сможет выполниться
 arm_trial() {
     if [ "$state" = "ok" ] || has_space; then
         arm
@@ -187,10 +187,26 @@ fi
 echo "$boot_id" > "$DIR/boot_id.txt"
 rotate_log
 
+if ! getenv boot_zmod | grep -q 'zmod_emmc_50'; then
+    if [ -f "$DIR/state.txt" ]; then
+        log "boot_zmod старой версии, тест заново" "old boot_zmod version, retesting"
+    fi
+    rm -f "$DIR/state.txt" "$DIR/fails.txt" "$DIR/armed.txt"
+fi
+
 state=$(read_file "$DIR/state.txt")
 fails=$(read_file "$DIR/fails.txt")
 if [ -z "$fails" ]; then
     fails=0
+fi
+
+mem=$(awk '/^MemTotal:/ {print int($2 / 1024)}' /proc/meminfo)
+if [ "$mem" -gt 160 ]; then
+    method=A
+    BOOT_ZMOD="$BOOT_ZMOD_A"
+else
+    method=B
+    BOOT_ZMOD="$BOOT_ZMOD_B"
 fi
 
 if [ "$state" = "fail" ]; then
@@ -230,15 +246,16 @@ clk=$(awk '/^clock:/ {print $2}' "$IOS" 2>/dev/null)
 timing=$(awk '/^timing spec:/ {print $3}' "$IOS" 2>/dev/null)
 errors=$(mmc_errors)
 mhz=$(( ${clk:-0} / 1000000 ))
-# zmod_emmc50 в cmdline: U-Boot выполнил boot_zmod
 marker=0
-grep -q 'zmod_emmc50' /proc/cmdline && marker=1
+if grep -q 'zmod_emmc_50' /proc/cmdline; then
+    marker=1
+fi
 if [ "$bootcmd" = "$ARMED_BOOTCMD" ]; then
     bc=armed
 else
     bc=stock
 fi
-log "загрузка: частота ${mhz} МГц, dtb=$mf timing=$timing ошибки=$errors boot_zmod=$marker bootcmd=$bc state=$state fails=$fails" "boot: clock ${mhz} MHz, dtb=$mf timing=$timing errors=$errors boot_zmod=$marker bootcmd=$bc state=$state fails=$fails"
+log "загрузка: частота ${mhz} МГц, dtb=$mf timing=$timing ошибки=$errors память=${mem} МБ метод=$method boot_zmod=$marker bootcmd=$bc state=$state fails=$fails" "boot: clock ${mhz} MHz, dtb=$mf timing=$timing errors=$errors mem=${mem} MB method=$method boot_zmod=$marker bootcmd=$bc state=$state fails=$fails"
 
 if [ "$mf" = "02faf080" ]; then
     rm -f "$DIR/armed.txt"
@@ -277,7 +294,7 @@ if [ "$mf" = "02faf080" ]; then
     fi
 else
     if [ "$marker" = "1" ]; then
-        fail "boot_zmod выполнен, но dtb не изменён (U-Boot не применил fdt)" "boot_zmod ran but dtb was not patched (U-Boot did not apply fdt)"
+        fail "boot_zmod выполнен, но dtb не изменён (U-Boot не применил fdt, метод $method)" "boot_zmod ran but dtb was not patched (U-Boot did not apply fdt, method $method)"
         exit 0
     fi
     if [ -z "$state" ]; then
