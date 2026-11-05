@@ -16,6 +16,11 @@ remove_base()
     sync
 
     if [ ${AD5M} -eq 1 ]; then
+        # eMMC 50 МГц: вернуть стоковый bootcmd и удалить boot_zmod
+        if [ "$(fw_printenv bootcmd 2>/dev/null)" = "bootcmd=setenv bootcmd run setargs_mmc boot_dsp0 boot_uImage;saveenv;run setargs_mmc boot_dsp0 boot_zmod" ]; then
+            fw_setenv bootcmd "run setargs_mmc boot_dsp0 boot_uImage"
+        fi
+        fw_printenv boot_zmod >/dev/null 2>&1 && fw_setenv boot_zmod
         rm /etc/init.d/S00fix
         rm /etc/init.d/S99moon
         rm /etc/init.d/S98camera
