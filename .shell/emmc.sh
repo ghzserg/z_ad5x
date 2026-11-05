@@ -197,10 +197,6 @@ if [ "$state" = "fail" ]; then
     exit 0
 fi
 
-if [ "${AD5M}" != "1" ]; then
-    log "не AD5M, выход" "not AD5M, exit"
-    exit 0
-fi
 if [ ! -f "$NODE/max-frequency" ]; then
     log "нет узла $NODE, выход" "node $NODE not found, exit"
     exit 0
