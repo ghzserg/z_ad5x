@@ -1,8 +1,6 @@
 #!/bin/sh
 # (C) 2024-2026 ghzserg https://github.com/ghzserg/zmod
-# Z-Mod: разовая загрузка eMMC на 50 МГц (HS52, без HS200/DDR) для AD5M / AD5M Pro.
-# Запускается после полного старта системы.
-# Постоянный bootcmd никогда не прописывается: каждая загрузка на 50 МГц разовая.
+# eMMC 50 МГц (HS52) для AD5M: только разовая загрузка, постоянный bootcmd не прописывается
 # Повторный тест: удалить все файлы из $DIR.
 
 source /usr/data/zmod/zmod/.shell/0.sh
@@ -25,10 +23,10 @@ BOOT_UIMAGE='part list mmc 0;fatload mmc 0:1 0x43000000 uImage;fatload mmc 0:1 0
 
 # log "русский текст" "english text"
 log() {
-    if [ "${ZLANG}" != "ru" ]; then
-        echo "$(date '+%d.%m.%Y %H:%M:%S') $2" >> "$LOG"
+    if [ "${ZLANG}" == "ru" ]; then
+        echo "$(date '+%d.%m.%Y %H:%M:%S') $1" >> "$LOG"
     else
-        echo "$(date '+%Y-%m-%d %H:%M:%S') $1" >> "$LOG"
+        echo "$(date '+%Y-%m-%d %H:%M:%S') $2" >> "$LOG"
     fi
 }
 
@@ -53,19 +51,19 @@ read_file() {
 }
 
 set_state() {
-    echo "$1" > "$DIR/state"
+    echo "$1" > "$DIR/state.txt"
     sync
 }
 
 set_fails() {
-    echo "$1" > "$DIR/fails"
+    echo "$1" > "$DIR/fails.txt"
     sync
 }
 
 arm() {
     fw_setenv bootcmd "$ARMED_BOOTCMD"
     if [ "$(getenv bootcmd)" = "$ARMED_BOOTCMD" ]; then
-        touch "$DIR/armed"
+        touch "$DIR/armed.txt"
         sync
         log "разовая загрузка 50 МГц включена" "one-shot 50 MHz boot armed"
     else
@@ -75,7 +73,7 @@ arm() {
 
 fail() {
     set_state fail
-    rm -f "$DIR/armed"
+    rm -f "$DIR/armed.txt"
     sync
     if [ "$(getenv bootcmd)" != "$STOCK_BOOTCMD" ]; then
         fw_setenv bootcmd "$STOCK_BOOTCMD"
@@ -104,41 +102,35 @@ emmc_test() {
         return 2
     fi
 
-    # Чтение: два прохода с устройства с очисткой кэша, хеши должны совпасть
-    drop_caches
-    t0=$(date +%s)
-    r1=$(dd if=/dev/mmcblk0 bs=1M count=$TEST_MB 2>/dev/null | sha256sum | cut -d' ' -f1)
-    t1=$(date +%s)
-    drop_caches
-    r2=$(dd if=/dev/mmcblk0 bs=1M count=$TEST_MB 2>/dev/null | sha256sum | cut -d' ' -f1)
-    if [ -z "$r1" ]; then
-        log "тест: чтение не выполнено" "test: read failed"
-        return 1
-    fi
-    if [ "$r1" != "$r2" ]; then
-        log "тест: чтение нестабильно ($r1 / $r2)" "test: unstable read ($r1 / $r2)"
-        return 1
-    fi
-    log "тест: чтение ${TEST_MB} МБ за $((t1 - t0)) с" "test: read ${TEST_MB} MB in $((t1 - t0)) s"
-
-    # Запись: хеш считается при генерации, затем файл читается после очистки кэша
     t0=$(date +%s)
     w1=$(dd if=/dev/urandom bs=1M count=$TEST_MB 2>/dev/null | tee "$TEST_FILE" | sha256sum | cut -d' ' -f1)
     sync
     t1=$(date +%s)
     drop_caches
     w2=$(sha256sum "$TEST_FILE" 2>/dev/null | cut -d' ' -f1)
-    rm -f "$TEST_FILE"
-    sync
     if [ -z "$w2" ]; then
         log "тест: записанный файл не прочитан" "test: written file could not be read"
+        rm -f "$TEST_FILE"
         return 1
     fi
     if [ "$w1" != "$w2" ]; then
         log "тест: данные после записи не совпали ($w1 / $w2)" "test: data mismatch after write ($w1 / $w2)"
+        rm -f "$TEST_FILE"
         return 1
     fi
     log "тест: запись ${TEST_MB} МБ за $((t1 - t0)) с" "test: write ${TEST_MB} MB in $((t1 - t0)) s"
+
+    drop_caches
+    t0=$(date +%s)
+    r1=$(dd if="$TEST_FILE" bs=1M 2>/dev/null | sha256sum | cut -d' ' -f1)
+    t1=$(date +%s)
+    rm -f "$TEST_FILE"
+    sync
+    if [ "$r1" != "$w1" ]; then
+        log "тест: чтение нестабильно ($w1 / $r1)" "test: unstable read ($w1 / $r1)"
+        return 1
+    fi
+    log "тест: чтение ${TEST_MB} МБ за $((t1 - t0)) с" "test: read ${TEST_MB} MB in $((t1 - t0)) s"
 
     if [ "$(mmc_errors)" != "0" ]; then
         log "тест: ошибки mmc в dmesg после теста" "test: mmc errors in dmesg after test"
@@ -147,20 +139,20 @@ emmc_test() {
     return 0
 }
 
-# ---------- основная часть ----------
-
 mkdir -p "$DIR"
 
-# Один запуск на загрузку
+# Файлы первой версии
+rm -f "$DIR/state" "$DIR/fails" "$DIR/armed" "$DIR/boot_id"
+
 boot_id=$(cat /proc/sys/kernel/random/boot_id)
-if [ "$(read_file "$DIR/boot_id")" = "$boot_id" ]; then
+if [ "$(read_file "$DIR/boot_id.txt")" = "$boot_id" ]; then
     exit 0
 fi
-echo "$boot_id" > "$DIR/boot_id"
+echo "$boot_id" > "$DIR/boot_id.txt"
 rotate_log
 
-state=$(read_file "$DIR/state")
-fails=$(read_file "$DIR/fails")
+state=$(read_file "$DIR/state.txt")
+fails=$(read_file "$DIR/fails.txt")
 if [ -z "$fails" ]; then
     fails=0
 fi
@@ -169,7 +161,6 @@ if [ "$state" = "fail" ]; then
     exit 0
 fi
 
-# Проверка платформы и стокового загрузчика
 if [ "${AD5M}" != "1" ]; then
     log "не AD5M, выход" "not AD5M, exit"
     exit 0
@@ -190,7 +181,6 @@ if [ "$bootcmd" != "$STOCK_BOOTCMD" ]; then
     fi
 fi
 
-# boot_zmod
 if [ "$(getenv boot_zmod)" != "$BOOT_ZMOD" ]; then
     fw_setenv boot_zmod "$BOOT_ZMOD"
     if [ "$(getenv boot_zmod)" != "$BOOT_ZMOD" ]; then
@@ -200,7 +190,6 @@ if [ "$(getenv boot_zmod)" != "$BOOT_ZMOD" ]; then
     log "boot_zmod записан" "boot_zmod written"
 fi
 
-# Текущее состояние загрузки
 if [ ! -r "$IOS" ]; then
     mount -t debugfs none /sys/kernel/debug 2>/dev/null
 fi
@@ -211,8 +200,7 @@ errors=$(mmc_errors)
 log "загрузка: dtb=$mf clock=$clk timing=$timing ошибки=$errors state=$state fails=$fails" "boot: dtb=$mf clock=$clk timing=$timing errors=$errors state=$state fails=$fails"
 
 if [ "$mf" = "02faf080" ]; then
-    # Загрузились на 50 МГц
-    rm -f "$DIR/armed"
+    rm -f "$DIR/armed.txt"
     sync
 
     if [ "$clk" != "50000000" ]; then
@@ -228,7 +216,6 @@ if [ "$mf" = "02faf080" ]; then
         set_fails 0
         arm
     else
-        # trial или файлы удалены для повторного теста
         emmc_test
         result=$?
         if [ "$result" = "0" ]; then
@@ -245,13 +232,12 @@ if [ "$mf" = "02faf080" ]; then
         fi
     fi
 else
-    # Загрузились на 25 МГц
     if [ -z "$state" ]; then
         set_state trial
         set_fails 0
         log "первый запуск, тестовая загрузка при следующей перезагрузке" "first run, test boot on next reboot"
         arm
-    elif [ -f "$DIR/armed" ]; then
+    elif [ -f "$DIR/armed.txt" ]; then
         fails=$((fails + 1))
         set_fails $fails
         log "загрузка на 50 МГц не дошла до системы ($fails из $MAX_FAILS)" "50 MHz boot did not reach the system ($fails of $MAX_FAILS)"
