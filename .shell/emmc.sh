@@ -248,6 +248,10 @@ if [ "$mf" = "02faf080" ]; then
     rm -f "$DIR/armed.txt"
     sync
 
+    if [ -z "$clk" ]; then
+        fail "не удалось прочитать $IOS (debugfs)" "cannot read $IOS (debugfs)"
+        exit 0
+    fi
     if [ "$clk" != "50000000" ]; then
         fail "частота ${mhz} МГц вместо 50 МГц (чип не поддерживает HS52)" "clock ${mhz} MHz instead of 50 MHz (chip does not support HS52)"
         exit 0
