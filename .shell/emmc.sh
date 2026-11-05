@@ -65,7 +65,7 @@ arm() {
     if [ "$(getenv bootcmd)" = "$ARMED_BOOTCMD" ]; then
         touch "$DIR/armed.txt"
         sync
-        log "разовая загрузка 50 МГц включена" "one-shot 50 MHz boot armed"
+        log "разовая загрузка 50 МГц включена (сейчас ${mhz} МГц)" "one-shot 50 MHz boot armed (now ${mhz} MHz)"
     else
         log "ОШИБКА: не удалось записать bootcmd" "ERROR: failed to write bootcmd"
     fi
@@ -207,14 +207,15 @@ mf=$(hexdump -ve '1/1 "%02x"' "$NODE/max-frequency")
 clk=$(awk '/^clock:/ {print $2}' "$IOS" 2>/dev/null)
 timing=$(awk '/^timing spec:/ {print $3}' "$IOS" 2>/dev/null)
 errors=$(mmc_errors)
-log "загрузка: dtb=$mf clock=$clk timing=$timing ошибки=$errors state=$state fails=$fails" "boot: dtb=$mf clock=$clk timing=$timing errors=$errors state=$state fails=$fails"
+mhz=$(( ${clk:-0} / 1000000 ))
+log "загрузка: частота ${mhz} МГц, dtb=$mf timing=$timing ошибки=$errors state=$state fails=$fails" "boot: clock ${mhz} MHz, dtb=$mf timing=$timing errors=$errors state=$state fails=$fails"
 
 if [ "$mf" = "02faf080" ]; then
     rm -f "$DIR/armed.txt"
     sync
 
     if [ "$clk" != "50000000" ]; then
-        fail "частота $clk вместо 50000000 (чип не поддерживает HS52)" "clock $clk instead of 50000000 (chip does not support HS52)"
+        fail "частота ${mhz} МГц вместо 50 МГц (чип не поддерживает HS52)" "clock ${mhz} MHz instead of 50 MHz (chip does not support HS52)"
         exit 0
     fi
     if [ "$errors" != "0" ]; then
@@ -250,7 +251,7 @@ else
     elif [ -f "$DIR/armed.txt" ]; then
         fails=$((fails + 1))
         set_fails $fails
-        log "загрузка на 50 МГц не дошла до системы ($fails из $MAX_FAILS)" "50 MHz boot did not reach the system ($fails of $MAX_FAILS)"
+        log "загрузка на 50 МГц не дошла до системы ($fails из $MAX_FAILS), сейчас ${mhz} МГц" "50 MHz boot did not reach the system ($fails of $MAX_FAILS), now ${mhz} MHz"
         if [ "$fails" -ge "$MAX_FAILS" ]; then
             fail "$MAX_FAILS неудачных загрузок подряд" "$MAX_FAILS failed boots in a row"
         else
