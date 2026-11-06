@@ -750,6 +750,7 @@ class zmod_color:
                     })
             except Exception:
                 pass
+        self._check_lanes(eventtime, status['slots'])
         return status
 
     # Кэш FFMInfo из Adventurer5M.json: перечитываем только при изменении mtime,
@@ -883,6 +884,17 @@ class zmod_color:
 
         return 500, "Error"
 
+    # Изменение слотов (тип, цвет, наличие) -> lane_data для OrcaSlicer, в любом режиме экрана
+    def _check_lanes(self, eventtime, slots):
+        if eventtime - getattr(self, '_lanes_time', 0.) < 3.:   # не чаще раза в 3 секунды
+            return
+        self._lanes_time = eventtime
+        lanes = {int(s['ID']): (s['Material'] if s['hasFilament'] else '', '#' + (s['HEX'] or 'FFFFFF')) for s in slots}
+        sent = getattr(self, '_lanes_sent', {})
+        if lanes != sent:
+            self._lanes_sent = lanes
+            self._publish_lanes({k: v for k, v in lanes.items() if sent.get(k) != v})
+
     # Слоты -> Moonraker lane_data для синхронизации OrcaSlicer (без родного экрана)
     def _publish_lanes(self, slots):
         save_variables = self.printer.lookup_object('save_variables', None)
@@ -896,7 +908,7 @@ class zmod_color:
                 try:
                     for zslot, (ztype, zcolor) in slots.items():
                         key = f'lane{zslot - 1}'
-                        if ztype in ('', '?'):
+                        if ztype == '?':   # '' - пустой слот, Orca покажет без филамента
                             requests.delete(url, params={'namespace': 'lane_data', 'key': key}, timeout=5)
                         else:
                             requests.post(url, json={'namespace': 'lane_data', 'key': key, 'value': {
