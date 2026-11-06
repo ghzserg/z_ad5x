@@ -1390,7 +1390,7 @@ class zmod_color:
         else:
             status_code, response_data = self.get_printer_data_detail()
         if status_code:
-            allowed_tool_count = (max(file_colors, key=lambda entry: entry[0])[0] + 1) if file_colors else gcmd.get_int('ALLOWED_TOOL_COUNT', 1)
+            allowed_tool_count = (max(file_colors, key=lambda entry: entry[0])[0] + 1) if file_colors else gcmd.get_int('ALLOWED_TOOL_COUNT', max([int(k[1:]) + 1 for k in gcmd.get_command_parameters() if k[:1] == 'T' and k[1:].isdigit()] or [1]))
 
             result = self.parse_printer_response(response_data)
 
