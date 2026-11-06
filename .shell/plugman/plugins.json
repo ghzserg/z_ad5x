@@ -49,10 +49,6 @@
     "url": "https://github.com/ninjamida/ifs_jacker_plugin.git", "branch": "master",
     "printers": ["AD5X"]
   },
-  "zmod_afclite": {
-    "url": "https://github.com/DIEHARDave/zmod_afclite.git", "branch": "main",
-    "printers": ["AD5X", "C5PRO"]
-  },
   "dryer": {
     "url": "https://github.com/pantata/dryer.git", "branch": "master",
     "printers": ["AD5X"]
