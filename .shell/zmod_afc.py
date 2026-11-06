@@ -9,6 +9,12 @@ import json
 from .zmod_color import atomic_write, FILE_CONFIG
 
 UNIT = 'IFS'
+DEFAULT_WEIGHT = 1000
+MSG = {
+    'material': ('Материал', 'Material'),
+    'cancel':   ('Отмена', 'Cancel'),
+    'no_lane':  ('Нет загруженной lane', 'No lane loaded'),
+}
 
 class _Obj:
     def __init__(self, fn):
@@ -26,18 +32,23 @@ class zmod_afc:
         self.slots = {}         # слот -> {'Material', 'HEX', 'hasFilament'}
         self.map = []           # индекс - инструмент, значение - слот
         self.active = 0         # активный слот (1-based), 0 - нет
+        self.palette = []       # палитра C5Pro (HEX), на AD5X пусто
+        self.types = []         # типы пластика для выбора (без скрытых)
         self.last = 0.          # время последнего пересчёта
         self.map_mtime = -1
-        for cmd in ('SET_COLOR', 'SET_MATERIAL', 'SET_MAP', 'CHANGE_TOOL', 'TOOL_UNLOAD', 'LANE_UNLOAD'):
+        self.state = 'Idle'     # Loading / Unloading во время операции
+        self.error = None       # текст последней ошибки загрузки/выгрузки
+        for cmd in ('SET_COLOR', 'SET_MATERIAL', 'SET_MAP', 'SET_WEIGHT', 'CHANGE_TOOL', 'TOOL_UNLOAD', 'LANE_UNLOAD'):
             self.gcode.register_command(cmd, getattr(self, 'cmd_' + cmd))
-        for cmd in ('SET_WEIGHT', 'SET_SPOOL_ID'):  # шлёт диалог филамента, нам не нужны
-            self.gcode.register_command(cmd, lambda gcmd: None)
+        for cmd in ('AFC_RESET', 'RESET_FAILURE', 'AFC_CLEAR_MESSAGE'):
+            self.gcode.register_command(cmd, self.cmd_AFC_RESET)
+        self.gcode.register_command('SET_SPOOL_ID', lambda gcmd: None)  # шлёт диалог филамента, не нужен
         self.printer.register_event_handler('klippy:ready', self._ready)
 
     def _ready(self):
         self.color = self.printer.lookup_object('zmod_color')
-        save_variables = self.printer.lookup_object('save_variables', None)
-        self.enabled = save_variables is not None and save_variables.allVariables.get('afc', 0) == 1
+        self.save_variables = self.printer.lookup_object('save_variables', None)
+        self.enabled = self.save_variables is not None and self.save_variables.allVariables.get('afc', 0) == 1
         if not self.enabled:
             return
         self.n = self.color.color_limit
@@ -54,6 +65,8 @@ class zmod_afc:
         self.last = eventtime
         st = self.color.get_status(eventtime)
         self.slots = {int(s['ID']): s for s in st['slots']}
+        self.palette = st.get('palette', [])    # C5Pro: цвет хранится индексом палитры
+        self.types = [t for t in st['valid_types'][:-1] if t not in st.get('hidden_types', [])]
         self.active = st.get('active_tool_id', -1) + 1
         try:
             mtime = os.stat(FILE_CONFIG).st_mtime
@@ -69,18 +82,26 @@ class zmod_afc:
             if not self.map:
                 self.map = list(range(1, self.n + 1))
 
+    def _t(self, key):
+        return MSG[key][0 if self.color.lang == 'ru' else 1]
+
+    def _weight(self, i):
+        return self.save_variables.allVariables.get(f'afc_weight_lane{i}', 0) or DEFAULT_WEIGHT
+
     def _lanes(self):
         return [f'lane{i}' for i in range(1, self.n + 1)]
 
     def _afc_status(self, eventtime):
         self._refresh(eventtime)
         lane = f'lane{self.active}' if self.active else None
-        return {'current_load': lane, 'current_lane': lane, 'next_lane': None, 'current_state': 'Idle',
+        return {'current_load': lane, 'current_lane': lane, 'next_lane': None,
+                'current_state': 'Error' if self.error else self.state,
                 'current_toolchange': 0, 'number_of_toolchanges': 0, 'spoolman': None,
-                'td1_present': False, 'lane_data_enabled': False, 'error_state': False,
+                'td1_present': False, 'lane_data_enabled': False, 'error_state': self.error is not None,
                 'bypass_state': False, 'quiet_mode': False, 'position_saved': False,
                 'extruders': [], 'hubs': [], 'units': [f'{UNIT} {UNIT}'], 'lanes': self._lanes(),
-                'buffers': [], 'message': {'message': None, 'type': None}, 'led_state': False}
+                'buffers': [], 'led_state': False,
+                'message': {'message': self.error, 'type': 'error' if self.error else None}}
 
     def _lane_status(self, eventtime, i):
         self._refresh(eventtime)
@@ -93,7 +114,7 @@ class zmod_afc:
                 'map': [f'T{t}' for t, slot in enumerate(self.map) if slot == i],
                 'load': has, 'prep': has, 'tool_loaded': tooled, 'loaded_to_hub': tooled,
                 'material': None if mat in ('', '?') else mat, 'spool_id': None,
-                'color': '#' + (s.get('HEX') or 'FFFFFF'), 'weight': 1000,
+                'color': '#' + (s.get('HEX') or 'FFFFFF'), 'weight': self._weight(i),
                 'extruder_temp': None, 'runout_lane': None, 'dist_hub': 0, 'filament_status_led': '',
                 'filament_status': 'In Tool' if tooled else 'Ready' if has else 'Not Ready',
                 'status': 'Tooled' if tooled else 'Loaded' if has else 'None'}
@@ -105,17 +126,24 @@ class zmod_afc:
                  for t, d in enumerate(defaults)]
         return tools, (silent if self.prompt or silent else 1)
 
-    def _slot(self, gcmd):
-        lane = gcmd.get('LANE')
+    def _slot(self, gcmd, current=False):
+        lane = gcmd.get('LANE', None)
+        if lane is None and current:   # TOOL_UNLOAD без LANE - текущая lane (HelixScreen)
+            self._refresh(self.printer.get_reactor().monotonic())
+            if not self.active:
+                raise gcmd.error(f"AFC: {self._t('no_lane')}")
+            return self.active
+        lane = lane or ''
         i = int(lane[4:]) if lane.lower().startswith('lane') and lane[4:].isdigit() else 0
         if not 1 <= i <= self.n:
             raise gcmd.error(f'AFC: unknown lane {lane}')
         return i
 
     def _set(self, gcmd, hexc=None, mat=None):
+        self._refresh(self.printer.get_reactor().monotonic())
         i = self._slot(gcmd)
         s = self.slots.get(i, {})
-        hexc = (hexc or s.get('HEX') or 'FFFFFF').lstrip('#').upper()
+        hexc = self._snap((hexc or s.get('HEX') or 'FFFFFF').lstrip('#').upper())
         mat = (mat or s.get('Material') or 'PLA').upper()
         c = self.color
         if mat not in c.valid_types[:-1]:
@@ -131,11 +159,42 @@ class zmod_afc:
         self.slots[i] = s
         self.last = 0.
 
+    # Ближайший цвет палитры (C5Pro хранит индекс, цвет вне палитры стал бы белым)
+    def _snap(self, hexc):
+        if not self.palette or hexc in self.palette:
+            return hexc
+        lab = lambda h: self.color.rgb_to_lab(int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16))
+        l1 = lab(hexc)
+        return min(self.palette, key=lambda h: self.color.delta_e76(*l1, *lab(h)))
+
     def cmd_SET_COLOR(self, gcmd):
         self._set(gcmd, hexc=gcmd.get('COLOR'))
 
+    # Точное имя - сразу, иначе окно выбора из подходящих (или всех) типов
     def cmd_SET_MATERIAL(self, gcmd):
-        self._set(gcmd, mat=gcmd.get('MATERIAL'))
+        self._refresh(self.printer.get_reactor().monotonic())
+        mat = gcmd.get('MATERIAL', '').strip().upper()
+        if not mat or mat in self.types:
+            gcmd.respond_raw("// action:prompt_end")
+            return self._set(gcmd, mat=mat or None)
+        i = self._slot(gcmd)
+        types = [t for t in self.types if mat in t] or self.types
+        gcmd.respond_raw("// action:prompt_end")
+        gcmd.respond_raw(f"// action:prompt_begin {self._t('material')} lane{i}")
+        gcmd.respond_raw("// action:prompt_button_group_start")
+        for n, t in enumerate(types):
+            if n and n % 4 == 0:
+                gcmd.respond_raw("// action:prompt_button_group_end")
+                gcmd.respond_raw("// action:prompt_button_group_start")
+            gcmd.respond_raw(f"// action:prompt_button {t}|SET_MATERIAL LANE=lane{i} MATERIAL={t}|primary")
+        gcmd.respond_raw("// action:prompt_button_group_end")
+        gcmd.respond_raw(f"// action:prompt_footer_button {self._t('cancel')}|RESPOND TYPE=command MSG=action:prompt_end")
+        gcmd.respond_raw("// action:prompt_show")
+
+    def cmd_SET_WEIGHT(self, gcmd):
+        i = self._slot(gcmd)
+        weight = max(0, int(gcmd.get_float('WEIGHT', 0.)))   # 0 - вернуть вес по умолчанию
+        self.gcode.run_script_from_command(f'SAVE_VARIABLE VARIABLE=afc_weight_lane{i} VALUE={weight}')
 
     def cmd_SET_MAP(self, gcmd):
         i = self._slot(gcmd)
@@ -149,19 +208,30 @@ class zmod_afc:
         self.map = m
         self.last = 0.
 
-    def _run(self, gcmd, template):
-        i = self._slot(gcmd)
-        self.gcode.run_script_from_command(template.format(slot=i, tool=i - 1))
-        self.last = 0.
+    # Загрузка/выгрузка: current_state на время операции, ошибка - в error_state/message
+    def _run(self, gcmd, template, state, current=False):
+        i = self._slot(gcmd, current)
+        self.state, self.error = state, None
+        try:
+            self.gcode.run_script_from_command(template.format(slot=i, tool=i - 1))
+        except self.printer.command_error as e:
+            self.error = f'lane{i}: {e}'
+            raise
+        finally:
+            self.state = 'Idle'
+            self.last = 0.
 
     def cmd_CHANGE_TOOL(self, gcmd):
-        self._run(gcmd, self.load)
+        self._run(gcmd, self.load, 'Loading')
 
     def cmd_TOOL_UNLOAD(self, gcmd):
-        self._run(gcmd, self.unload)
+        self._run(gcmd, self.unload, 'Unloading', current=True)
 
     def cmd_LANE_UNLOAD(self, gcmd):
-        self._run(gcmd, self.unload)
+        self._run(gcmd, self.unload, 'Unloading')
+
+    def cmd_AFC_RESET(self, gcmd):
+        self.error = None
 
 def load_config(config):
     return zmod_afc(config)
