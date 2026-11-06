@@ -6,6 +6,7 @@
 
 import os
 import json
+import queue
 import logging
 import threading
 import requests
@@ -47,6 +48,8 @@ class zmod_afc:
         self.spool_sig = {}     # слот -> ((HEX, тип) катушки, armed): смена слота мимо катушки сбрасывает её
         self.prev_has = {}      # слот -> наличие прутка на прошлом пересчёте
         self.active_spool = None  # spool_id, переданный Moonraker как активный
+        self.native_q = None    # очередь /control родного экрана (отдельный поток, по порядку)
+        self.pending = {}       # слот -> (HEX, тип, до): записано, но zmod_color ещё не видит
         for cmd in ('SET_COLOR', 'SET_MATERIAL', 'SET_MAP', 'SET_WEIGHT', 'CHANGE_TOOL', 'TOOL_UNLOAD', 'LANE_UNLOAD'):
             self.gcode.register_command(cmd, getattr(self, 'cmd_' + cmd))
         for cmd in ('AFC_RESET', 'RESET_FAILURE', 'AFC_CLEAR_MESSAGE'):
@@ -96,6 +99,12 @@ class zmod_afc:
         if self.color.color_limit != self.n:
             self._resize(self.color.color_limit, save=True)
         self.slots = {int(s['ID']): s for s in st['slots']}
+        for i, (h, m, until) in list(self.pending.items()):
+            s = self.slots.get(i)
+            if s is None or (s['HEX'], s['Material']) == (h, m) or eventtime > until:
+                del self.pending[i]
+            else:
+                s.update(HEX=h, Material=m)
         self.palette = st.get('palette', [])    # C5Pro: цвет хранится индексом палитры
         self.types = [t for t in st['valid_types'][:-1] if t not in st.get('hidden_types', [])]
         self.active = st.get('active_tool_id', -1) + 1
@@ -256,16 +265,39 @@ class zmod_afc:
         if mat not in c.valid_types[:-1]:
             raise self.printer.command_error(f"AFC: {mat}? {', '.join(c.valid_types[:-1])}")
         if c.display:
-            code, resp = c.zsend_post_request('/control', payload={
-                'cmd': 'msConfig_cmd', 'args': {'slot': i, 'mt': mat, 'rgb': f'#{hexc}'}})
+            self._native(i, mat, hexc)
         else:
             code, resp = c.set_printer_data_detail(i, mat, f'#{hexc}')
-        if code != 200:
-            raise self.printer.command_error(f'AFC: {resp}')
+            if code != 200:
+                raise self.printer.command_error(f'AFC: {resp}')
         s.update(HEX=hexc, Material=mat)   # SET_COLOR и SET_MATERIAL идут одним скриптом
         self.slots[i] = s
+        self.pending[i] = (hexc, mat, self.reactor.monotonic() + 10.)
         self.last = 0.
         return hexc, mat
+
+    # Родной экран: HTTP /control не в reactor (до 60 с при зависшем экране), а в своём потоке.
+    # Очередь сохраняет порядок (SET_COLOR, затем SET_MATERIAL), ошибка - в message AFC
+    def _native(self, i, mat, hexc):
+        if self.native_q is None:
+            self.native_q = queue.Queue()
+            threading.Thread(target=self._native_worker, daemon=True).start()
+        self.native_q.put((i, mat, hexc))
+
+    def _native_worker(self):
+        while True:
+            i, mat, hexc = self.native_q.get()
+            try:
+                code, resp = self.color.zsend_post_request('/control', payload={
+                    'cmd': 'msConfig_cmd', 'args': {'slot': i, 'mt': mat, 'rgb': f'#{hexc}'}})
+            except Exception as e:
+                code, resp = None, e
+            if code != 200:
+                self.reactor.register_async_callback(lambda e, err=f'lane{i}: {resp}': self._native_error(err))
+
+    def _native_error(self, err):
+        self.error = err
+        self.gcode.respond_info(f'AFC: {err}')
 
     # Ближайший цвет палитры (C5Pro хранит индекс, цвет вне палитры стал бы белым)
     def _snap(self, hexc):
