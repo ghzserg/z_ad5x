@@ -1253,8 +1253,6 @@ class App:
             self.job_active = True
         try:
             limit = to_int(zc.get('color_limit'), 4)
-            parts = ['PRINT_ZCOLOR', f'FILENAME="{fname.replace(chr(34), "")}"',
-                     f'LEVELING={1 if leveling else 0}', f'AUTOPA={1 if autopa else 0}']
             tmap = {}
             if use_ms or mappings:          # «Включить IFS» игнорируем: сопоставление есть всегда
                 for m in mappings:
@@ -1262,29 +1260,28 @@ class App:
                     sid = to_int(m.get('slotId'), 0)
                     if 0 <= tid < MAX_TOOLS and 1 <= sid <= limit:
                         tmap[tid] = sid
+            script = f'SAVE_VARIABLE VARIABLE=print_leveling VALUE={1 if leveling else 0}'
+            if self.cfg.colors:
+                script += f'\nSAVE_VARIABLE VARIABLE=print_autopa VALUE={1 if autopa else 0}'
+            req = {'filename': fname}
             if tmap:
                 need = max(max(tmap) + 1, to_int(tool_cnt, 0))
-                if need > limit:
-                    parts.append(f'ALLOWED_TOOL_COUNT={need}')
-                parts += [f'T{t}={s}' for t, s in sorted(tmap.items())]
-            script = ' '.join(parts)
-            if not self.cfg.colors:
-                script = (f'SAVE_VARIABLE VARIABLE=print_leveling VALUE={1 if leveling else 0}\n'
-                          f'_ZSDCARD_PRINT_FILE FILENAME="{fname.replace(chr(34), "")}"')
+                req['tools'] = ','.join(str(tmap.get(t, '')) for t in range(need))
         except Exception:
             self.job_active = False
             raise
         self.job_file, self.job_bound = fname, None
-        log.info('Старт печати: %s', script)
-        threading.Thread(target=self._run_print, args=(script,), daemon=True).start()
+        log.info('Старт печати: %s %s', script.replace('\n', ' | '), req)
+        threading.Thread(target=self._run_print, args=(script, req), daemon=True).start()
 
-    def _run_print(self, script):
+    def _run_print(self, script, req):
         try:
-            self.mr.gcode(script, timeout=self.cfg.print_timeout)
+            self.mr.gcode(script)
+            self.mr.post('/printer/print/start', req, timeout=self.cfg.print_timeout)
             self.last_error = ''
         except Exception as e:
             self.last_error = str(e)
-            log.error('PRINT_ZCOLOR: %s', e)
+            log.error('print/start: %s', e)
         finally:
             with self.job_lock:
                 self.job_active = False
