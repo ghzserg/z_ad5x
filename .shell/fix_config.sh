@@ -133,6 +133,7 @@ restore_base()
     fi
     if [ ${C5PRO} -eq 1 ]; then
         rm -f ${KLIPPER_DIR}/klippy/extras/zmod_color.py
+        rm -f ${KLIPPER_DIR}/klippy/extras/zmod_afc.py
         check_link /usr/data/nginx/sites-enabled/mainsail /usr/data/nginx/sites-available/mainsail
         grep -q zmod ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py && [ -f /usr/data/zmod/zmod/.shell/klipper/${VER_FF}_virtual_sdcard.py.orig ] && cat /usr/data/zmod/zmod/.shell/klipper/${VER_FF}_virtual_sdcard.py.orig >${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py
     fi
@@ -140,6 +141,7 @@ restore_base()
         grep -q zmod ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py && cp /usr/data/zmod/zmod/.shell/virtual_sdcard.py.orig ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py
 
         rm -f ${KLIPPER_DIR}/klippy/extras/zmod_color.py
+        rm -f ${KLIPPER_DIR}/klippy/extras/zmod_afc.py
         rm -f ${KLIPPER_DIR}/klippy/extras/zmod_tenz.py
         rm -f ${KLIPPER_DIR}/klippy/extras/zmod_ifs.py
         rm -f ${KLIPPER_DIR}/klippy/extras/zmod_ifs_switch_sensor.py
@@ -558,12 +560,14 @@ unset LD_PRELOAD
     fi
     if [ ${C5PRO} -eq 1 ]; then
         check_link ${KLIPPER_DIR}/klippy/extras/zmod_color.py /usr/data/zmod/zmod/.shell/zmod_color.py
+        check_link ${KLIPPER_DIR}/klippy/extras/zmod_afc.py /usr/data/zmod/zmod/.shell/zmod_afc.py
         cat /usr/data/zmod/zmod/.shell/klipper/${VER_FF}_virtual_sdcard.py >${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py
         grep -q "M400" ${KLIPPER_DIR}/klippy/extras/filament_switch_sensor.py && sed -i "s/M400//" ${KLIPPER_DIR}/klippy/extras/filament_switch_sensor.py
     fi
     if [ ${AD5X} -eq 1 ]; then
         grep -q "zmod 1.13" ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py || cp /usr/data/zmod/zmod/.shell/virtual_sdcard.py ${KLIPPER_DIR}/klippy/extras/virtual_sdcard.py
         check_link ${KLIPPER_DIR}/klippy/extras/zmod_color.py /usr/data/zmod/zmod/.shell/zmod_color.py
+        check_link ${KLIPPER_DIR}/klippy/extras/zmod_afc.py /usr/data/zmod/zmod/.shell/zmod_afc.py
         check_link ${KLIPPER_DIR}/klippy/extras/zmod_tenz.py /usr/data/zmod/zmod/.shell/zmod_tenz.py
         check_link ${KLIPPER_DIR}/klippy/extras/zmod_ifs.py /usr/data/zmod/zmod/.shell/zmod_ifs.py
         check_link ${KLIPPER_DIR}/klippy/extras/zmod_ifs_switch_sensor.py /usr/data/zmod/zmod/.shell/zmod_ifs_switch_sensor.py
