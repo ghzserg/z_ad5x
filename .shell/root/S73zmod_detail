@@ -1,0 +1,42 @@
+#!/bin/sh
+# (C) 2026 ghzserg https://github.com/ghzserg/zmod
+#
+# Starts zmod_detail service (AD5X, native screen only)
+#
+
+source /usr/data/zmod/zmod/.shell/0.sh
+PID_FILE=/run/zmod_detail.pid
+
+if [ ${AD5X} -ne 1 ] || grep -q "display_off = 1" /opt/config/mod_data/variables.cfg; then
+    exit 0
+fi
+
+start() {
+    start-stop-daemon -S -b -m -p $PID_FILE --exec /usr/data/zmod/zmod/.shell/root/zmod_detail.py -- "${ZLANG}"
+}
+
+stop() {
+    start-stop-daemon -K -p $PID_FILE
+}
+restart() {
+    stop
+    sleep 1
+    start
+}
+
+case "$1" in
+  start)
+        start
+        ;;
+  stop)
+        stop
+        ;;
+  restart|reload)
+        restart
+        ;;
+  *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+esac
+
+exit $?
