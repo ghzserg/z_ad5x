@@ -18,4 +18,4 @@ if [ ${AD5M} -eq 1 ]; then
 fi
 /usr/data/zmod/zmod/.shell/root/S71screen stop
 /usr/data/zmod/zmod/.shell/root/S73zmod_detail stop
-/usr/data/zmod/zmod/.shell/root/S72ff_orca stop
+/usr/data/zmod/zmod/.shell/root/S72orca_ff stop
