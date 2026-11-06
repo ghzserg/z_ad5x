@@ -6,9 +6,13 @@
 
 import os
 import json
+import logging
+import threading
+import requests
 from .zmod_color import atomic_write, FILE_CONFIG
 
 UNIT = 'IFS'
+SPOOLMAN = 'http://127.0.0.1:7125/server/spoolman/proxy'
 DEFAULT_WEIGHT = 1000
 MSG = {
     'material': ('Материал', 'Material'),
@@ -38,11 +42,15 @@ class zmod_afc:
         self.map_mtime = -1
         self.state = 'Idle'     # Loading / Unloading во время операции
         self.error = None       # текст последней ошибки загрузки/выгрузки
+        self.spools = {}        # слот -> spool_id Spoolman
+        self.spool_sig = {}     # слот -> ((HEX, тип) катушки, armed): смена слота мимо катушки сбрасывает её
+        self.prev_has = {}      # слот -> наличие прутка на прошлом пересчёте
+        self.active_spool = None  # spool_id, переданный Moonraker как активный
         for cmd in ('SET_COLOR', 'SET_MATERIAL', 'SET_MAP', 'SET_WEIGHT', 'CHANGE_TOOL', 'TOOL_UNLOAD', 'LANE_UNLOAD'):
             self.gcode.register_command(cmd, getattr(self, 'cmd_' + cmd))
         for cmd in ('AFC_RESET', 'RESET_FAILURE', 'AFC_CLEAR_MESSAGE'):
             self.gcode.register_command(cmd, self.cmd_AFC_RESET)
-        self.gcode.register_command('SET_SPOOL_ID', lambda gcmd: None)  # шлёт диалог филамента, не нужен
+        self.gcode.register_command('SET_SPOOL_ID', self.cmd_SET_SPOOL_ID)
         self.printer.register_event_handler('klippy:ready', self._ready)
 
     def _ready(self):
@@ -52,6 +60,12 @@ class zmod_afc:
         if not self.enabled:
             return
         self.n = self.color.color_limit
+        self.reactor = self.printer.get_reactor()
+        self.webhooks = self.printer.lookup_object('webhooks')
+        for i in range(1, self.n + 1):
+            sid = self.save_variables.allVariables.get(f'afc_spool_lane{i}', 0)
+            if sid:
+                self.spools[i] = sid
         self.printer.add_object('AFC', _Obj(self._afc_status))
         self.printer.add_object(f'AFC_{UNIT} {UNIT}', _Obj(
             lambda e: {'lanes': self._lanes(), 'extruders': [], 'hubs': [], 'buffers': []}))
@@ -81,6 +95,66 @@ class zmod_afc:
                 self.map = []
             if not self.map:
                 self.map = list(range(1, self.n + 1))
+        self._check_spools()
+
+    # Сброс катушки: слот перезаправили (пруток вынут) или сменили цвет/тип мимо катушки.
+    # Активная катушка Moonraker (учёт расхода) - катушка активной lane.
+    def _check_spools(self):
+        for i in list(self.spools):
+            s = self.slots.get(i, {})
+            cur, has = (s.get('HEX'), s.get('Material')), bool(s.get('hasFilament'))
+            want, armed = self.spool_sig.get(i, (None, False))
+            if not armed:
+                if want is None or cur == want:     # ждём, пока слот примет цвет/тип катушки
+                    self.spool_sig[i] = (cur, True)
+            elif cur != want or (self.prev_has.get(i) and not has):
+                self._set_spool(i, 0)
+            self.prev_has[i] = has
+        sid = self.spools.get(self.active, 0)
+        if (self.spools or self.active_spool) and sid != self.active_spool:
+            try:
+                self.webhooks.call_remote_method('spoolman_set_active_spool', spool_id=sid or None)
+                self.active_spool = sid
+            except Exception:
+                pass    # Moonraker ещё не подключён или нет Spoolman
+
+    def _save(self, name, value):
+        self.reactor.register_callback(lambda e: self.gcode.run_script(f'SAVE_VARIABLE VARIABLE={name} VALUE={value}'))
+
+    def _set_spool(self, i, sid):
+        if sid:
+            self.spools[i] = sid
+            self._fetch_spool(i, sid)
+        else:
+            self.spools.pop(i, None)
+        self.spool_sig.pop(i, None)
+        self._save(f'afc_spool_lane{i}', sid)
+        self.last = 0.
+
+    # Цвет и тип катушки из Spoolman -> слот (HTTP в потоке, запись - в reactor)
+    def _fetch_spool(self, i, sid):
+        def worker():
+            try:
+                r = requests.post(SPOOLMAN, json={'request_method': 'GET', 'path': f'/v1/spool/{sid}'}, timeout=10)
+                r.raise_for_status()
+                res = r.json()['result']
+                fil = res.get('response', res)['filament']
+                hexc, mat = (fil.get('color_hex') or '').upper(), (fil.get('material') or '').upper()
+            except Exception as e:
+                logging.info(f'zmod_afc: spoolman spool {sid}: {e}')
+                return
+            self.reactor.register_async_callback(lambda e: self._apply_spool(i, sid, hexc, mat))
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _apply_spool(self, i, sid, hexc, mat):
+        if self.spools.get(i) != sid:
+            return
+        types = sorted(self.color.valid_types[:-1], key=len, reverse=True)
+        mat = mat if mat in types else next((t for t in types if t in mat), None)   # PLA+ -> PLA
+        try:
+            self.spool_sig[i] = (self._write(i, hexc or None, mat), False)
+        except Exception as e:
+            logging.info(f'zmod_afc: spool {sid} -> lane{i}: {e}')
 
     def _t(self, key):
         return MSG[key][0 if self.color.lang == 'ru' else 1]
@@ -113,7 +187,7 @@ class zmod_afc:
                 'buffer': None, 'buffer_status': None, 'lane': i,
                 'map': [f'T{t}' for t, slot in enumerate(self.map) if slot == i],
                 'load': has, 'prep': has, 'tool_loaded': tooled, 'loaded_to_hub': tooled,
-                'material': None if mat in ('', '?') else mat, 'spool_id': None,
+                'material': None if mat in ('', '?') else mat, 'spool_id': self.spools.get(i),
                 'color': '#' + (s.get('HEX') or 'FFFFFF'), 'weight': self._weight(i),
                 'extruder_temp': None, 'runout_lane': None, 'dist_hub': 0, 'filament_status_led': '',
                 'filament_status': 'In Tool' if tooled else 'Ready' if has else 'Not Ready',
@@ -141,23 +215,26 @@ class zmod_afc:
 
     def _set(self, gcmd, hexc=None, mat=None):
         self._refresh(self.printer.get_reactor().monotonic())
-        i = self._slot(gcmd)
+        self._write(self._slot(gcmd), hexc, mat)
+
+    def _write(self, i, hexc=None, mat=None):
         s = self.slots.get(i, {})
         hexc = self._snap((hexc or s.get('HEX') or 'FFFFFF').lstrip('#').upper())
         mat = (mat or s.get('Material') or 'PLA').upper()
         c = self.color
         if mat not in c.valid_types[:-1]:
-            raise gcmd.error(f"AFC: {mat}? {', '.join(c.valid_types[:-1])}")
+            raise self.printer.command_error(f"AFC: {mat}? {', '.join(c.valid_types[:-1])}")
         if c.display:
             code, resp = c.zsend_post_request('/control', payload={
                 'cmd': 'msConfig_cmd', 'args': {'slot': i, 'mt': mat, 'rgb': f'#{hexc}'}})
         else:
             code, resp = c.set_printer_data_detail(i, mat, f'#{hexc}')
         if code != 200:
-            raise gcmd.error(f'AFC: {resp}')
+            raise self.printer.command_error(f'AFC: {resp}')
         s.update(HEX=hexc, Material=mat)   # SET_COLOR и SET_MATERIAL идут одним скриптом
         self.slots[i] = s
         self.last = 0.
+        return hexc, mat
 
     # Ближайший цвет палитры (C5Pro хранит индекс, цвет вне палитры стал бы белым)
     def _snap(self, hexc):
@@ -190,6 +267,11 @@ class zmod_afc:
         gcmd.respond_raw("// action:prompt_button_group_end")
         gcmd.respond_raw(f"// action:prompt_footer_button {self._t('cancel')}|RESPOND TYPE=command MSG=action:prompt_end")
         gcmd.respond_raw("// action:prompt_show")
+
+    # SET_SPOOL_ID LANE= SPOOL_ID= (пусто или 0 - снять катушку)
+    def cmd_SET_SPOOL_ID(self, gcmd):
+        sid = gcmd.get('SPOOL_ID', '').strip()
+        self._set_spool(self._slot(gcmd), int(sid) if sid.isdigit() else 0)
 
     def cmd_SET_WEIGHT(self, gcmd):
         i = self._slot(gcmd)
