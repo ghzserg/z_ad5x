@@ -1397,14 +1397,8 @@ class zmod_color:
             if not self.ifs:
                 silent = 2
             else:
-                zmod_afc = self.printer.lookup_object('zmod_afc', None)
-                zmod_afc = zmod_afc if zmod_afc is not None and zmod_afc.enabled and 'T0' not in gcmd.get_command_parameters() else None
-                if zmod_afc is not None:
-                    auto_assign = 0
                 if auto_assign == 0:
                     default_values = [result[i]['ID'] if i < len(result) else result[-1]['ID'] for i in range(allowed_tool_count)] if result else [1] * allowed_tool_count
-                    if zmod_afc is not None:
-                        default_values, silent = zmod_afc.apply(default_values, silent)
                     tools = []
                     for i in range(allowed_tool_count):
                         tools += [gcmd.get_int(f"T{i}", int(default_values[i]))]

@@ -30,7 +30,6 @@ class zmod_afc:
     def __init__(self, config):
         self.printer = config.get_printer()
         self.gcode = self.printer.lookup_object('gcode')
-        self.prompt = config.getboolean('prompt', False)  # показывать ли окно Z-Mod перед печатью
         self.load = config.get('load', 'IN_ZCOLOR SLOT={slot} NAPR=0')
         self.unload = config.get('unload', 'IN_ZCOLOR SLOT={slot} NAPR=1')
         self.enabled = False    # переменная мода afc, читается на klippy:ready
@@ -232,13 +231,6 @@ class zmod_afc:
                 'extruder_temp': None, 'runout_lane': None, 'dist_hub': 0, 'filament_status_led': '',
                 'filament_status': 'In Tool' if tooled else 'Ready' if has else 'Not Ready',
                 'status': 'Tooled' if tooled else 'Loaded' if has else 'None'}
-
-    # Для SET_ZCOLOR: карта AFC вместо значений по умолчанию, окно Z-Mod скрыто
-    def apply(self, defaults, silent):
-        self._refresh(self.printer.get_reactor().monotonic())
-        tools = [self.map[t] if t < len(self.map) and 1 <= self.map[t] <= self.n else d
-                 for t, d in enumerate(defaults)]
-        return tools, (silent if self.prompt or silent else 1)
 
     def _slot(self, gcmd, current=False):
         lane = gcmd.get('LANE', None)
