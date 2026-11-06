@@ -15,6 +15,7 @@ import time
 
 FFCONFIG='/usr/prog/config/Adventurer5M.json'
 FILE_CONFIG='/usr/data/config/mod_data/file.json'
+DETAIL_FILE='/tmp/detail.txt'    # слоты от родного экрана, пишет zmod_detail.py
 THROTTLE_LINES = 32     # в циклах по строкам файла проверять время (zmod._throttle) раз в N строк
 SKIP_LINE_FIRST_CHARS = frozenset('GMXYZEFgmxyzef')
 
@@ -722,6 +723,7 @@ class zmod_color:
             'hidden_types': list(self.hide_filament_types),
             'extruder_sensor': False,
             'total_tools': 1,
+            'active_tool_id': -1,
             'slots': []
         }
         zmod_ifs = getattr(self, 'zmod_ifs', None)
@@ -734,6 +736,7 @@ class zmod_color:
         if ffm_info is not None:
             try:
                 status['channel'] = int(ffm_info.get("channel", 0))
+                status['active_tool_id'] = status['channel'] - 1 if status['extruder_sensor'] and status['channel'] > 0 else -1
                 color_mapping = getattr(self, 'COLOR_MAPPING', {})
                 for i in range(1, self.color_limit + 1):
                     hex_color = ffm_info.get(f"ffmColor{i}", "")
@@ -743,7 +746,7 @@ class zmod_color:
                         'Material': ffm_info.get(f"ffmType{i}", "?").upper(),
                         'Color': color_mapping.get(hex_color.lower(), hex_color),
                         'HEX': hex_color,
-                        'hasFilament': bool(zmod_ifs.get_port(i)) if zmod_ifs is not None else False
+                        'hasFilament': bool(zmod_ifs.get_port(i)) if zmod_ifs is not None else self._read_detail_cached().get(i, False)
                     })
             except Exception:
                 pass
@@ -764,6 +767,21 @@ class zmod_color:
                 self._ffm_info = None
             self._ffm_info_mtime = mtime
         return getattr(self, '_ffm_info', None)
+
+    # Наличие прутка в режиме с родным экраном: /tmp/detail.txt от zmod_detail.py, кэш по mtime
+    def _read_detail_cached(self):
+        try:
+            mtime = os.stat(DETAIL_FILE).st_mtime
+        except OSError:
+            return {}
+        if getattr(self, '_detail_mtime', None) != mtime:
+            try:
+                with open(DETAIL_FILE, 'r') as file:
+                    self._detail = {int(s['slotId']): bool(s.get('hasFilament')) for s in json.load(file)['slotInfos']}
+            except Exception:
+                self._detail = {}
+            self._detail_mtime = mtime
+        return self._detail
 
     def get_printer_ip(self):
         interfaces = ['wlan0', 'eth0']
