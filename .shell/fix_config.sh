@@ -1000,6 +1000,23 @@ stepper: stepper_x, stepper_y, stepper_z
         mv ${MOD_CONF}/mod_data/user.moonraker.conf.tmp ${MOD_CONF}/mod_data/user.moonraker.conf
     fi
 
+    # zmod_afclite конфликтует со встроенным zmod_afc: отключаем, убираем из конфигов Moonraker и удаляем
+    AFCLITE=${MOD_CONF}/mod_data/plugins/zmod_afclite
+    if grep -q "plugins/zmod_afclite/" ${MOD_CONF}/mod_data/plugins.cfg; then
+        echo "Remove plugin zmod_afclite"
+        sed -i "/plugins\/zmod_afclite\//d" ${MOD_CONF}/mod_data/plugins.cfg
+        [ -x ${AFCLITE}/uninstall.sh ] && ${AFCLITE}/uninstall.sh
+    fi
+    for conf in ${MOD_CONF}/moonraker.conf ${MOD_CONF}/mod_data/user.moonraker.conf ${MOD_CONF}/mod_data/extra_plugins.moonraker.conf; do
+        if grep -q "^\[update_manager zmod_afclite\]" $conf; then
+            awk '{ l = $0; sub(/\r$/, "", l) }
+              l == "[update_manager zmod_afclite]" { skip = 1; next }
+              skip && l ~ /^\[/ { skip = 0 }
+              !skip' $conf > $conf.tmp && mv $conf.tmp $conf
+        fi
+    done
+    [ -d ${AFCLITE} ] && rm -rf ${AFCLITE}
+
     if [ ${NEED_REBOOT} -eq 1 ]; then
         if [ ${AD5M} -eq 1 ]; then
             echo "Kill firmwareExe"
