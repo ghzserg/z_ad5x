@@ -11,7 +11,7 @@ import threading
 import requests
 from .zmod_color import atomic_write, FILE_CONFIG
 
-UNIT = 'IFS'
+UNIT = 'IFS'            # юнит; при нескольких IFS (IFS Jacker) - IFS_1, IFS_2... по 4 lane
 SPOOLMAN = 'http://127.0.0.1:7125/server/spoolman/proxy'
 DEFAULT_WEIGHT = 1000
 MSG = {
@@ -59,18 +59,32 @@ class zmod_afc:
         self.enabled = self.save_variables is not None and self.save_variables.allVariables.get('afc', 0) == 1
         if not self.enabled:
             return
-        self.n = self.color.color_limit
         self.reactor = self.printer.get_reactor()
         self.webhooks = self.printer.lookup_object('webhooks')
-        for i in range(1, self.n + 1):
-            sid = self.save_variables.allVariables.get(f'afc_spool_lane{i}', 0)
-            if sid:
-                self.spools[i] = sid
+        v = self.save_variables.allVariables
+        self.spools = {int(k[14:]): sid for k, sid in v.items() if k.startswith('afc_spool_lane') and sid}
         self.printer.add_object('AFC', _Obj(self._afc_status))
-        self.printer.add_object(f'AFC_{UNIT} {UNIT}', _Obj(
-            lambda e: {'lanes': self._lanes(), 'extruders': [], 'hubs': [], 'buffers': []}))
-        for i in range(1, self.n + 1):
-            self.printer.add_object(f'AFC_lane lane{i}', _Obj(lambda e, i=i: self._lane_status(e, i)))
+        self.objs = set()
+        # IFS Jacker сообщает число каналов через ~30 с после старта: регистрируем сохранённое
+        # число lane сразу, чтобы морда увидела их без перезагрузки страницы
+        self._resize(max(self.color.color_limit, v.get('afc_lanes', 0)))
+        self._resize(self.color.color_limit)
+
+    # Число lane = zmod_color.color_limit (IFS Jacker меняет его на лету). Объекты только
+    # добавляются; лишние не попадают в списки AFC и юнитов
+    def _resize(self, n, save=False):
+        self.n = n
+        for name in self._units():
+            if name not in self.objs:
+                self.objs.add(name)
+                self.printer.add_object(f'AFC_{UNIT} {name}', _Obj(lambda e, name=name: {
+                    'lanes': self._lanes(name), 'extruders': [], 'hubs': [], 'buffers': []}))
+        for i in range(1, n + 1):
+            if i not in self.objs:
+                self.objs.add(i)
+                self.printer.add_object(f'AFC_lane lane{i}', _Obj(lambda e, i=i: self._lane_status(e, i)))
+        if save and n != self.save_variables.allVariables.get('afc_lanes', 0):
+            self._save('afc_lanes', n)
 
     # Пересчёт не чаще раза в секунду; команды сбрасывают self.last для немедленного обновления
     def _refresh(self, eventtime):
@@ -78,6 +92,8 @@ class zmod_afc:
             return
         self.last = eventtime
         st = self.color.get_status(eventtime)
+        if self.color.color_limit != self.n:
+            self._resize(self.color.color_limit, save=True)
         self.slots = {int(s['ID']): s for s in st['slots']}
         self.palette = st.get('palette', [])    # C5Pro: цвет хранится индексом палитры
         self.types = [t for t in st['valid_types'][:-1] if t not in st.get('hidden_types', [])]
@@ -162,8 +178,14 @@ class zmod_afc:
     def _weight(self, i):
         return self.save_variables.allVariables.get(f'afc_weight_lane{i}', 0) or DEFAULT_WEIGHT
 
-    def _lanes(self):
-        return [f'lane{i}' for i in range(1, self.n + 1)]
+    def _units(self):
+        return [UNIT] if self.n <= 4 else [f'{UNIT}_{u + 1}' for u in range((self.n + 3) // 4)]
+
+    def _unit(self, i):
+        return UNIT if self.n <= 4 else f'{UNIT}_{(i + 3) // 4}'
+
+    def _lanes(self, unit=None):
+        return [f'lane{i}' for i in range(1, self.n + 1) if unit is None or self._unit(i) == unit]
 
     def _afc_status(self, eventtime):
         self._refresh(eventtime)
@@ -173,7 +195,7 @@ class zmod_afc:
                 'current_toolchange': 0, 'number_of_toolchanges': 0, 'spoolman': None,
                 'td1_present': False, 'lane_data_enabled': False, 'error_state': self.error is not None,
                 'bypass_state': False, 'quiet_mode': False, 'position_saved': False,
-                'extruders': [], 'hubs': [], 'units': [f'{UNIT} {UNIT}'], 'lanes': self._lanes(),
+                'extruders': [], 'hubs': [], 'units': [f'{UNIT} {u}' for u in self._units()], 'lanes': self._lanes(),
                 'buffers': [], 'led_state': False,
                 'message': {'message': self.error, 'type': 'error' if self.error else None}}
 
@@ -183,7 +205,7 @@ class zmod_afc:
         has = bool(s.get('hasFilament'))
         tooled = self.active == i
         mat = s.get('Material', '?')
-        return {'name': f'lane{i}', 'unit': UNIT, 'hub': None, 'extruder': None,
+        return {'name': f'lane{i}', 'unit': self._unit(i), 'hub': None, 'extruder': None,
                 'buffer': None, 'buffer_status': None, 'lane': i,
                 'map': [f'T{t}' for t, slot in enumerate(self.map) if slot == i],
                 'load': has, 'prep': has, 'tool_loaded': tooled, 'loaded_to_hub': tooled,
