@@ -1000,12 +1000,15 @@ stepper: stepper_x, stepper_y, stepper_z
         mv ${MOD_CONF}/mod_data/user.moonraker.conf.tmp ${MOD_CONF}/mod_data/user.moonraker.conf
     fi
 
-    # zmod_afclite конфликтует со встроенным zmod_afc: отключаем, убираем из конфигов Moonraker и удаляем
+    # zmod_afclite конфликтует со встроенным zmod_afc: если был включён - включаем afc,
+    # затем убираем из конфигов Moonraker и удаляем
     AFCLITE=${MOD_CONF}/mod_data/plugins/zmod_afclite
     if grep -q "plugins/zmod_afclite/" ${MOD_CONF}/mod_data/plugins.cfg; then
-        echo "Remove plugin zmod_afclite"
+        echo "Remove plugin zmod_afclite, enable afc"
         sed -i "/plugins\/zmod_afclite\//d" ${MOD_CONF}/mod_data/plugins.cfg
         [ -x ${AFCLITE}/uninstall.sh ] && ${AFCLITE}/uninstall.sh
+        sed -i '/^afc = /d' ${MOD_CONF}/mod_data/variables.cfg
+        sed -i '2 i\afc = 1' ${MOD_CONF}/mod_data/variables.cfg
     fi
     for conf in ${MOD_CONF}/moonraker.conf ${MOD_CONF}/mod_data/user.moonraker.conf ${MOD_CONF}/mod_data/extra_plugins.moonraker.conf; do
         if grep -q "^\[update_manager zmod_afclite\]" $conf; then
