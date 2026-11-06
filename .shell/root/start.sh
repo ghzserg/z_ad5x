@@ -151,10 +151,12 @@ prepare_chroot()
         fi
         if [ ${C5PRO} -eq 1 ]; then
             check_link /usr/data/zmod/klipper/klippy/extras/zmod_color.py /usr/data/zmod/zmod/.shell/zmod_color.py
+            check_link /usr/data/zmod/klipper/klippy/extras/zmod_afc.py /usr/data/zmod/zmod/.shell/zmod_afc.py
         fi
         if [ ${AD5X} -eq 1 ]; then
             check_link /usr/data/zmod/klipper/klippy/chelper/c_helper.so /usr/data/zmod/klipper/mcu/ad5x/c_helper.so
             check_link /usr/data/zmod/klipper/klippy/extras/zmod_color.py /usr/data/zmod/zmod/.shell/zmod_color.py
+            check_link /usr/data/zmod/klipper/klippy/extras/zmod_afc.py /usr/data/zmod/zmod/.shell/zmod_afc.py
             check_link /usr/data/zmod/klipper/klippy/extras/zmod_ifs_motion_sensor.py /usr/data/zmod/zmod/.shell/zmod_ifs_motion_sensor.py
             check_link /usr/data/zmod/klipper/klippy/extras/zmod_ifs_switch_sensor.py /usr/data/zmod/zmod/.shell/zmod_ifs_switch_sensor.py
             check_link /usr/data/zmod/klipper/klippy/extras/zmod_ifs.py /usr/data/zmod/zmod/.shell/zmod_ifs.py
