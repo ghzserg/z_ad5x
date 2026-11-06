@@ -746,7 +746,7 @@ class zmod_color:
                         'Material': ffm_info.get(f"ffmType{i}", "?").upper(),
                         'Color': color_mapping.get(hex_color.lower(), hex_color),
                         'HEX': hex_color,
-                        'hasFilament': bool(zmod_ifs.get_port(i)) if zmod_ifs is not None else self._read_detail_cached().get(i, False)
+                        'hasFilament': self._read_detail_cached().get(i, False) if self.display else bool(zmod_ifs.get_port(i)) if zmod_ifs is not None else False
                     })
             except Exception:
                 pass
