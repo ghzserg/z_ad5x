@@ -18,6 +18,7 @@ MSG = {
     'material': ('Материал', 'Material'),
     'cancel':   ('Отмена', 'Cancel'),
     'no_lane':  ('Нет загруженной lane', 'No lane loaded'),
+    'no_card':  ('Метка {} не привязана к катушке в Spoolman', 'Tag {} is not linked to a spool in Spoolman'),
 }
 
 class _Obj:
@@ -148,13 +149,21 @@ class zmod_afc:
         self.last = 0.
 
     # Цвет и тип катушки из Spoolman -> слот (HTTP в потоке, запись - в reactor)
+    # Запрос к Spoolman через прокси Moonraker (только из потока)
+    @staticmethod
+    def _spoolman(method, path, body=None):
+        req = {'request_method': method, 'path': path}
+        if body is not None:
+            req['body'] = body
+        r = requests.post(SPOOLMAN, json=req, timeout=10)
+        r.raise_for_status()
+        res = r.json()['result']
+        return res.get('response', res) if isinstance(res, dict) and 'response' in res else res
+
     def _fetch_spool(self, i, sid):
         def worker():
             try:
-                r = requests.post(SPOOLMAN, json={'request_method': 'GET', 'path': f'/v1/spool/{sid}'}, timeout=10)
-                r.raise_for_status()
-                res = r.json()['result']
-                fil = res.get('response', res)['filament']
+                fil = self._spoolman('GET', f'/v1/spool/{sid}')['filament']
                 hexc, mat = (fil.get('color_hex') or '').upper(), (fil.get('material') or '').upper()
             except Exception as e:
                 logging.info(f'zmod_afc: spoolman spool {sid}: {e}')
@@ -290,10 +299,28 @@ class zmod_afc:
         gcmd.respond_raw(f"// action:prompt_footer_button {self._t('cancel')}|RESPOND TYPE=command MSG=action:prompt_end")
         gcmd.respond_raw("// action:prompt_show")
 
-    # SET_SPOOL_ID LANE= SPOOL_ID= (пусто или 0 - снять катушку)
+    # NFC-метка: катушка с UID в доп. поле card_uids (HEX через запятую, пишут приложения SpoolLink)
+    def _card(self, i, uid):
+        def worker():
+            try:
+                found = next((sp['id'] for sp in self._spoolman('GET', '/v1/spool')
+                              if uid in json.loads(sp.get('extra', {}).get('card_uids', '""')).upper().split(',')), 0)
+            except Exception as e:
+                logging.info(f'zmod_afc: spoolman card {uid}: {e}')
+                return
+            self.reactor.register_async_callback(lambda e: self._set_spool(i, found) if found
+                                                 else self.gcode.respond_info(f"AFC: {self._t('no_card').format(uid)}"))
+        threading.Thread(target=worker, daemon=True).start()
+
+    # SET_SPOOL_ID LANE= SPOOL_ID= (пусто или 0 - снять катушку) или CARD_UID= (найти по метке)
     def cmd_SET_SPOOL_ID(self, gcmd):
+        i = self._slot(gcmd)
         sid = gcmd.get('SPOOL_ID', '').strip()
-        self._set_spool(self._slot(gcmd), int(sid) if sid.isdigit() else 0)
+        sid = int(sid) if sid.isdigit() else 0
+        uid = gcmd.get('CARD_UID', '').strip().upper()
+        if uid:
+            return self._card(i, uid)
+        self._set_spool(i, sid)
 
     def cmd_SET_WEIGHT(self, gcmd):
         i = self._slot(gcmd)
