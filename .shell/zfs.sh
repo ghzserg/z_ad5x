@@ -74,7 +74,7 @@ else
     echo 3 > /proc/sys/vm/drop_caches
 
     read up rest </proc/uptime; t1="${up%.*}${up#*.}"
-    dd if=$FILE of=/dev/null bs=1M count=${SIZE} conv=fsync status=none 2>/dev/null
+    dd if=$FILE of=/dev/null bs=1M count=${SIZE} status=none 2>/dev/null
     read up rest </proc/uptime; t2="${up%.*}${up#*.}"
     TIME_R=$(( 10*(t2-t1) ))
 
