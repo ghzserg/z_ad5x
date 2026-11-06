@@ -176,6 +176,7 @@ prepare_chroot()
     check_link /etc/init.d/S70httpd /usr/data/zmod/zmod/.shell/root/S70httpd
     check_link /etc/init.d/S71screen /usr/data/zmod/zmod/.shell/root/S71screen
     check_link /etc/init.d/S72orca_ff /usr/data/zmod/zmod/.shell/root/S72orca_ff
+    check_link /etc/init.d/S73zmod_detail /usr/data/zmod/zmod/.shell/root/S73zmod_detail
 
     [ -L /etc/init.d/S35tslib ] && rm -f /etc/init.d/S35tslib
 
@@ -366,6 +367,7 @@ if [ -f /usr/data/zmod/moonraker/moonraker.py ]; then
 fi
 
 /usr/data/zmod/zmod/.shell/root/S71screen start
+/usr/data/zmod/zmod/.shell/root/S73zmod_detail start
 
 date -s "2026-01-01 00:00:00"
 
