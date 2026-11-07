@@ -1365,7 +1365,12 @@ class zmod_color:
         plate = self.zmod.get_plate(gcmd, fname)
 
         auto_assign_setting = 0
-        if gcmd.get_int('ALLOWED_TOOL_COUNT', 0) == 0:
+        tools_given = sorted(int(k[1:]) for k in gcmd.get_command_parameters() if k[:1] == 'T' and k[1:].isdigit())
+        if gcmd.get_int('ALLOWED_TOOL_COUNT', 0) == 0 and tools_given and gcmd.get_int('AUTO_ASSIGN', 0) == 0:   # сопоставление передано - файл не сканируем
+            self.file_colors = [(t, '', '') for t in tools_given]
+            if self.display and tools_given[-1] > 3:
+                raise gcmd.error(self._t('error_native_screen_tool_count', len(tools_given)))
+        elif gcmd.get_int('ALLOWED_TOOL_COUNT', 0) == 0:
             colors_found, self.file_colors, self.file_plates = self.get_used_colors(gcmd, plate)
             if self.display and any(file_color[0] > 3 for file_color in self.file_colors):
                 raise gcmd.error(self._t('error_native_screen_tool_count', len(self.file_colors)))
