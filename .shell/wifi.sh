@@ -109,6 +109,9 @@ wifi_fix()
     killall -9 wpa_cli
 
     start-stop-daemon --start --oknodo --background --exec /usr/sbin/wpa_cli -- -i $INTERFACE -a /usr/data/zmod/zmod/.shell/wifi_reconnect.sh
+    # wpa_cli -a does not report CONNECTED if the link came up before it attached
+    sleep 1
+    wpa_cli -i $INTERFACE status | grep -q '^wpa_state=COMPLETED' && /usr/data/zmod/zmod/.shell/wifi_reconnect.sh $INTERFACE CONNECTED check
     echo "Wi-Fi restart initiated. DHCP will start automatically on connection."
 }
 
