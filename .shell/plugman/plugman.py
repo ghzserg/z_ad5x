@@ -243,8 +243,9 @@ def new_block(name, p):
     if p.get("type") == "web":
         b = [f"[update_manager {name}]", "type: web", "channel: stable",
              f"repo: {p['repo']}", f"path: {p['path']}"]
-        if p.get("persistent_files"):
-            b += ["persistent_files:", f"    {p['persistent_files']}"]
+        pf = p.get("persistent_files")
+        if pf:
+            b += ["persistent_files:"] + [f"    {f}" for f in ([pf] if isinstance(pf, str) else pf)]
     else:
         b = [f"[update_manager {name}]", "type: git_repo", "channel: stable",
              f"path: {path_of(name, p)}", f"origin: {p['url']}",
