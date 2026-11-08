@@ -15,6 +15,7 @@ from .zmod_color import atomic_write, FILE_CONFIG
 UNIT = 'IFS'            # юнит; при нескольких IFS (IFS Jacker) - IFS_1, IFS_2... по 4 lane
 SPOOLMAN = 'http://127.0.0.1:7125/server/spoolman/proxy'
 DEFAULT_WEIGHT = 1000
+EMPTY_DELAY = 30.       # слот пуст дольше - пруток вынут (IFS после старта несколько раз мигает пустым)
 MSG = {
     'material': ('Материал', 'Material'),
     'cancel':   ('Отмена', 'Cancel'),
@@ -46,6 +47,7 @@ class zmod_afc:
         self.spools = {}        # слот -> spool_id Spoolman
         self.spool_sig = {}     # слот -> ((HEX, тип) катушки, armed): смена слота мимо катушки сбрасывает её
         self.prev_has = {}      # слот -> наличие прутка на прошлом пересчёте
+        self.empty_since = {}   # слот -> с какого момента пуст после прутка
         self.active_spool = None  # spool_id, переданный Moonraker как активный
         self.native_q = None    # очередь /control родного экрана (отдельный поток, по порядку)
         self.pending = {}       # слот -> (HEX, тип, до): записано, но zmod_color ещё не видит
@@ -125,14 +127,19 @@ class zmod_afc:
     # Сброс катушки: слот перезаправили (пруток вынут) или сменили цвет/тип мимо катушки.
     # Активная катушка Moonraker (учёт расхода) - катушка активной lane.
     def _check_spools(self):
+        now = self.reactor.monotonic()
         for i in list(self.spools):
             s = self.slots.get(i, {})
             cur, has = (s.get('HEX'), s.get('Material')), bool(s.get('hasFilament'))
             want, armed = self.spool_sig.get(i, (None, False))
+            if has:
+                self.empty_since.pop(i, None)
+            elif self.prev_has.get(i):
+                self.empty_since.setdefault(i, now)
             if not armed:
                 if want is None or cur == want:     # ждём, пока слот примет цвет/тип катушки
                     self.spool_sig[i] = (cur, True)
-            elif cur != want or (self.prev_has.get(i) and not has):
+            elif cur != want or now - self.empty_since.get(i, now) >= EMPTY_DELAY:
                 self._set_spool(i, 0)
             self.prev_has[i] = has
         sid = self.spools.get(self.active, 0)
@@ -153,6 +160,7 @@ class zmod_afc:
         else:
             self.spools.pop(i, None)
         self.spool_sig.pop(i, None)
+        self.empty_since.pop(i, None)
         self._save(f'afc_spool_lane{i}', sid)
         self.last = 0.
 
