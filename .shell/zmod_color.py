@@ -889,7 +889,10 @@ class zmod_color:
         if eventtime - getattr(self, '_lanes_time', 0.) < 3.:   # не чаще раза в 3 секунды
             return
         self._lanes_time = eventtime
-        lanes = {int(s['ID']): (s['Material'] if s['hasFilament'] else '', '#' + (s['HEX'] or 'FFFFFF')) for s in slots}
+        sv = self.printer.lookup_object('save_variables', None)
+        sv = {} if sv is None else sv.allVariables     # катушка Spoolman lane (zmod_afc) - тоже повод обновить
+        lanes = {int(s['ID']): (s['Material'] if s['hasFilament'] else '', '#' + (s['HEX'] or 'FFFFFF'),
+                                sv.get(f"afc_spool_lane{s['ID']}") or None) for s in slots}
         sent = getattr(self, '_lanes_sent', {})
         if lanes != sent:
             self._lanes_sent = lanes
@@ -901,6 +904,7 @@ class zmod_color:
         save_variables = {} if save_variables == None else save_variables.allVariables
         if not self.orca_lanes or save_variables.get('helix', 0) == 1:
             return
+        spools = {k: save_variables.get(f'afc_spool_lane{k}') or None for k in slots}
 
         def worker():
             url = 'http://127.0.0.1:7125/server/database/item'
@@ -909,13 +913,14 @@ class zmod_color:
                     if not getattr(self, '_lane0_removed', False):   # старый формат ключей lane0..
                         requests.delete(url, params={'namespace': 'lane_data', 'key': 'lane0'}, timeout=5)
                         self._lane0_removed = True
-                    for zslot, (ztype, zcolor) in slots.items():
+                    for zslot, (ztype, zcolor, *_) in slots.items():
                         key = f'lane{zslot}'      # как имена lane AFC и HelixScreen
                         if ztype == '?':   # '' - пустой слот, Orca покажет без филамента
                             requests.delete(url, params={'namespace': 'lane_data', 'key': key}, timeout=5)
                         else:
                             requests.post(url, json={'namespace': 'lane_data', 'key': key, 'value': {
-                                'lane': str(zslot - 1), 'material': ztype, 'color': zcolor.upper(), 'name': ztype}},
+                                'lane': str(zslot - 1), 'material': ztype, 'color': zcolor.upper(), 'name': ztype,
+                                'spool_id': spools[zslot]}},
                                 timeout=5).raise_for_status()
                     return
                 except Exception as e:
