@@ -1,0 +1,210 @@
+#!/bin/sh
+# (C) 2024-2026 ghzserg https://github.com/ghzserg/zmod
+#
+# Wi-Fi watchdog. Started by wifi.sh once zmod manages Wi-Fi; exits when it no longer does.
+# wifi_reconnect.sh only reacts to wpa_supplicant events, so it cannot help when there is
+# no event at all (no association after boot, a stuck link). Once a minute this checks wlan0
+# and repairs only the broken step:
+#   not associated 2 min        -> wpa_cli reassociate
+#   not associated 4 min        -> full restart (wifi.sh)
+#   associated, no IPv4 address -> wifi_reconnect.sh CONNECTED at minutes 1, 3, 7; restart at 10
+#   gateway silent 3 min        -> reassociate; 6 min -> restart (only if the gateway has
+#                                  answered ping/arping since association, so a router that
+#                                  ignores ping never triggers anything)
+#   wpa_supplicant not running  -> restart
+# Restarts back off: gap 300 s, doubled after each one up to 3600 s; reset only when the
+# gateway answers (association alone is not enough: an AP without DHCP would loop).
+# A new wpa_supplicant PID means someone restarted Wi-Fi: the counters start over.
+# Not covered: wlan0 missing (USB dongle gone) - nothing is done then.
+# Usage: wifi_watchdog.sh start | run | once
+
+source /usr/data/zmod/zmod/.shell/0.sh
+
+IF=wlan0
+ZSHELL=/usr/data/zmod/zmod/.shell
+LOGDIR=${MOD_CONF}/mod_data/log
+LOG=$LOGDIR/wifi_watchdog.log
+STATE=/run/wifi_watchdog.state
+PIDFILE=/run/wifi_watchdog.pid
+BOOTCOPY=/run/wifi_watchdog.bootlog
+INTERVAL=60
+FIRST_DELAY=120
+GAP_MIN=300
+GAP_MAX=3600
+
+log() {
+    [ -f "$LOG" ] && [ "$(wc -c < "$LOG")" -gt 65536 ] && mv -f "$LOG" "$LOG.1"
+    echo "$(date '+%F %T') $*" >> "$LOG"
+}
+
+# assoc_bad gw_bad dhcp_bad last_restart gap gw_seen wpa_pid
+load_state() {
+    assoc_bad=0; gw_bad=0; dhcp_bad=0; last_restart=0; gap=$GAP_MIN; gw_seen=0; wpa_pid=0
+    [ -f "$STATE" ] && read -r assoc_bad gw_bad dhcp_bad last_restart gap gw_seen wpa_pid < "$STATE"
+    case "$assoc_bad.$gw_bad.$dhcp_bad.$last_restart.$gap.$gw_seen.$wpa_pid" in
+        *[!0-9.]*|*..*|.*|*.) assoc_bad=0; gw_bad=0; dhcp_bad=0; last_restart=0; gap=$GAP_MIN; gw_seen=0; wpa_pid=0 ;;
+    esac
+}
+save_state() { echo "$assoc_bad $gw_bad $dhcp_bad $last_restart $gap $gw_seen $wpa_pid" > "$STATE"; }
+reset_counters() { assoc_bad=0; gw_bad=0; dhcp_bad=0; gw_seen=0; }
+
+uptime_s() { cut -d. -f1 /proc/uptime; }
+
+# The conditions under which wifi.sh manages Wi-Fi (they can change without a reboot,
+# e.g. Wi-Fi handed back to the stock screen)
+zmod_manages_wifi() {
+    [ -f ${MOD_CONF}/mod/SKIP_ZMOD ] || [ -f ${MOD_CONF}/mod/REMOVE ] || [ -f ${MOD_CONF}/mod/FULL_REMOVE ] && return 1
+    grep -q "wifi = 1" ${MOD_CONF}/mod_data/variables.cfg || return 1
+    [ -f "$FFCONFIG" ] || return 1
+    grep -q -e '"wifiStationStatus" : true' -e '"ethernetStatus" : true' -e '"wifiHotspotStatus" : true' \
+        -e '"isManual" : true' -e '"isUdhcpc" : false' "$FFCONFIG" && return 1
+    grep '^[[:space:]]*ssid=' ${WPA_CONFIG} | grep -qv 'ssid="flashforge_5G"'
+}
+
+# wifi.sh or fix_config.sh (which starts wifi.sh at boot) is running. Checked only right
+# before an action: it walks /proc. cmdline is NUL-separated, busybox grep stops at NUL.
+zmod_busy() {
+    for f in /proc/[0-9]*/cmdline; do
+        case "$(tr '\0' ' ' 2>/dev/null < "$f")" in
+            *"$ZSHELL/wifi.sh"*|*"$ZSHELL/fix_config.sh"*|*S00fix*) return 0 ;;
+        esac
+    done
+    return 1
+}
+
+diag() {
+    st=$(wpa_cli -i $IF status 2>/dev/null | grep -E '^(wpa_state|bssid|freq|ip_address)=' | tr '\n' ' ')
+    ssid=$(sed -n 's/^[[:space:]]*ssid="\(.*\)"/\1/p' ${WPA_CONFIG} | grep -v '^flashforge_5G$' | head -1)
+    sig=$(wpa_cli -i $IF scan_results 2>/dev/null | awk -F'\t' -v s="$ssid" '$5 == s {print $2 "MHz " $3 "dBm"}' | tr '\n' ' ')
+    log "  $st| scan '$ssid': ${sig:-not seen}"
+}
+
+reassociate() {
+    log "$1: reassociate"
+    diag
+    wpa_cli -i $IF reassociate >/dev/null 2>&1
+}
+
+full_restart() {
+    now=$(uptime_s)
+    [ "$last_restart" -gt 0 ] && [ $((now - last_restart)) -lt "$gap" ] && return
+    if [ "$last_restart" -gt 0 ]; then
+        gap=$((gap * 2)); [ $gap -gt $GAP_MAX ] && gap=$GAP_MAX
+    fi
+    log "restart Wi-Fi: $1 (next restart not before $gap s unless the gateway answers)"
+    diag
+    # wifi.sh rotates wifi.log; keep the boot one, it shows why the link never came up
+    if [ ! -f "$BOOTCOPY" ] && [ -f "$LOGDIR/wifi.log" ]; then
+        cp -f "$LOGDIR/wifi.log" "$LOGDIR/wifi_boot.log" && touch "$BOOTCOPY"
+    fi
+    last_restart=$now
+    reset_counters
+    save_state
+    $ZSHELL/wifi.sh >/dev/null 2>&1
+    wpa_pid=$(pidof wpa_supplicant | cut -d' ' -f1)
+    wpa_pid=${wpa_pid:-0}
+}
+
+gw_alive() {
+    ping -c 2 -W 3 "$1" >/dev/null 2>&1 || arping -I $IF -c 2 -w 3 "$1" >/dev/null 2>&1
+}
+
+# Returns 1 when zmod no longer manages Wi-Fi. Each branch sets "act" to the repair, if any;
+# it runs only when wifi.sh/fix_config.sh are not busy.
+check_once() {
+    zmod_manages_wifi || return 1
+    ip link show $IF >/dev/null 2>&1 || return 0
+    load_state
+    act=""
+
+    pid=$(pidof wpa_supplicant | cut -d' ' -f1)
+    if [ -z "$pid" ]; then
+        act="restart wpa_supplicant is not running"
+    else
+        [ "$pid" != "$wpa_pid" ] && reset_counters
+        wpa_pid=$pid
+        wst=$(wpa_cli -i $IF status 2>/dev/null | sed -n 's/^wpa_state=//p')
+        addr=$(ip addr show dev $IF 2>/dev/null | sed -n 's/.*inet \([0-9.]*\).*/\1/p' | head -1)
+        gw=$(ip route 2>/dev/null | sed -n "s/^default via \([0-9.]*\) dev $IF.*/\1/p" | head -1)
+
+        if [ "$wst" != COMPLETED ]; then
+            assoc_bad=$((assoc_bad + 1)); gw_bad=0; dhcp_bad=0; gw_seen=0
+            if [ $assoc_bad -ge 4 ]; then
+                act="restart not associated for $assoc_bad min (wpa_state=${wst:-none})"
+            elif [ $assoc_bad -eq 2 ]; then
+                act="reassoc not associated for 2 min (wpa_state=${wst:-none})"
+            fi
+        elif [ -z "$addr" ]; then
+            [ $assoc_bad -ge 2 ] && log "associated again after $assoc_bad min"
+            assoc_bad=0
+            dhcp_bad=$((dhcp_bad + 1)); gw_bad=0; gw_seen=0
+            if [ $dhcp_bad -ge 10 ]; then
+                act="restart no IPv4 address for $dhcp_bad min"
+            else
+                case $dhcp_bad in 1|3|7) act="dhcp associated, no IPv4 address (minute $dhcp_bad)" ;; esac
+            fi
+        else
+            [ $assoc_bad -ge 2 ] && log "associated again after $assoc_bad min"
+            [ $dhcp_bad -gt 0 ] && log "got IPv4 address $addr after $dhcp_bad min"
+            assoc_bad=0; dhcp_bad=0
+            # no default route (DHCP without a gateway): nothing to probe
+            if [ -n "$gw" ] && gw_alive "$gw"; then
+                [ $gw_bad -gt 0 ] && log "gateway $gw answers again after $gw_bad min"
+                [ $last_restart -gt 0 ] && log "network works after the restart"
+                gw_bad=0; gw_seen=1; gap=$GAP_MIN; last_restart=0
+            elif [ -n "$gw" ] && [ $gw_seen = 1 ]; then
+                gw_bad=$((gw_bad + 1))
+                if [ $gw_bad -ge 6 ]; then
+                    act="restart gateway $gw silent for $gw_bad min"
+                elif [ $gw_bad -eq 3 ]; then
+                    act="reassoc gateway $gw silent for 3 min"
+                elif [ $gw_bad -eq 1 ]; then
+                    log "gateway $gw silent (ping and arping)"
+                fi
+            fi
+        fi
+    fi
+
+    if [ -n "$act" ] && zmod_busy; then
+        act=""
+    fi
+    case "$act" in
+        restart*) full_restart "${act#restart }" ;;
+        reassoc*) reassociate "${act#reassoc }" ;;
+        dhcp*)
+            log "${act#dhcp }: DHCP"
+            $ZSHELL/wifi_reconnect.sh $IF CONNECTED >/dev/null 2>&1
+            ;;
+    esac
+    save_state
+}
+
+case "$1" in
+    start)
+        # a stale pidfile may name a reused PID: trust it only if it is really us
+        p=$(cat $PIDFILE 2>/dev/null)
+        [ -n "$p" ] && tr '\0' ' ' < /proc/$p/cmdline 2>/dev/null | grep -q "wifi_watchdog.sh run" && exit 0
+        rm -f $PIDFILE
+        start-stop-daemon -S -q -b -m -p $PIDFILE -N 10 -a /bin/sh -- $ZSHELL/wifi_watchdog.sh run
+        ;;
+    once)
+        check_once
+        ;;
+    run)
+        trap 'rm -f $PIDFILE' EXIT
+        rm -f "$STATE"
+        up=$(uptime_s)
+        [ $up -lt $FIRST_DELAY ] && sleep $((FIRST_DELAY - up))
+        log "started"
+        while :; do
+            # save_variables rewrites variables.cfg in place: re-check before giving up
+            check_once || { sleep 5; zmod_manages_wifi || break; }
+            sleep $INTERVAL
+        done
+        log "stopped: zmod no longer manages Wi-Fi"
+        ;;
+    *)
+        echo "Use $0 start|run|once"
+        exit 1
+        ;;
+esac

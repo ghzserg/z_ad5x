@@ -115,6 +115,9 @@ wifi_fix()
     sleep 1
     wpa_cli -i $INTERFACE status | grep -q '^wpa_state=COMPLETED' && /usr/data/zmod/zmod/.shell/wifi_reconnect.sh $INTERFACE CONNECTED check
     echo "Wi-Fi restart initiated. DHCP will start automatically on connection."
+
+    # events alone do not cover a link that never comes up; no-op if already running
+    /usr/data/zmod/zmod/.shell/wifi_watchdog.sh start
 }
 
 mv ${MOD_CONF}/mod_data/log/wifi.4.log ${MOD_CONF}/mod_data/log/wifi.5.log 2>/dev/null
