@@ -80,6 +80,8 @@ class zmod_afc:
         # число lane сразу, чтобы морда увидела их без перезагрузки страницы
         self._resize(max(self.color.color_limit, v.get('afc_lanes', 0)))
         self._resize(self.color.color_limit)
+        if self.idle_map:   # на старте печати нет: карта от прошлой печати или до обновления не нужна
+            atomic_write(FILE_CONFIG, json.dumps(list(range(1, self.n + 1)), indent=2))
 
     # Число lane = zmod_color.color_limit (IFS Jacker меняет его на лету). Объекты только
     # добавляются; лишние не попадают в списки AFC и юнитов
