@@ -34,6 +34,9 @@ class zmod_afc:
         self.load = config.get('load', 'IN_ZCOLOR SLOT={slot} NAPR=0')
         self.unload = config.get('unload', 'IN_ZCOLOR SLOT={slot} NAPR=1')
         self.idle_load = config.get('idle_load', '')  # после загрузки вне печати (C5Pro: вернуть датчики голов)
+        self.idle_map = config.getboolean('idle_map', True)  # после печати карта сбрасывается: lane N = T(N-1)
+        self.printing = False
+        self.spool_colors = {}  # слот -> точный цвет катушки Spoolman (C5Pro хранит индекс палитры)
         self.enabled = False    # переменная мода afc, читается на klippy:ready
         self.n = 0
         self.slots = {}         # слот -> {'Material', 'HEX', 'hasFilament'}
@@ -69,6 +72,8 @@ class zmod_afc:
         self.webhooks = self.printer.lookup_object('webhooks')
         v = self.save_variables.allVariables
         self.spools = {int(k[14:]): sid for k, sid in v.items() if k.startswith('afc_spool_lane') and sid}
+        for i, sid in self.spools.items():
+            self._fetch_spool(i, sid, apply=False)
         self.printer.add_object('AFC', _Obj(self._afc_status))
         self.objs = set()
         # IFS Jacker сообщает число каналов через ~30 с после старта: регистрируем сохранённое
@@ -110,6 +115,11 @@ class zmod_afc:
         self.palette = st.get('palette', [])    # C5Pro: цвет хранится индексом палитры
         self.types = [t for t in st['valid_types'][:-1] if t not in st.get('hidden_types', [])]
         self.active = st.get('active_tool_id', -1) + 1
+        printing = self.printer.lookup_object('print_stats').get_status(eventtime)['state'] in ('printing', 'paused')
+        if self.idle_map and self.printing and not printing:
+            self.map = list(range(1, self.n + 1))
+            atomic_write(FILE_CONFIG, json.dumps(self.map, indent=2))
+        self.printing = printing
         try:
             mtime = os.stat(FILE_CONFIG).st_mtime
         except OSError:
@@ -161,6 +171,7 @@ class zmod_afc:
         else:
             self.spools.pop(i, None)
         self.spool_sig.pop(i, None)
+        self.spool_colors.pop(i, None)
         self.empty_since.pop(i, None)
         self._save(f'afc_spool_lane{i}', sid)
         self.last = 0.
@@ -177,7 +188,7 @@ class zmod_afc:
         res = r.json()['result']
         return res.get('response', res) if isinstance(res, dict) and 'response' in res else res
 
-    def _fetch_spool(self, i, sid):
+    def _fetch_spool(self, i, sid, apply=True):
         def worker():
             try:
                 fil = self._spoolman('GET', f'/v1/spool/{sid}')['filament']
@@ -185,11 +196,15 @@ class zmod_afc:
             except Exception as e:
                 logging.info(f'zmod_afc: spoolman spool {sid}: {e}')
                 return
-            self.reactor.register_async_callback(lambda e: self._apply_spool(i, sid, hexc, mat))
+            self.reactor.register_async_callback(lambda e: self._apply_spool(i, sid, hexc, mat, apply))
         threading.Thread(target=worker, daemon=True).start()
 
-    def _apply_spool(self, i, sid, hexc, mat):
+    def _apply_spool(self, i, sid, hexc, mat, apply=True):
         if self.spools.get(i) != sid:
+            return
+        if hexc:
+            self.spool_colors[i] = '#' + hexc
+        if not apply:
             return
         types = sorted(self.color.valid_types[:-1], key=len, reverse=True)
         mat = mat if mat in types else next((t for t in types if t in mat), None)   # PLA+ -> PLA
@@ -197,6 +212,11 @@ class zmod_afc:
             self.spool_sig[i] = (self._write(i, hexc or None, mat), False)
         except Exception as e:
             logging.info(f'zmod_afc: spool {sid} -> lane{i}: {e}')
+
+    # Для lane_data (zmod_color): точный цвет катушки, пока слот хранит цвет, записанный из неё
+    def spool_color(self, i, hexc):
+        want, armed = self.spool_sig.get(i, (None, False))
+        return self.spool_colors.get(i) if armed and want and want[0] == hexc else None
 
     def _t(self, key):
         return MSG[key][0 if self.color.lang == 'ru' else 1]

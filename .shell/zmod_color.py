@@ -891,10 +891,13 @@ class zmod_color:
         self._lanes_time = eventtime
         sv = self.printer.lookup_object('save_variables', None)
         sv = {} if sv is None else sv.allVariables     # катушка Spoolman lane (zmod_afc) - тоже повод обновить
-        lanes = {int(s['ID']): (s['Material'] if s['hasFilament'] else '', '#' + (s['HEX'] or 'FFFFFF'),
+        afc = self.printer.lookup_object('zmod_afc', None)
+        lanes = {int(s['ID']): (s['Material'] if s['hasFilament'] else '',
+                                (afc and afc.spool_color(int(s['ID']), s['HEX'])) or '#' + (s['HEX'] or 'FFFFFF'),
                                 sv.get(f"afc_spool_lane{s['ID']}") or None) for s in slots}
         sent = getattr(self, '_lanes_sent', {})
-        if lanes != sent:
+        next_lanes, self._lanes_next = getattr(self, '_lanes_next', None), lanes   # изменение должно повториться:
+        if lanes != sent and lanes == next_lanes:                                # IFS мигает после старта
             self._lanes_sent = lanes
             self._publish_lanes({k: v for k, v in lanes.items() if sent.get(k) != v})
 
