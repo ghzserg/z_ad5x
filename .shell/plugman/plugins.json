@@ -61,5 +61,9 @@
     "flook32": {
     "url": "https://github.com/ghzserg/flook32_plugin.git", "branch": "main",
     "printers": ["FF5M", "AD5X", "C5PRO"]
+  },
+  "telegram_notify": {
+    "url": "https://github.com/mlengle/telegram_notify.git", "branch": "main",
+    "printers": ["FF5M"]
   }
 }
