@@ -1000,6 +1000,15 @@ stepper: stepper_x, stepper_y, stepper_z
         mv ${MOD_CONF}/mod_data/user.moonraker.conf.tmp ${MOD_CONF}/mod_data/user.moonraker.conf
     fi
 
+    # Катушки и вес zmod_afclite (E0..) -> zmod_afc (lane1..), если там ещё не заданы
+    VARS=${MOD_CONF}/mod_data/variables.cfg
+    grep -E "^zmod_afclite_(spool|weight)_e[0-9]+ = " $VARS | while read key eq val; do
+        kind=${key#zmod_afclite_}
+        new=afc_${kind%_e*}_lane$((${key##*_e} + 1))
+        grep -q "^$new = " $VARS || sed -i "2 i\\$new = $val" $VARS
+        sed -i "/^$key = /d" $VARS
+    done
+
     # zmod_afclite конфликтует со встроенным zmod_afc: если был включён - включаем afc,
     # затем убираем из конфигов Moonraker и удаляем
     AFCLITE=${MOD_CONF}/mod_data/plugins/zmod_afclite
