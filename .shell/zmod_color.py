@@ -906,8 +906,11 @@ class zmod_color:
             url = 'http://127.0.0.1:7125/server/database/item'
             for attempt in range(12):
                 try:
+                    if not getattr(self, '_lane0_removed', False):   # старый формат ключей lane0..
+                        requests.delete(url, params={'namespace': 'lane_data', 'key': 'lane0'}, timeout=5)
+                        self._lane0_removed = True
                     for zslot, (ztype, zcolor) in slots.items():
-                        key = f'lane{zslot - 1}'
+                        key = f'lane{zslot}'      # как имена lane AFC и HelixScreen
                         if ztype == '?':   # '' - пустой слот, Orca покажет без филамента
                             requests.delete(url, params={'namespace': 'lane_data', 'key': key}, timeout=5)
                         else:

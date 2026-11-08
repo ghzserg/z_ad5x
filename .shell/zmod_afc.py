@@ -33,6 +33,7 @@ class zmod_afc:
         self.gcode = self.printer.lookup_object('gcode')
         self.load = config.get('load', 'IN_ZCOLOR SLOT={slot} NAPR=0')
         self.unload = config.get('unload', 'IN_ZCOLOR SLOT={slot} NAPR=1')
+        self.idle_load = config.get('idle_load', '')  # после загрузки вне печати (C5Pro: вернуть датчики голов)
         self.enabled = False    # переменная мода afc, читается на klippy:ready
         self.n = 0
         self.slots = {}         # слот -> {'Material', 'HEX', 'hasFilament'}
@@ -386,6 +387,9 @@ class zmod_afc:
 
     def cmd_CHANGE_TOOL(self, gcmd):
         self._run(gcmd, self.load, 'Loading')
+        state = self.printer.lookup_object('print_stats').get_status(self.reactor.monotonic())['state']
+        if self.idle_load and state not in ('printing', 'paused'):
+            self.gcode.run_script_from_command(self.idle_load)
 
     def cmd_TOOL_UNLOAD(self, gcmd):
         self._run(gcmd, self.unload, 'Unloading', current=True)
