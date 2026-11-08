@@ -213,7 +213,7 @@ class zmod_afc:
         except Exception as e:
             logging.info(f'zmod_afc: spool {sid} -> lane{i}: {e}')
 
-    # Для lane_data (zmod_color): точный цвет катушки, пока слот хранит цвет, записанный из неё
+    # Для lane и lane_data (zmod_color): точный цвет катушки, пока слот хранит цвет, записанный из неё
     def spool_color(self, i, hexc):
         want, armed = self.spool_sig.get(i, (None, False))
         return self.spool_colors.get(i) if armed and want and want[0] == hexc else None
@@ -256,7 +256,7 @@ class zmod_afc:
                 'map': [f'T{t}' for t, slot in enumerate(self.map) if slot == i],
                 'load': has, 'prep': has, 'tool_loaded': tooled, 'loaded_to_hub': tooled,
                 'material': None if mat in ('', '?') else mat, 'spool_id': self.spools.get(i),
-                'color': '#' + (s.get('HEX') or 'FFFFFF'), 'weight': self._weight(i),
+                'color': self.spool_color(i, s.get('HEX')) or '#' + (s.get('HEX') or 'FFFFFF'), 'weight': self._weight(i),
                 'extruder_temp': None, 'runout_lane': None, 'dist_hub': 0, 'filament_status_led': '',
                 'filament_status': 'In Tool' if tooled else 'Ready' if has else 'Not Ready',
                 'status': 'Tooled' if tooled else 'Loaded' if has else 'None'}
