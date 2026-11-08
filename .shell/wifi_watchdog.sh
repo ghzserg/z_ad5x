@@ -29,6 +29,7 @@ PIDFILE=/run/wifi_watchdog.pid
 BOOTCOPY=/run/wifi_watchdog.bootlog
 INTERVAL=60
 FIRST_DELAY=120
+SCAN_WAIT=8
 GAP_MIN=300
 GAP_MAX=3600
 
@@ -72,11 +73,40 @@ zmod_busy() {
     return 1
 }
 
+# Tells a stuck wpa_supplicant from a dead driver/USB chip: process state, kernel wait channel,
+# operstate, USB device, and a fresh scan (age = seconds since the driver last saw our AP).
 diag() {
+    p=$(pidof wpa_supplicant | cut -d' ' -f1)
+    ps_st=$(sed -n 's/^State:[[:space:]]*\([A-Z]\).*/\1/p' /proc/$p/status 2>/dev/null)
+    wchan=$(cat /proc/$p/wchan 2>/dev/null)
+    oper=$(cat /sys/class/net/$IF/operstate 2>/dev/null)
+    dev=$(readlink -f /sys/class/net/$IF/device 2>/dev/null)
+    usb=$(cat $dev/../idVendor $dev/../idProduct 2>/dev/null | tr '\n' ':')
+    # dmesg is cleared at boot and its ring is small; klogd keeps kernel lines in /var/log/messages
+    usbdisc=$(grep -c 'USB disconnect' /var/log/messages 2>/dev/null)
+    usblast=$(grep 'USB disconnect' /var/log/messages 2>/dev/null | tail -1 | cut -c1-15)
+    # wpa_cli waits up to 10 s per call on a hung wpa_supplicant: do not ask a dead or D-state one
+    if [ -z "$p" ] || [ "$ps_st" = D ]; then
+        [ -n "$p" ] && wst_txt="$ps_st ${wchan:-?}" || wst_txt="not running"
+        log "  wpa_supplicant $wst_txt | $IF ${oper:-?} | usb ${usb:-none} disconnects ${usbdisc:-?} ${usblast} | wpa_cli skipped"
+        return
+    fi
     st=$(wpa_cli -i $IF status 2>/dev/null | grep -E '^(wpa_state|bssid|freq|ip_address)=' | tr '\n' ' ')
+    log "  $st| wpa_supplicant $ps_st ${wchan:-?} | $IF ${oper:-?} | usb ${usb:-none} disconnects ${usbdisc:-?} ${usblast}"
     ssid=$(sed -n 's/^[[:space:]]*ssid="\(.*\)"/\1/p' ${WPA_CONFIG} | grep -v '^flashforge_5G$' | head -1)
-    sig=$(wpa_cli -i $IF scan_results 2>/dev/null | awk -F'\t' -v s="$ssid" '$5 == s {print $2 "MHz " $3 "dBm"}' | tr '\n' ' ')
-    log "  $st| scan '$ssid': ${sig:-not seen}"
+    scan=$(wpa_cli -i $IF scan 2>/dev/null)
+    case "$scan" in
+        OK) sleep $SCAN_WAIT ;;
+        FAIL-BUSY) ;;
+        *) log "  scan ${scan:-no reply}"; return ;;
+    esac
+    # age = seconds since the driver last saw the AP; <= SCAN_WAIT means seen in this scan
+    seen=$(wpa_cli -i $IF scan_results 2>/dev/null | awk -F'\t' -v s="$ssid" '$5 == s {print $1, $2 "MHz", $3 "dBm"}')
+    ages=""
+    for b in $(echo "$seen" | cut -d' ' -f1); do
+        ages="$ages $(wpa_cli -i $IF bss $b 2>/dev/null | sed -n 's/^age=//p')s"
+    done
+    log "  scan $scan '$ssid': $(echo ${seen:-not seen}) age${ages:- -}"
 }
 
 reassociate() {
