@@ -60,8 +60,10 @@ wifi_fix()
 
     echo "WiFi station enabled — restarting network..."
 
-    if [ ${AD5M} -eq 1 ]; then insmod /lib/modules/8821cu.ko; fi
-    if [ ${AD5X} -eq 1 ]; then insmod /usr/prog/modules/8821cu.ko power_on=PB07; fi
+    if ! grep -q '^8821cu ' /proc/modules; then
+        if [ ${AD5M} -eq 1 ]; then insmod /lib/modules/8821cu.ko; fi
+        if [ ${AD5X} -eq 1 ]; then insmod /usr/prog/modules/8821cu.ko power_on=PB07; fi
+    fi
 
     echo "Waiting for interface $INTERFACE to appear..."
 
