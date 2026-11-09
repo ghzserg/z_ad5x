@@ -27,11 +27,23 @@ XR_MARK=zmod_xram_on
 STOCK_BOOTCMD='run setargs_mmc boot_dsp0 boot_uImage'
 ARMED_BOOTCMD='setenv bootcmd run setargs_mmc boot_dsp0 boot_uImage;saveenv;run setargs_mmc boot_dsp0 boot_zmod'
 
+xr_fw_ok() {
+    _r=1
+    if mount -t msdos -o ro /dev/mmcblk0p1 /mnt 2>/dev/null; then
+        [ -f "$_mp/sunxi.dtb" ] && \
+            [ "$(md5sum < "/mnt/sunxi.dtb" | cut -d' ' -f1)" = "c4aabbae50d6f56c8db2109804456ed2" ]
+        _r=$?
+        umount /mnt 2>/dev/null
+    fi
+    return $_r
+}
+
 EMMC_ENABLED=1
 [ -f "$DIR/disable.txt" ] && EMMC_ENABLED=0
 XR=1
 [ -f "$XR_DISABLE" ] && XR=0
 [ -f "$XR_STATE" ] && [ "$(cat "$XR_STATE" 2>/dev/null)" = "fail" ] && XR=0
+[ "$XR" = "1" ] && ! xr_fw_ok && XR=0
 
 if [ "$EMMC_ENABLED" = "1" ]; then
     E_CMD_50='fdt rm /soc@3000000/sdmmc@4020000 mmc-hs200-1_8v;fdt rm /soc@3000000/sdmmc@4020000 mmc-ddr-1_8v;fdt set /soc@3000000/sdmmc@4020000 max-frequency <0x2faf080>'
