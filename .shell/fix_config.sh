@@ -1033,7 +1033,7 @@ stepper: stepper_x, stepper_y, stepper_z
         if [ ${AD5M} -eq 1 ]; then
             echo "Kill firmwareExe"
             sync
-            killall firmwareExe
+            killall -9 firmwareExe
             sync
         fi
         sync

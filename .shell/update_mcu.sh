@@ -96,6 +96,8 @@ update_ifs()
     update_mcu_ifs &>${CONFIG_DIR}/mod_data/log/update_mcu_ifs.log
 }
 
+sync
+killall -9 firmwareExe
 killall python3.7 firmwareExe python3
 kill $(ps|grep klippy.py| grep -v grep| awk '{print $1}')
 kill $(ps|grep klippy.py| grep -v grep| awk '{print $1}')
