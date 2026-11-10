@@ -63,14 +63,9 @@ zmod_manages_wifi() {
 }
 
 # wifi.sh or fix_config.sh (which starts wifi.sh at boot) is running. Checked only right
-# before an action: it walks /proc. cmdline is NUL-separated, busybox grep stops at NUL.
+# before an action. busybox ps on AD5M has no -w, but prints full command lines into a pipe.
 zmod_busy() {
-    for f in /proc/[0-9]*/cmdline; do
-        case "$(tr '\0' ' ' 2>/dev/null < "$f")" in
-            *"$ZSHELL/wifi.sh"*|*"$ZSHELL/fix_config.sh"*|*S00fix*) return 0 ;;
-        esac
-    done
-    return 1
+    ps | grep -E '/wifi\.sh( |$)|/fix_config\.sh( |$)|S00fix' | grep -v grep >/dev/null
 }
 
 # Tells a stuck wpa_supplicant from a dead driver/USB chip: process state, kernel wait channel,
@@ -82,9 +77,10 @@ diag() {
     oper=$(cat /sys/class/net/$IF/operstate 2>/dev/null)
     dev=$(readlink -f /sys/class/net/$IF/device 2>/dev/null)
     usb=$(cat $dev/../idVendor $dev/../idProduct 2>/dev/null | tr '\n' ':')
-    # dmesg is cleared at boot and its ring is small; klogd keeps kernel lines in /var/log/messages
-    usbdisc=$(grep -c 'USB disconnect' /var/log/messages 2>/dev/null)
-    usblast=$(grep 'USB disconnect' /var/log/messages 2>/dev/null | tail -1 | cut -c1-15)
+    # AD5M: klogd keeps kernel lines in /var/log/messages (the dmesg ring is small); AD5X has no such file
+    if [ -f /var/log/messages ]; then kmsg="cat /var/log/messages"; else kmsg=dmesg; fi
+    usbdisc=$($kmsg 2>/dev/null | grep -c 'USB disconnect')
+    usblast=$($kmsg 2>/dev/null | grep 'USB disconnect' | tail -1 | cut -c1-15)
     # wpa_cli waits up to 10 s per call on a hung wpa_supplicant: do not ask a dead or D-state one
     if [ -z "$p" ] || [ "$ps_st" = D ]; then
         [ -n "$p" ] && wst_txt="$ps_st ${wchan:-?}" || wst_txt="not running"
@@ -118,11 +114,15 @@ reassociate() {
 full_restart() {
     now=$(uptime_s)
     [ "$last_restart" -gt 0 ] && [ $((now - last_restart)) -lt "$gap" ] && return
+    ngap=$gap
     if [ "$last_restart" -gt 0 ]; then
-        gap=$((gap * 2)); [ $gap -gt $GAP_MAX ] && gap=$GAP_MAX
+        ngap=$((gap * 2)); [ $ngap -gt $GAP_MAX ] && ngap=$GAP_MAX
     fi
-    log "restart Wi-Fi: $1 (next restart not before $gap s unless the gateway answers)"
+    log "restart Wi-Fi: $1 (next restart not before $ngap s unless the gateway answers)"
     diag
+    # diag takes seconds: a WIFI macro may have started wifi.sh meanwhile, do not run a second one
+    if zmod_busy; then log "  wifi.sh started meanwhile: restart skipped"; return; fi
+    gap=$ngap
     # wifi.sh rotates wifi.log; keep the boot one, it shows why the link never came up
     if [ ! -f "$BOOTCOPY" ] && [ -f "$LOGDIR/wifi.log" ]; then
         cp -f "$LOGDIR/wifi.log" "$LOGDIR/wifi_boot.log" && touch "$BOOTCOPY"
@@ -224,7 +224,7 @@ case "$1" in
         trap 'rm -f $PIDFILE' EXIT
         rm -f "$STATE"
         up=$(uptime_s)
-        [ $up -lt $FIRST_DELAY ] && sleep $((FIRST_DELAY - up))
+        [ "${up:-0}" -lt $FIRST_DELAY ] && sleep $((FIRST_DELAY - ${up:-0}))
         log "started"
         while :; do
             # save_variables rewrites variables.cfg in place: re-check before giving up
