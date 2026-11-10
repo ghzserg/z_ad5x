@@ -263,10 +263,10 @@ if [ -z "$fails" ]; then
     fails=0
 fi
 
-# 50 МГц сдался (state=fail), а extra_ram включён: eMMC больше не трогаем, разовая загрузка дальше
+# 50 МГц сдался (state=fail) или выключен (disable.txt), а extra_ram включён: eMMC больше не трогаем, разовая загрузка дальше
 # несёт только правки extra_ram (без этого каждая следующая загрузка снова взводила бы 50 МГц)
 EMMC_GAVE_UP=0
-if [ "$state" = "fail" ] && [ "$XR" = "1" ] && [ "$EMMC_ENABLED" = "1" ]; then
+if [ "$XR" = "1" ] && { [ "$state" = "fail" ] || [ "$EMMC_ENABLED" = "0" ]; }; then
     EMMC_ENABLED=0
     EMMC_GAVE_UP=1
 fi
@@ -491,7 +491,7 @@ if [ "$XR" = "1" ]; then
         if [ "$(read_file "$XR_STATE")" = "fail" ]; then
             disarm
         else
-            log "50 МГц отключён (state=fail), разовая загрузка только с extra_ram" "50 MHz is off (state=fail), one-shot boot with extra_ram only"
+            log "50 МГц отключён, разовая загрузка только с extra_ram" "50 MHz is off, one-shot boot with extra_ram only"
             arm
         fi
     fi
