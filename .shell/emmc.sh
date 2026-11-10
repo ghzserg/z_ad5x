@@ -45,36 +45,40 @@ XR=1
 [ -f "$XR_STATE" ] && [ "$(cat "$XR_STATE" 2>/dev/null)" = "fail" ] && XR=0
 [ "$XR" = "1" ] && ! xr_fw_ok && XR=0
 
-if [ "$EMMC_ENABLED" = "1" ]; then
-    E_CMD_50='fdt rm /soc@3000000/sdmmc@4020000 mmc-hs200-1_8v;fdt rm /soc@3000000/sdmmc@4020000 mmc-ddr-1_8v;fdt set /soc@3000000/sdmmc@4020000 max-frequency <0x2faf080>'
-    E_CMD_DDR='fdt rm /soc@3000000/sdmmc@4020000 mmc-hs200-1_8v;fdt set /soc@3000000/sdmmc@4020000 max-frequency <0x2faf080>'
-    E_MARK='zmod_emmc_50'
-    E_MARK_DDR='zmod_emmc_ddr'
-else
-    E_CMD_50=''; E_CMD_DDR=''; E_MARK=''; E_MARK_DDR=''
-fi
-if [ "$XR" = "1" ]; then
-    XR_CMD='fdt rsvmem delete 3;fdt rsvmem delete 2;fdt rsvmem delete 1;fdt rsvmem delete 0;fdt rsvmem add 0x41b00000 0x100000'
-    XR_MARK_PART="$XR_MARK"
-else
-    XR_CMD=''; XR_MARK_PART=''
-fi
+# Строки разовой загрузки: собираются после чтения state.txt (при state=fail правок eMMC в них нет)
+build_boot_zmod() {
+    if [ "$EMMC_ENABLED" = "1" ]; then
+        E_CMD_50='fdt rm /soc@3000000/sdmmc@4020000 mmc-hs200-1_8v;fdt rm /soc@3000000/sdmmc@4020000 mmc-ddr-1_8v;fdt set /soc@3000000/sdmmc@4020000 max-frequency <0x2faf080>'
+        E_CMD_DDR='fdt rm /soc@3000000/sdmmc@4020000 mmc-hs200-1_8v;fdt set /soc@3000000/sdmmc@4020000 max-frequency <0x2faf080>'
+        E_MARK='zmod_emmc_50'
+        E_MARK_DDR='zmod_emmc_ddr'
+    else
+        E_CMD_50=''; E_CMD_DDR=''; E_MARK=''; E_MARK_DDR=''
+    fi
+    if [ "$XR" = "1" ]; then
+        XR_CMD='fdt rsvmem delete 3;fdt rsvmem delete 2;fdt rsvmem delete 1;fdt rsvmem delete 0;fdt rsvmem add 0x41b00000 0x100000'
+        XR_MARK_PART="$XR_MARK"
+    else
+        XR_CMD=''; XR_MARK_PART=''
+    fi
 
-FDT_50="$E_CMD_50"
-[ -n "$XR_CMD" ] && { [ -n "$FDT_50" ] && FDT_50="${FDT_50};${XR_CMD}" || FDT_50="$XR_CMD"; }
-MK_50="$E_MARK"
-[ -n "$XR_MARK_PART" ] && { [ -n "$MK_50" ] && MK_50="$MK_50 $XR_MARK_PART" || MK_50="$XR_MARK_PART"; }
-FDT_DDR="$E_CMD_DDR"
-[ -n "$XR_CMD" ] && { [ -n "$FDT_DDR" ] && FDT_DDR="${FDT_DDR};${XR_CMD}" || FDT_DDR="$XR_CMD"; }
-MK_DDR="$E_MARK_DDR"
-[ -n "$XR_MARK_PART" ] && { [ -n "$MK_DDR" ] && MK_DDR="$MK_DDR $XR_MARK_PART" || MK_DDR="$XR_MARK_PART"; }
+    FDT_50="$E_CMD_50"
+    [ -n "$XR_CMD" ] && { [ -n "$FDT_50" ] && FDT_50="${FDT_50};${XR_CMD}" || FDT_50="$XR_CMD"; }
+    MK_50="$E_MARK"
+    [ -n "$XR_MARK_PART" ] && { [ -n "$MK_50" ] && MK_50="$MK_50 $XR_MARK_PART" || MK_50="$XR_MARK_PART"; }
+    FDT_DDR="$E_CMD_DDR"
+    [ -n "$XR_CMD" ] && { [ -n "$FDT_DDR" ] && FDT_DDR="${FDT_DDR};${XR_CMD}" || FDT_DDR="$XR_CMD"; }
+    MK_DDR="$E_MARK_DDR"
+    [ -n "$XR_MARK_PART" ] && { [ -n "$MK_DDR" ] && MK_DDR="$MK_DDR $XR_MARK_PART" || MK_DDR="$XR_MARK_PART"; }
 
-EMMC_FDT="${FDT_50};setenv bootargs \${bootargs} ${MK_50}"
-BOOT_ZMOD_A="${EMMC_FDT};run boot_uImage"
-BOOT_ZMOD_B="part list mmc 0;fatload mmc 0:1 0x43000000 uImage;fatload mmc 0:1 0x44864e70 sunxi.dtb;fdt addr 0x44864e70;fdt resize;${EMMC_FDT};bootm 0x43000000 - 0x44864e70"
-EMMC_FDT_DDR="${FDT_DDR};setenv bootargs \${bootargs} ${MK_DDR}"
-BOOT_ZMOD_A_DDR="${EMMC_FDT_DDR};run boot_uImage"
-BOOT_ZMOD_B_DDR="part list mmc 0;fatload mmc 0:1 0x43000000 uImage;fatload mmc 0:1 0x44864e70 sunxi.dtb;fdt addr 0x44864e70;fdt resize;${EMMC_FDT_DDR};bootm 0x43000000 - 0x44864e70"
+    EMMC_FDT="${FDT_50};setenv bootargs \${bootargs} ${MK_50}"
+    BOOT_ZMOD_A="${EMMC_FDT};run boot_uImage"
+    BOOT_ZMOD_B="part list mmc 0;fatload mmc 0:1 0x43000000 uImage;fatload mmc 0:1 0x44864e70 sunxi.dtb;fdt addr 0x44864e70;fdt resize;${EMMC_FDT};bootm 0x43000000 - 0x44864e70"
+    EMMC_FDT_DDR="${FDT_DDR};setenv bootargs \${bootargs} ${MK_DDR}"
+    BOOT_ZMOD_A_DDR="${EMMC_FDT_DDR};run boot_uImage"
+    BOOT_ZMOD_B_DDR="part list mmc 0;fatload mmc 0:1 0x43000000 uImage;fatload mmc 0:1 0x44864e70 sunxi.dtb;fdt addr 0x44864e70;fdt resize;${EMMC_FDT_DDR};bootm 0x43000000 - 0x44864e70"
+}
+
 BOOT_UIMAGE='part list mmc 0;fatload mmc 0:1 0x43000000 uImage;fatload mmc 0:1 0x44864e70 sunxi.dtb;fdt resize;bootm 0x43000000 - 0x44864e70'
 
 log() {
@@ -258,6 +262,15 @@ fails=$(read_file "$DIR/fails.txt")
 if [ -z "$fails" ]; then
     fails=0
 fi
+
+# 50 МГц сдался (state=fail) или выключен (disable.txt), а extra_ram включён: eMMC больше не трогаем, разовая загрузка дальше
+# несёт только правки extra_ram (без этого каждая следующая загрузка снова взводила бы 50 МГц)
+EMMC_GAVE_UP=0
+if [ "$XR" = "1" ] && { [ "$state" = "fail" ] || [ "$EMMC_ENABLED" = "0" ]; }; then
+    EMMC_ENABLED=0
+    EMMC_GAVE_UP=1
+fi
+build_boot_zmod
 
 mem=$(awk '/^MemTotal:/ {print int($2 / 1024)}' /proc/meminfo)
 if [ "$mem" -gt 160 ]; then
@@ -444,6 +457,17 @@ if [ "$XR" = "1" ]; then
             sync
             log "extra_ram: работает (MemTotal $(awk '/^MemTotal:/ {print $2}' /proc/meminfo) КБ)" "extra_ram: active (MemTotal $(awk '/^MemTotal:/ {print $2}' /proc/meminfo) kB)"
         fi
+    elif [ "$EMMC_GAVE_UP" = "1" ] && [ -f "$DIR/armed.txt" ]; then
+        # разовая загрузка только с extra_ram взведена, но метки нет: она не дошла до системы
+        xr_fails=$((xr_fails + 1))
+        echo "$xr_fails" > "$XR_FAILS"
+        sync
+        log "extra_ram: загрузка не дошла до системы ($xr_fails из $XR_MAX_FAILS)" "extra_ram: boot did not reach the system ($xr_fails of $XR_MAX_FAILS)"
+        if [ "$xr_fails" -ge "$XR_MAX_FAILS" ]; then
+            echo fail > "$XR_STATE"
+            touch "$XR_DISABLE"
+            log "extra_ram: отключён после $XR_MAX_FAILS неудач (создан disable_extra_ram.txt)" "extra_ram: disabled after $XR_MAX_FAILS failures (created disable_extra_ram.txt)"
+        fi
     elif [ -z "$xr_state" ]; then
         echo trial > "$XR_STATE"
         echo 0 > "$XR_FAILS"
@@ -458,6 +482,17 @@ if [ "$XR" = "1" ]; then
             echo fail > "$XR_STATE"
             touch "$XR_DISABLE"
             log "extra_ram: отключён после $XR_MAX_FAILS неудач (создан disable_extra_ram.txt)" "extra_ram: disabled after $XR_MAX_FAILS failures (created disable_extra_ram.txt)"
+        fi
+    fi
+
+    # 50 МГц сдался: разовую загрузку (только extra_ram) взводит этот блок, ветки eMMC выше её не трогают
+    if [ "$EMMC_GAVE_UP" = "1" ]; then
+        rm -f "$DIR/armed.txt"
+        if [ "$(read_file "$XR_STATE")" = "fail" ]; then
+            disarm
+        else
+            log "50 МГц отключён, разовая загрузка только с extra_ram" "50 MHz is off, one-shot boot with extra_ram only"
+            arm
         fi
     fi
 fi
