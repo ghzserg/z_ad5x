@@ -43,9 +43,9 @@ start_mjpg_streamer() {
     export MALLOC_ARENA_MAX=1
     export MALLOC_MMAP_THRESHOLD_=65536
     if [ -f /ZMOD ]; then
-        /usr/data/zmod/zmod/.shell/root/zcam/zcam ${MOD_CONF}/mod_data/log/cam/mjpg_streamer.log /usr/data/zmod/zmod/.shell/mjpg_streamer/mjpg_streamer -o "/usr/data/zmod/zmod/.shell/mjpg_streamer/lib/output_http.so -w /usr/share/mjpg-streamer/www -p 8080" -i  "/usr/data/zmod/zmod/.shell/mjpg_streamer/lib/input_uvc.so -b 1 -d /dev/${VIDEO} -r ${WIDTH}x${HEIGHT} -f $FPS $FFS"
+        /usr/data/zmod/zmod/.shell/root/zcam/zcam ${MOD_CONF}/mod_data/log/cam/mjpg_streamer.log /usr/data/zmod/zmod/.shell/mjpg_streamer/mjpg_streamer -o "/usr/data/zmod/zmod/.shell/mjpg_streamer/lib/output_http.so -w /usr/share/mjpg-streamer/www -p 8080" -i  "/usr/data/zmod/zmod/.shell/mjpg_streamer/lib/input_uvc.so -b 1 -d /dev/${VIDEO} -r ${WIDTH}x${HEIGHT} -f $FPS $FFS -idle 30"
     else
-        chroot $MOD /usr/data/zmod/zmod/.shell/root/zcam/zcam ${MOD_CONF}/mod_data/log/cam/mjpg_streamer.log /usr/data/zmod/zmod/.shell/mjpg_streamer/mjpg_streamer -o "/usr/data/zmod/zmod/.shell/mjpg_streamer/lib/output_http.so -w /usr/share/mjpg-streamer/www -p 8080" -i  "/usr/data/zmod/zmod/.shell/mjpg_streamer/lib/input_uvc.so -b 1 -d /dev/${VIDEO} -r ${WIDTH}x${HEIGHT} -f $FPS $FFS"
+        chroot $MOD /usr/data/zmod/zmod/.shell/root/zcam/zcam ${MOD_CONF}/mod_data/log/cam/mjpg_streamer.log /usr/data/zmod/zmod/.shell/mjpg_streamer/mjpg_streamer -o "/usr/data/zmod/zmod/.shell/mjpg_streamer/lib/output_http.so -w /usr/share/mjpg-streamer/www -p 8080" -i  "/usr/data/zmod/zmod/.shell/mjpg_streamer/lib/input_uvc.so -b 1 -d /dev/${VIDEO} -r ${WIDTH}x${HEIGHT} -f $FPS $FFS -idle 30"
     fi
 }
 
