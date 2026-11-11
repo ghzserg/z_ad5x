@@ -145,6 +145,8 @@ def zmod_active(name):
 
 def installed(name, p):
     path = path_of(name, p)
+    if p.get("check_files"):
+        return all(os.path.isfile(os.path.join(path, f)) for f in p["check_files"]) and not pending(path)
     return os.path.isdir(path) and not pending(path)
 
 def var_on(var):
@@ -330,7 +332,7 @@ def toggle(printer, name):
         else:
             unmark_remove(path)          # плагин включается - каталог не удалять
             if web:
-                if not os.path.isdir(path):
+                if not installed(name, p):
                     say(tr("download", name=name))
                     web_install(name, p)
                     sh(p.get("start_cmd"))
