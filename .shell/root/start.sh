@@ -126,18 +126,6 @@ prepare_chroot()
     check_link /etc/init.d/S60klipper /usr/data/zmod/zmod/.shell/root/S60klipper
     check_link /bin/ping /usr/data/zmod/zmod/.shell/root/ping
 
-    [ -d /srv/helixscreen/ ] || mkdir -p /srv/helixscreen/
-    if ! [ -f /srv/helixscreen/release_info.json ]; then
-        if [ ${AD5M} -eq 1 ]; then
-            echo '{"project_name":"helixscreen","project_owner":"prestonbrown","version":"v0.0.1","asset_name":"helixscreen-ad5m.zip"}' >/srv/helixscreen/release_info.json
-        fi
-        if [ ${C5PRO} -eq 1 ] || [ ${AD5X} -eq 1 ]; then
-            echo '{"project_name":"helixscreen","project_owner":"prestonbrown","version":"v0.0.1","asset_name":"helixscreen-ad5x.zip"}' >/srv/helixscreen/release_info.json
-        fi
-    else
-        sed -i 's/ghzserg/prestonbrown/' /srv/helixscreen/release_info.json
-    fi
-
     [ ${AD5M} -eq 1 ] && check_link /root/klipper-env/klippy /usr/data/zmod/klipper/klippy
     if [ -f /usr/data/zmod/klipper/klippy/klippy.py ]; then
         check_link /usr/data/zmod/klipper/klippy/extras/gcode_shell_command.py /usr/data/zmod/zmod/.shell/gcode_shell_command.py
@@ -308,6 +296,19 @@ if [ -f /opt/config/mod_data/rem.conf ]; then
         done
     rm -f /opt/config/mod_data/rem.conf
 fi
+
+# Возвращаем HelixScreen
+[ -d /srv/helixscreen/ ] || mkdir -p /srv/helixscreen/
+if ! [ -f /srv/helixscreen/release_info.json ]; then
+    if [ ${AD5M} -eq 1 ]; then
+        echo '{"project_name":"helixscreen","project_owner":"prestonbrown","version":"v0.0.1","asset_name":"helixscreen-ad5m.zip"}' >/srv/helixscreen/release_info.json
+    fi
+    if [ ${C5PRO} -eq 1 ] || [ ${AD5X} -eq 1 ]; then
+        echo '{"project_name":"helixscreen","project_owner":"prestonbrown","version":"v0.0.1","asset_name":"helixscreen-ad5x.zip"}' >/srv/helixscreen/release_info.json
+    fi
+fi
+
+
 
 # Создаем каталоги под плагины
 update_plugins /opt/config/moonraker.conf
