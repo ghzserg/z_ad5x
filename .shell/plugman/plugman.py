@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import json, os, re, subprocess, sys
+import json, os, re, subprocess, sys, time
 import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -18,46 +18,46 @@ ON, OFF = "2E7D32", "616161"
 
 LANG_CFG = MOD_DATA + "/lang.cfg"                # язык Z-Mod (language: ru)
 
-# key: plugins, upd_on, upd_off, save, ok, download, clone, disabled, installed, restart, error
+# key: plugins, upd_on, upd_off, save, ok, install, clone, disabled, installed, restart, error
 T = {
     "en": ["Plugins ({printer})", "Update: On", "Update: Off", "Save (Moonraker restart)", "Ok",
-           "Download {name}...", "Clone {name}...", "{name}: Disabled", "{name}: Installed",
+           "{name}: install via Fluidd/Mainsail updates", "Clone {name}...", "{name}: Disabled", "{name}: Installed",
            ". Klipper restart, run PLUGINS", "Error {name}: {e}"],
     "ru": ["Плагины ({printer})", "Обновление: Вкл", "Обновление: Выкл", "Сохранить (перезапуск Moonraker)", "Ок",
-           "Загрузка {name}...", "Клонирование {name}...", "{name}: отключён", "{name}: установлен",
+           "{name}: установите через обновления Fluidd/Mainsail", "Клонирование {name}...", "{name}: отключён", "{name}: установлен",
            ". Перезапуск Klipper, затем выполните PLUGINS", "Ошибка {name}: {e}"],
     "de": ["Plugins ({printer})", "Update: An", "Update: Aus", "Speichern (Moonraker-Neustart)", "OK",
-           "{name} wird heruntergeladen...", "{name} wird geklont...", "{name}: Deaktiviert", "{name}: Installiert",
+           "{name}: über Fluidd/Mainsail-Updates installieren", "{name} wird geklont...", "{name}: Deaktiviert", "{name}: Installiert",
            ". Klipper-Neustart, danach PLUGINS ausführen", "Fehler {name}: {e}"],
     "fr": ["Plugins ({printer})", "Mise à jour : On", "Mise à jour : Off", "Enregistrer (redémarrage de Moonraker)", "OK",
-           "Téléchargement de {name}...", "Clonage de {name}...", "{name} : désactivé", "{name} : installé",
+           "{name} : installez via les mises à jour Fluidd/Mainsail", "Clonage de {name}...", "{name} : désactivé", "{name} : installé",
            ". Redémarrage de Klipper, puis lancez PLUGINS", "Erreur {name} : {e}"],
     "es": ["Plugins ({printer})", "Actualización: Sí", "Actualización: No", "Guardar (reinicio de Moonraker)", "OK",
-           "Descargando {name}...", "Clonando {name}...", "{name}: desactivado", "{name}: instalado",
+           "{name}: instale desde las actualizaciones de Fluidd/Mainsail", "Clonando {name}...", "{name}: desactivado", "{name}: instalado",
            ". Reinicio de Klipper, luego ejecute PLUGINS", "Error {name}: {e}"],
     "it": ["Plugin ({printer})", "Aggiornamento: On", "Aggiornamento: Off", "Salva (riavvio di Moonraker)", "OK",
-           "Download di {name}...", "Clonazione di {name}...", "{name}: disattivato", "{name}: installato",
+           "{name}: installa dagli aggiornamenti di Fluidd/Mainsail", "Clonazione di {name}...", "{name}: disattivato", "{name}: installato",
            ". Riavvio di Klipper, poi esegui PLUGINS", "Errore {name}: {e}"],
     "pt": ["Plugins ({printer})", "Atualização: Ligada", "Atualização: Desligada", "Guardar (reinício do Moonraker)", "OK",
-           "A descarregar {name}...", "A clonar {name}...", "{name}: desativado", "{name}: instalado",
+           "{name}: instale pelas atualizações do Fluidd/Mainsail", "A clonar {name}...", "{name}: desativado", "{name}: instalado",
            ". Reinício do Klipper, depois execute PLUGINS", "Erro {name}: {e}"],
     "cs": ["Pluginy ({printer})", "Aktualizace: Zap", "Aktualizace: Vyp", "Uložit (restart Moonraker)", "OK",
-           "Stahování {name}...", "Klonování {name}...", "{name}: vypnuto", "{name}: nainstalováno",
+           "{name}: nainstalujte přes aktualizace Fluidd/Mainsail", "Klonování {name}...", "{name}: vypnuto", "{name}: nainstalováno",
            ". Restart Klipperu, poté spusťte PLUGINS", "Chyba {name}: {e}"],
     "tr": ["Eklentiler ({printer})", "Güncelleme: Açık", "Güncelleme: Kapalı", "Kaydet (Moonraker yeniden başlatılır)", "Tamam",
-           "{name} indiriliyor...", "{name} klonlanıyor...", "{name}: devre dışı", "{name}: yüklendi",
+           "{name}: Fluidd/Mainsail güncellemeleri üzerinden yükleyin", "{name} klonlanıyor...", "{name}: devre dışı", "{name}: yüklendi",
            ". Klipper yeniden başlatılıyor, ardından PLUGINS çalıştırın", "Hata {name}: {e}"],
     "ja": ["プラグイン ({printer})", "更新: オン", "更新: オフ", "保存 (Moonraker再起動)", "OK",
-           "{name} をダウンロード中...", "{name} をクローン中...", "{name}: 無効", "{name}: インストール済み",
+           "{name}: Fluidd/Mainsailの更新からインストールしてください", "{name} をクローン中...", "{name}: 無効", "{name}: インストール済み",
            "。Klipperを再起動します。その後PLUGINSを実行してください", "エラー {name}: {e}"],
     "ko": ["플러그인 ({printer})", "업데이트: 켬", "업데이트: 끔", "저장 (Moonraker 재시작)", "확인",
-           "{name} 다운로드 중...", "{name} 복제 중...", "{name}: 비활성화됨", "{name}: 설치됨",
+           "{name}: Fluidd/Mainsail 업데이트에서 설치하세요", "{name} 복제 중...", "{name}: 비활성화됨", "{name}: 설치됨",
            ". Klipper 재시작 후 PLUGINS를 실행하세요", "오류 {name}: {e}"],
     "zh": ["插件 ({printer})", "更新：开启", "更新：关闭", "保存（重启 Moonraker）", "确定",
-           "正在下载 {name}...", "正在克隆 {name}...", "{name}：已禁用", "{name}：已安装",
+           "{name}：请通过 Fluidd/Mainsail 更新安装", "正在克隆 {name}...", "{name}：已禁用", "{name}：已安装",
            "。Klipper 将重启，然后运行 PLUGINS", "错误 {name}：{e}"],
 }
-KEYS = ["plugins", "upd_on", "upd_off", "save", "ok", "download", "clone",
+KEYS = ["plugins", "upd_on", "upd_off", "save", "ok", "install", "clone",
         "disabled", "installed", "restart", "error"]
 
 def get_lang():
@@ -104,6 +104,9 @@ def gcode(*lines):
 def say(msg):
     msg = str(msg).replace('"', "'").replace("\n", " ")[:300]
     gcode(f'RESPOND MSG="{msg}"')
+
+def web_notice(name):
+    gcode(f'_SHOW_MSG TITLE={name} MSG="{tr("install", name=name)}" COMMAND=_PLUGINS_APPLY')
 
 def my_plugins(printer):
     return {n: p for n, p in jload(CATALOG, {}).items() if printer in p.get("printers", [])}
@@ -179,7 +182,7 @@ def find_block(lines, name, commented):
                 if commented:
                     if not t.startswith("#") or t.startswith("#["):
                         break
-                elif t.startswith("["):
+                elif t.startswith(("[", "#[")):
                     break
                 j += 1
             while j > i + 1 and not lines[j - 1].strip():
@@ -277,8 +280,8 @@ def toggle(printer, name):
     new_state = None
     try:
         if is_active(name, p):
-            if sec_state(name) != "on":
-                mark_remove(path)        # обновления выключены, плагин отключается - каталог на удаление
+            set_sec(name, p, "off")      # плагин отключается - выключаем и обновления (если уже выключены - пропуск)
+            mark_remove(path)            # плагин не активен и обновления выключены - каталог на удаление
             if not web:
                 final = lambda: zmod_set(name, False)
             elif p.get("var"):
@@ -286,9 +289,10 @@ def toggle(printer, name):
             text = tr("disabled", name=name)
         else:
             unmark_remove(path)          # плагин включается - каталог не удалять
+            set_sec(name, p, "on")       # сначала включаем в Moonraker (если уже включён - пропуск)
             if web:
                 if not installed(name, p):
-                    raise RuntimeError("Install via Moonraker")
+                    return web_notice(name)
                 if p.get("var"):
                     setvar, new_state = (p["var"], 1), True
             else:
@@ -300,8 +304,6 @@ def toggle(printer, name):
                     if r.returncode != 0:
                         raise RuntimeError(r.stderr.strip())
                 final = lambda: zmod_set(name, True)
-            if sec_state(name) is None:     # если обновления не выключали вручную - дописываем запись
-                set_sec(name, p, "on")
             text = tr("installed", name=name)
         say(text + (tr("restart") if final else ""))
     except Exception as e:
@@ -319,6 +321,12 @@ def toggle_updates(printer, name):
     if not p:
         return
     set_sec(name, p, "off" if sec_state(name) == "on" else "on")
+    if p.get("type") == "web" and not installed(name, p):
+        if sec_state(name) == "on":
+            return web_notice(name)                              # включили в Moonraker - сообщение и перезапуск Moonraker
+        elif p.get("var"):
+            gcode(f"SAVE_VARIABLE VARIABLE={p['var']} VALUE=0")  # выключили - переменная 0, каталог на удаление
+            mark_remove(path_of(name, p))
     menu(printer)
 
 def apply(printer):
