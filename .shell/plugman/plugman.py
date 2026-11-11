@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import json, os, re, subprocess, sys, time
+import json, os, re, subprocess, sys
 import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -313,7 +313,8 @@ def toggle(printer, name):
         final()
     else:
         if setvar:
-            gcode(f"SAVE_VARIABLE VARIABLE={setvar[0]} VALUE={setvar[1]}")
+            vs = [setvar] + ([(p["var_swap"], 1 - setvar[1])] if p.get("var_swap") else [])   # парная переменная - наоборот
+            gcode(*[f"SAVE_VARIABLE VARIABLE={k} VALUE={v}" for k, v in vs])
         menu(printer, {name: new_state} if new_state is not None else None)
 
 def toggle_updates(printer, name):
