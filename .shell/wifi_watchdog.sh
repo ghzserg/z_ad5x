@@ -1,5 +1,6 @@
 #!/bin/sh
-# (C) 2024-2026 ghzserg https://github.com/ghzserg/zmod
+# (C) 2026 mlengle https://github.com/mlengle
+# (C) 2026 ghzserg https://github.com/ghzserg/zmod
 #
 # Wi-Fi watchdog. Started by wifi.sh once zmod manages Wi-Fi; exits when it no longer does.
 # wifi_reconnect.sh only reacts to wpa_supplicant events, so it cannot help when there is
@@ -89,6 +90,8 @@ diag() {
     fi
     st=$(wpa_cli -i $IF status 2>/dev/null | grep -E '^(wpa_state|bssid|freq|ip_address)=' | tr '\n' ' ')
     log "  $st| wpa_supplicant $ps_st ${wchan:-?} | $IF ${oper:-?} | usb ${usb:-none} disconnects ${usbdisc:-?} ${usblast}"
+    # a scan pulls the radio off the channel: not while associated
+    case "$st" in *wpa_state=COMPLETED*) return ;; esac
     ssid=$(sed -n 's/^[[:space:]]*ssid="\(.*\)"/\1/p' ${WPA_CONFIG} | grep -v '^flashforge_5G$' | head -1)
     scan=$(wpa_cli -i $IF scan 2>/dev/null)
     case "$scan" in
@@ -136,14 +139,16 @@ full_restart() {
 }
 
 gw_alive() {
+    # frames are arriving: the link is alive, no need to fork ping
+    read -r rx < /sys/class/net/$IF/statistics/rx_packets
+    [ "$rx" != "$last_rx" ] && { last_rx=$rx; return 0; }
     ping -c 2 -W 3 "$1" >/dev/null 2>&1 || arping -I $IF -c 2 -w 3 "$1" >/dev/null 2>&1
 }
 
 # Returns 1 when zmod no longer manages Wi-Fi. Each branch sets "act" to the repair, if any;
 # it runs only when wifi.sh/fix_config.sh are not busy.
 check_once() {
-    zmod_manages_wifi || return 1
-    ip link show $IF >/dev/null 2>&1 || return 0
+    [ -d /sys/class/net/$IF ] || return 0
     load_state
     act=""
 
@@ -195,8 +200,9 @@ check_once() {
         fi
     fi
 
-    if [ -n "$act" ] && zmod_busy; then
-        act=""
+    if [ -n "$act" ]; then
+        zmod_manages_wifi || return 1
+        zmod_busy && act=""
     fi
     case "$act" in
         restart*) full_restart "${act#restart }" ;;

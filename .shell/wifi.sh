@@ -73,7 +73,7 @@ wifi_fix()
 
     if ! grep -q '^8821cu ' /proc/modules; then
         if [ ${AD5M} -eq 1 ]; then insmod /lib/modules/8821cu.ko rtw_power_mgnt=0 || insmod /lib/modules/8821cu.ko; fi
-        if [ ${AD5X} -eq 1 ]; then insmod /usr/prog/modules/8821cu.ko power_on=PB07; fi
+        if [ ${AD5X} -eq 1 ]; then insmod /usr/prog/modules/8821cu.ko rtw_power_mgnt=0 power_on=PB07 || insmod /usr/prog/modules/8821cu.ko power_on=PB07; fi
     fi
     [ -f $PS ] && [ "$(cat $PS)" != 0 ] && echo "WARNING: 8821cu still has rtw_power_mgnt=$(cat $PS)"
 
