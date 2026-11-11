@@ -124,6 +124,7 @@ prepare_chroot()
     [ -L /etc/init.d/S98camera ] && rm -f /etc/init.d/S98camera
     check_link /etc/init.d/S99camera /usr/data/zmod/zmod/.shell/root/S99camera
     check_link /etc/init.d/S60klipper /usr/data/zmod/zmod/.shell/root/S60klipper
+    check_link /bin/ping /usr/data/zmod/zmod/.shell/root/ping
 
     [ -d /srv/helixscreen/ ] || mkdir -p /srv/helixscreen/
     if ! [ -f /srv/helixscreen/release_info.json ]; then
