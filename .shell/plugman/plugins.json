@@ -27,6 +27,7 @@
       "config/user_filaments.json"
     ],
     "var": "helix",
+    "var_swap": "guppy",
     "check_files": ["bin/helix-screen", "bin/helix-splash", "bin/helix-watchdog", "bin/helix-launcher.sh"],
     "printers": [
       "FF5M",
