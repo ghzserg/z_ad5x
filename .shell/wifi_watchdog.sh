@@ -48,7 +48,7 @@ load_state() {
     esac
 }
 save_state() { echo "$assoc_bad $gw_bad $dhcp_bad $last_restart $gap $gw_seen $wpa_pid" > "$STATE"; }
-reset_counters() { assoc_bad=0; gw_bad=0; dhcp_bad=0; gw_seen=0; }
+reset_counters() { assoc_bad=0; gw_bad=0; dhcp_bad=0; gw_seen=0; gw_mute=0; }
 
 uptime_s() { cut -d. -f1 /proc/uptime; }
 
@@ -139,10 +139,17 @@ full_restart() {
 }
 
 gw_alive() {
-    # frames are arriving: the link is alive, no need to fork ping
+    # frames are arriving: the link is alive, no need to fork ping (once ping has armed gw_seen)
     read -r rx < /sys/class/net/$IF/statistics/rx_packets
-    [ "$rx" != "$last_rx" ] && { last_rx=$rx; return 0; }
-    ping -c 2 -W 3 "$1" >/dev/null 2>&1 || arping -I $IF -c 2 -w 3 "$1" >/dev/null 2>&1
+    rx_ok=1; [ "$rx" = "$last_rx" ] && rx_ok=0; last_rx=$rx
+    [ $rx_ok = 1 ] && { [ $gw_seen = 1 ] || [ "${gw_mute:-0}" -ge 3 ]; } && return 0
+    # a gateway that never answered ping/arping: stop probing after 3 tries (until reassociation)
+    [ $gw_seen = 0 ] && [ "${gw_mute:-0}" -ge 3 ] && return 1
+    if ping -c 2 -W 3 "$1" >/dev/null 2>&1 || arping -I $IF -c 2 -w 3 "$1" >/dev/null 2>&1; then
+        gw_seen=1; gw_mute=0; return 0
+    fi
+    [ $gw_seen = 0 ] && gw_mute=$(( ${gw_mute:-0} + 1 ))
+    return 1
 }
 
 # Returns 1 when zmod no longer manages Wi-Fi. Each branch sets "act" to the repair, if any;
@@ -163,7 +170,7 @@ check_once() {
         gw=$(ip route 2>/dev/null | sed -n "s/^default via \([0-9.]*\) dev $IF.*/\1/p" | head -1)
 
         if [ "$wst" != COMPLETED ]; then
-            assoc_bad=$((assoc_bad + 1)); gw_bad=0; dhcp_bad=0; gw_seen=0
+            assoc_bad=$((assoc_bad + 1)); gw_bad=0; dhcp_bad=0; gw_seen=0; gw_mute=0
             if [ $assoc_bad -ge 4 ]; then
                 act="restart not associated for $assoc_bad min (wpa_state=${wst:-none})"
             elif [ $assoc_bad -eq 2 ]; then
@@ -172,7 +179,7 @@ check_once() {
         elif [ -z "$addr" ]; then
             [ $assoc_bad -ge 2 ] && log "associated again after $assoc_bad min"
             assoc_bad=0
-            dhcp_bad=$((dhcp_bad + 1)); gw_bad=0; gw_seen=0
+            dhcp_bad=$((dhcp_bad + 1)); gw_bad=0; gw_seen=0; gw_mute=0
             if [ $dhcp_bad -ge 10 ]; then
                 act="restart no IPv4 address for $dhcp_bad min"
             else
@@ -186,7 +193,7 @@ check_once() {
             if [ -n "$gw" ] && gw_alive "$gw"; then
                 [ $gw_bad -gt 0 ] && log "gateway $gw answers again after $gw_bad min"
                 [ $last_restart -gt 0 ] && log "network works after the restart"
-                gw_bad=0; gw_seen=1; gap=$GAP_MIN; last_restart=0
+                gw_bad=0; gap=$GAP_MIN; last_restart=0
             elif [ -n "$gw" ] && [ $gw_seen = 1 ]; then
                 gw_bad=$((gw_bad + 1))
                 if [ $gw_bad -ge 6 ]; then
