@@ -26,7 +26,7 @@ get_origin_from_config() {
   ' "$config_file"
 }
 
-if grep -q "^\[update_manager $1\]" ${MOD_CONF}/moonraker.conf || grep -q "^\[update_manager $1\]" ${MOD_CONF}/mod_data/user.moonraker.conf || grep -q "^\[update_manager $1\]" ${MOD_CONF}/mod_data/extra_plugins.moonraker.conf; then
+if [ "$2" != "Enable" ] || grep -q "^\[update_manager $1\]" ${MOD_CONF}/moonraker.conf || grep -q "^\[update_manager $1\]" ${MOD_CONF}/mod_data/user.moonraker.conf || grep -q "^\[update_manager $1\]" ${MOD_CONF}/mod_data/extra_plugins.moonraker.conf; then
     url=$(get_origin_from_config ${MOD_CONF}/moonraker.conf "$1")
     if [ "$url" == "" ]; then
         url=$(get_origin_from_config ${MOD_CONF}/mod_data/user.moonraker.conf "$1")
@@ -63,7 +63,7 @@ if grep -q "^\[update_manager $1\]" ${MOD_CONF}/moonraker.conf || grep -q "^\[up
         /usr/data/zmod/zmod/.shell/reset_git.sh "$1"
     fi
 
-    if ! [ -f "${MOD_CONF}/mod_data/plugins/$1/$1.cfg" ] && ! [ -f "${MOD_CONF}/mod_data/plugins/$1/${ZLANG}/$1.cfg" ]; then
+    if [ "$2" = "Enable" ] && ! [ -f "${MOD_CONF}/mod_data/plugins/$1/$1.cfg" ] && ! [ -f "${MOD_CONF}/mod_data/plugins/$1/${ZLANG}/$1.cfg" ]; then
         if [ "${ZLANG}" != 'ru' ]; then
             echo "Plugin $1 not found in mod_data/plugins/$1/$1.cfg and mod_data/plugins/$1/${ZLANG}/$1.cfg"
         else
