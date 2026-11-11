@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import json, os, re, subprocess, sys
+import json, os, re, subprocess, sys, time
 import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -104,6 +104,11 @@ def gcode(*lines):
 def say(msg):
     msg = str(msg).replace('"', "'").replace("\n", " ")[:300]
     gcode(f'RESPOND MSG="{msg}"')
+
+def web_notice(name):
+    gcode(f'_SHOW_MSG TITLE={name} MSG="{tr("install", name=name)}"')   # одно сообщение
+    time.sleep(3)                                                       # дать сообщению дойти до экрана
+    api("POST", "/server/restart")                                      # Moonraker перечитает конфиг
 
 def my_plugins(printer):
     return {n: p for n, p in jload(CATALOG, {}).items() if printer in p.get("printers", [])}
@@ -289,8 +294,7 @@ def toggle(printer, name):
             set_sec(name, p, "on")       # сначала включаем в Moonraker (если уже включён - пропуск)
             if web:
                 if not installed(name, p):
-                    say(tr("install", name=name))
-                    return
+                    return web_notice(name)
                 if p.get("var"):
                     setvar, new_state = (p["var"], 1), True
             else:
@@ -321,7 +325,7 @@ def toggle_updates(printer, name):
     set_sec(name, p, "off" if sec_state(name) == "on" else "on")
     if p.get("type") == "web" and not installed(name, p):
         if sec_state(name) == "on":
-            say(tr("install", name=name))                        # включили в Moonraker - ставить через обновления
+            return web_notice(name)                              # включили в Moonraker - сообщение и перезапуск Moonraker
         elif p.get("var"):
             gcode(f"SAVE_VARIABLE VARIABLE={p['var']} VALUE=0")  # выключили - переменная 0, каталог на удаление
             mark_remove(path_of(name, p))
