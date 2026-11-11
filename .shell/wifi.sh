@@ -60,10 +60,22 @@ wifi_fix()
 
     echo "WiFi station enabled — restarting network..."
 
-    if ! grep -q '^8821cu ' /proc/modules; then
-        if [ ${AD5M} -eq 1 ]; then insmod /lib/modules/8821cu.ko; fi
-        if [ ${AD5X} -eq 1 ]; then insmod /usr/prog/modules/8821cu.ko power_on=PB07; fi
+    # Power save (LPS) makes the adapter miss frames from the AP and drops the link.
+    # rtw_power_mgnt only applies at load time: reload the module if udev or auto_run.sh loaded it first.
+    PS=/sys/module/8821cu/parameters/rtw_power_mgnt
+    if [ -f $PS ] && [ "$(cat $PS)" != 0 ]; then
+        echo "8821cu loaded with rtw_power_mgnt=$(cat $PS): reloading"
+        killall wpa_cli wpa_supplicant udhcpc 2>/dev/null
+        sleep 1
+        ifconfig "$INTERFACE" down 2>/dev/null
+        rmmod 8821cu
     fi
+
+    if ! grep -q '^8821cu ' /proc/modules; then
+        if [ ${AD5M} -eq 1 ]; then insmod /lib/modules/8821cu.ko rtw_power_mgnt=0 || insmod /lib/modules/8821cu.ko; fi
+        if [ ${AD5X} -eq 1 ]; then insmod /usr/prog/modules/8821cu.ko rtw_power_mgnt=0 power_on=PB07 || insmod /usr/prog/modules/8821cu.ko power_on=PB07; fi
+    fi
+    [ -f $PS ] && [ "$(cat $PS)" != 0 ] && echo "WARNING: 8821cu still has rtw_power_mgnt=$(cat $PS)"
 
     echo "Waiting for interface $INTERFACE to appear..."
 
@@ -115,6 +127,9 @@ wifi_fix()
     sleep 1
     wpa_cli -i $INTERFACE status | grep -q '^wpa_state=COMPLETED' && /usr/data/zmod/zmod/.shell/wifi_reconnect.sh $INTERFACE CONNECTED check
     echo "Wi-Fi restart initiated. DHCP will start automatically on connection."
+
+    # events alone do not cover a link that never comes up; no-op if already running
+    /usr/data/zmod/zmod/.shell/wifi_watchdog.sh start
 }
 
 mv ${MOD_CONF}/mod_data/log/wifi.4.log ${MOD_CONF}/mod_data/log/wifi.5.log 2>/dev/null
