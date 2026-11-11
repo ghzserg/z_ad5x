@@ -286,6 +286,7 @@ def toggle(printer, name):
             text = tr("disabled", name=name)
         else:
             unmark_remove(path)          # плагин включается - каталог не удалять
+            set_sec(name, p, "on")       # сначала включаем в Moonraker (если уже включён - пропуск)
             if web:
                 if not installed(name, p):
                     say(tr("install", name=name))
@@ -301,8 +302,6 @@ def toggle(printer, name):
                     if r.returncode != 0:
                         raise RuntimeError(r.stderr.strip())
                 final = lambda: zmod_set(name, True)
-            if sec_state(name) is None:     # если обновления не выключали вручную - дописываем запись
-                set_sec(name, p, "on")
             text = tr("installed", name=name)
         say(text + (tr("restart") if final else ""))
     except Exception as e:
