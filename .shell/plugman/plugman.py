@@ -106,9 +106,7 @@ def say(msg):
     gcode(f'RESPOND MSG="{msg}"')
 
 def web_notice(name):
-    gcode(f'_SHOW_MSG TITLE={name} MSG="{tr("install", name=name)}"')   # одно сообщение
-    time.sleep(3)                                                       # дать сообщению дойти до экрана
-    api("POST", "/server/restart")                                      # Moonraker перечитает конфиг
+    gcode(f'_SHOW_MSG TITLE={name} MSG="{tr("install", name=name)}" COMMAND=_PLUGINS_APPLY')
 
 def my_plugins(printer):
     return {n: p for n, p in jload(CATALOG, {}).items() if printer in p.get("printers", [])}
