@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-import json, os, re, shutil, subprocess, sys, tempfile
-import urllib.request, zipfile
+import json, os, re, subprocess, sys
+import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CATALOG = os.path.join(HERE, "plugins.json")
@@ -82,10 +82,6 @@ def jload(path, default):
     except Exception:
         return default
 
-def jsave(path, data):
-    with open(path, "w") as f:
-        json.dump(data, f, indent=2)
-
 def readlines(path):
     try:
         with open(path) as f:
@@ -108,10 +104,6 @@ def gcode(*lines):
 def say(msg):
     msg = str(msg).replace('"', "'").replace("\n", " ")[:300]
     gcode(f'RESPOND MSG="{msg}"')
-
-def sh(cmd):
-    if cmd:
-        subprocess.run(cmd, shell=True, capture_output=True, text=True)
 
 def my_plugins(printer):
     return {n: p for n, p in jload(CATALOG, {}).items() if printer in p.get("printers", [])}
@@ -163,44 +155,6 @@ def is_active(name, p):
 
 def zmod_set(name, enable):
     gcode(f"{'ENABLE' if enable else 'DISABLE'}_PLUGIN name={name}")
-
-def asset_name(name, p):
-    a = jload(os.path.join(path_of(name, p), "release_info.json"), {}).get("asset_name")
-    if a:
-        return a
-    raise RuntimeError("Not release_info.json with asset_name")
-
-def web_install(name, p):
-    asset = asset_name(name, p)
-    url = f"https://github.com/{p['repo']}/releases/latest/download/{asset}"
-    os.makedirs(os.path.join(HERE, "tmp"), exist_ok=True)   # не /tmp: архив ~60 МБ
-    tmp = tempfile.mkdtemp(dir=os.path.join(HERE, "tmp"))
-    try:
-        resp = urllib.request.urlopen(url, timeout=60)
-        m = re.search(r"/download/([^/]+)/", resp.geturl())
-        tag = m.group(1) if m else "unknown"
-        arc = os.path.join(tmp, asset)
-        with open(arc, "wb") as f:
-            shutil.copyfileobj(resp, f, 1 << 20)
-        ext = os.path.join(tmp, "x")
-        os.makedirs(ext)
-        with zipfile.ZipFile(arc) as z:
-            for i in z.infolist():
-                z.extract(i, ext)
-                mode = (i.external_attr >> 16) & 0o7777
-                if mode:
-                    os.chmod(os.path.join(ext, i.filename), mode)
-        items = os.listdir(ext)
-        src = os.path.join(ext, items[0]) if len(items) == 1 and \
-            os.path.isdir(os.path.join(ext, items[0])) else ext
-        dst = path_of(name, p)
-        shutil.move(src, dst)
-        jsave(os.path.join(dst, "release_info.json"), {
-            "project_name": p["repo"].split("/")[1],
-            "project_owner": p["repo"].split("/")[0],
-            "version": tag, "asset_name": asset})
-    finally:
-        shutil.rmtree(tmp, ignore_errors=True)
 
 def conf_lines():
     try:
@@ -301,9 +255,10 @@ def menu(printer, override=None):
             set_sec(name, p, "on")
             st = "on"
         u = st == "on"
+        hide = p.get("type") == "web" and not installed(name, p)   # web-плагин ставится через Moonraker
         out.append("action:prompt_button_group_start")
-        out.append(btn(name, f"_PLUGIN_TOGGLE NAME={name}", ON if act else OFF))
-        out.append(btn(tr("upd_on") if u else tr("upd_off"),
+        if not hide: out.append(btn(name, f"_PLUGIN_TOGGLE NAME={name}", ON if act else OFF))
+        out.append(btn((name + ": " if hide else "") + (tr("upd_on") if u else tr("upd_off")),
                        f"_PLUGIN_UPD NAME={name}", ON if u else OFF))
         out.append("action:prompt_button_group_end")
     out.append("action:prompt_footer_button " + tr("save") + "|_PLUGINS_APPLY|" + ON)
@@ -333,9 +288,7 @@ def toggle(printer, name):
             unmark_remove(path)          # плагин включается - каталог не удалять
             if web:
                 if not installed(name, p):
-                    say(tr("download", name=name))
-                    web_install(name, p)
-                    sh(p.get("start_cmd"))
+                    raise RuntimeError("Install via Moonraker")
                 if p.get("var"):
                     setvar, new_state = (p["var"], 1), True
             else:

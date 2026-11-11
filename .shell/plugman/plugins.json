@@ -28,7 +28,6 @@
     ],
     "var": "helix",
     "check_files": ["bin/helix-screen", "bin/helix-splash", "bin/helix-watchdog", "bin/helix-launcher.sh"],
-    "start_cmd": "",
     "printers": [
       "FF5M",
       "AD5X",
