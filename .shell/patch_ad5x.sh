@@ -12,3 +12,4 @@ FILE_MD5=$(md5sum /usr/prog/PROGRAM/software/firmwareExe | cut -d' ' -f1)
 
 fix_firmwareExe "53002874d76d1b381e45d4b533884408" 1314894 # 3.1.6
 fix_firmwareExe "1025ea1724d178b76bc839d7126e5a0a" 1366198 # 3.1.7
+fix_firmwareExe "a6d84bd6cbb9dfd15b745d3b3704af5e" 1394074 # 3.1.8
