@@ -160,6 +160,7 @@ prepare_chroot()
 
     check_link /root/moonraker-env/moonraker /usr/data/zmod/moonraker
     check_link /etc/init.d/S80helixscreen /usr/data/zmod/zmod/.shell/root/S80helixscreen
+    check_link /etc/init.d/S80rivet /usr/data/zmod/zmod/.shell/root/S80rivet
     check_link /etc/init.d/S80guppyscreen /usr/data/zmod/zmod/.shell/root/S80guppyscreen
     check_link /etc/init.d/S65moonraker /usr/data/zmod/zmod/.shell/root/S65moonraker
     check_link /etc/init.d/S70httpd /usr/data/zmod/zmod/.shell/root/S70httpd
@@ -305,6 +306,14 @@ if ! [ -f /srv/helixscreen/release_info.json ]; then
     fi
     if [ ${C5PRO} -eq 1 ] || [ ${AD5X} -eq 1 ]; then
         echo '{"project_name":"helixscreen","project_owner":"prestonbrown","version":"v0.0.1","asset_name":"helixscreen-ad5x.zip"}' >/srv/helixscreen/release_info.json
+    fi
+fi
+
+# Возвращаем Rivet (https://github.com/lDOCI/rivet) - только AD5M
+if [ ${AD5M} -eq 1 ]; then
+    [ -d /srv/rivet/ ] || mkdir -p /srv/rivet/
+    if ! [ -f /srv/rivet/release_info.json ]; then
+        echo '{"project_name":"rivet","project_owner":"lDOCI","version":"v0.0.1","asset_name":"rivet-ad5m.zip"}' >/srv/rivet/release_info.json
     fi
 fi
 

@@ -10,6 +10,9 @@ fi
 if grep -q "helix = 1" /opt/config/mod_data/variables.cfg; then
     /usr/data/zmod/zmod/.shell/root/S80helixscreen stop
 fi
+if grep -q "rivet = 1" /opt/config/mod_data/variables.cfg; then
+    /usr/data/zmod/zmod/.shell/root/S80rivet stop
+fi
 /usr/data/zmod/zmod/.shell/root/S65moonraker stop
 if [ ${AD5M} -eq 1 ]; then
     if grep -q "klipper13 = 1" /opt/config/mod_data/variables.cfg; then

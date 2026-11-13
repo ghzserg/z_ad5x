@@ -35,6 +35,16 @@
       "C5PRO"
     ]
   },
+ "rivet": {
+    "type": "web",
+    "repo": "lDOCI/rivet",
+    "path": "/srv/rivet",
+    "persistent_files": ["rivet.good", "rolled-back"],
+    "var": "rivet",
+    "var_swap": "guppy",
+    "check_files": ["rivet", "S80rivet"],
+    "printers": ["FF5M"]
+  },
   "nopoop": {
     "url": "https://github.com/ghzserg/nopoop.git", "branch": "master",
     "printers": ["AD5X"]
