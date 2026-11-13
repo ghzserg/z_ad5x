@@ -1,0 +1,28 @@
+#!/bin/sh
+# (C) 2024-2026 ghzserg https://github.com/ghzserg/zmod
+#
+# Rivet, the touch screen (https://github.com/lDOCI/rivet). Moonraker's update
+# manager ([update_manager rivet], plugman) installs it into /srv/rivet; Rivet's
+# own /srv/rivet/S80rivet starts it under a watchdog that restarts it after an
+# update and rolls a broken release back. S80guppyscreen calls this script when
+# "rivet = 1"; it starts Rivet only while GuppyScreen and HelixScreen are off.
+
+DAEMON_DIR="/srv/rivet"
+DAEMON="${DAEMON_DIR}/rivet"
+SCRIPT="${DAEMON_DIR}/S80rivet"
+VARS=/opt/config/mod_data/variables.cfg
+
+# Installed?
+[ -f "$DAEMON" ] && [ -f "$SCRIPT" ] || exit 0
+chmod +x "$DAEMON" "$SCRIPT"
+
+case "$1" in
+    start|restart|reload)
+        if grep -q "guppy = 1" $VARS || grep -q "helix = 1" $VARS; then
+            echo "Rivet: GuppyScreen or HelixScreen is selected, not starting"
+            exit 0
+        fi
+        ;;
+esac
+
+exec "$SCRIPT" "$@"
