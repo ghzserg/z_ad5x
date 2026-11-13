@@ -314,6 +314,8 @@ def toggle(printer, name):
     else:
         if setvar:
             vs = [setvar] + ([(p["var_swap"], 1 - setvar[1])] if p.get("var_swap") else [])   # парная переменная - наоборот
+            if setvar[1] == 1:
+                vs += [(v, 0) for v in p.get("var_off", [])]   # другие экраны при включении - выключить
             gcode(*[f"SAVE_VARIABLE VARIABLE={k} VALUE={v}" for k, v in vs])
         menu(printer, {name: new_state} if new_state is not None else None)
 
