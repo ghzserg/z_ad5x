@@ -28,12 +28,24 @@
     ],
     "var": "helix",
     "var_swap": "guppy",
+    "var_off": ["rivet"],
     "check_files": ["bin/helix-screen", "bin/helix-splash", "bin/helix-watchdog", "bin/helix-launcher.sh"],
     "printers": [
       "FF5M",
       "AD5X",
       "C5PRO"
     ]
+  },
+ "rivet": {
+    "type": "web",
+    "repo": "lDOCI/rivet",
+    "path": "/srv/rivet",
+    "persistent_files": ["rivet.good", "rolled-back"],
+    "var": "rivet",
+    "var_swap": "guppy",
+    "var_off": ["helix"],
+    "check_files": ["rivet", "S80rivet"],
+    "printers": ["FF5M"]
   },
   "nopoop": {
     "url": "https://github.com/ghzserg/nopoop.git", "branch": "master",

@@ -85,10 +85,17 @@ if grep -q "helix = 1" /opt/config/mod_data/variables.cfg && [ -f /etc/init.d/S8
     [ -f $DAEMON ] && [ -f $SPLASH ] && [ -f $WATCHDOG ] && [ -f $LAUNCHER ] && HELIX=1
 fi
 
+RIVET=0
+if [ $HELIX -eq 0 ] && grep -q "rivet = 1" /opt/config/mod_data/variables.cfg && [ -f /etc/init.d/S80rivet ]; then
+    [ -f /srv/rivet/rivet ] && [ -f /srv/rivet/S80rivet ] && RIVET=1
+fi
+
 case "$1" in
     start)
         if [ $HELIX -eq 1 ]; then
             /etc/init.d/S80helixscreen "$1"
+        elif [ $RIVET -eq 1 ]; then
+            /etc/init.d/S80rivet "$1"
         else
             start &> /opt/config/mod_data/log/guppyscreen_start.log
         fi
@@ -98,11 +105,16 @@ case "$1" in
         if [ $HELIX -eq 1 ]; then
             /etc/init.d/S80helixscreen "$1"
         fi
+        if [ $RIVET -eq 1 ]; then
+            /etc/init.d/S80rivet "$1"
+        fi
         ;;
     restart|reload)
         stop
         if [ $HELIX -eq 1 ]; then
             /etc/init.d/S80helixscreen "$1"
+        elif [ $RIVET -eq 1 ]; then
+            /etc/init.d/S80rivet "$1"
         else
             sleep 2
             start
