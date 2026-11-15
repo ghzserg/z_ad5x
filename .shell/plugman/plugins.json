@@ -2,18 +2,22 @@
   "recommend": {
     "url": "https://github.com/ghzserg/recommend.git", "branch": "main",
     "ensure_update": true,
+    "incompatible": [],
     "printers": ["FF5M", "AD5X", "C5PRO"]
   },
   "timelapse": {
     "url": "https://github.com/ghzserg/timelapse.git", "branch": "main",
+    "incompatible": [],
     "printers": ["FF5M", "AD5X", "C5PRO"]
   },
   "notify": {
     "url": "https://github.com/ghzserg/notify.git", "branch": "main",
+    "incompatible": ["telegram_notify"],
     "printers": ["FF5M", "AD5X", "C5PRO"]
   },
  "g28_tenz": {
     "url": "https://github.com/ghzserg/g28_tenz.git", "branch": "main",
+    "incompatible": ["lesswaste", "bambufy"],
     "printers": ["FF5M", "AD5X"]
   },
  "helixscreen": {
@@ -30,6 +34,7 @@
     "var_swap": "guppy",
     "var_off": ["rivet"],
     "check_files": ["bin/helix-screen", "bin/helix-splash", "bin/helix-watchdog", "bin/helix-launcher.sh"],
+    "incompatible": [],
     "printers": [
       "FF5M",
       "AD5X",
@@ -45,38 +50,47 @@
     "var_swap": "guppy",
     "var_off": ["helix"],
     "check_files": ["rivet", "S80rivet"],
+    "incompatible": [],
     "printers": ["FF5M"]
   },
   "nopoop": {
     "url": "https://github.com/ghzserg/nopoop.git", "branch": "master",
+    "incompatible": ["quickswap", "lesswaste", "bambufy"],
     "printers": ["AD5X"]
   },
     "quickswap": {
     "url": "https://github.com/ninjamida/quickswap-5x.git", "branch": "master",
+    "incompatible": ["lesswaste", "bambufy"],
     "printers": ["AD5X"]
   },
   "lesswaste": {
     "url": "https://github.com/Hrybmo/lesswaste.git", "branch": "master",
+    "incompatible": [],
     "printers": ["AD5X"]
   },
   "bambufy": {
     "url": "https://github.com/function3d/bambufy.git", "branch": "master",
+    "incompatible": [],
     "printers": ["AD5X"]
   },
   "ifs_jacker": {
     "url": "https://github.com/ninjamida/ifs_jacker_plugin.git", "branch": "master",
+    "incompatible": [],
     "printers": ["AD5X"]
   },
   "dryer": {
     "url": "https://github.com/pantata/dryer.git", "branch": "master",
+    "incompatible": [],
     "printers": ["AD5X"]
   },
     "flook32": {
     "url": "https://github.com/ghzserg/flook32_plugin.git", "branch": "main",
+    "incompatible": [],
     "printers": ["FF5M", "AD5X", "C5PRO"]
   },
   "telegram_notify": {
     "url": "https://github.com/mlengle/telegram_notify.git", "branch": "main",
+    "incompatible": [],
     "printers": ["FF5M"]
   }
 }

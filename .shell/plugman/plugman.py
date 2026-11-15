@@ -18,47 +18,59 @@ ON, OFF = "2E7D32", "616161"
 
 LANG_CFG = MOD_DATA + "/lang.cfg"                # язык Z-Mod (language: ru)
 
-# key: plugins, upd_on, upd_off, save, ok, install, clone, disabled, installed, restart, error
+# key: plugins, upd_on, upd_off, save, ok, install, clone, disabled, installed, restart, error, incompatible
 T = {
     "en": ["Plugins ({printer})", "Update: On", "Update: Off", "Save (Moonraker restart)", "Ok",
            "{name}: install via Fluidd/Mainsail updates", "Clone {name}...", "{name}: Disabled", "{name}: Installed",
-           ". Klipper restart, run PLUGINS", "Error {name}: {e}"],
+           ". Klipper restart, run PLUGINS", "Error {name}: {e}",
+           "'{name}' cannot be enabled. Incompatible plugin found: {other}"],
     "ru": ["Плагины ({printer})", "Обновление: Вкл", "Обновление: Выкл", "Сохранить (перезапуск Moonraker)", "Ок",
            "{name}: установите через обновления Fluidd/Mainsail", "Клонирование {name}...", "{name}: отключён", "{name}: установлен",
-           ". Перезапуск Klipper, затем выполните PLUGINS", "Ошибка {name}: {e}"],
+           ". Перезапуск Klipper, затем выполните PLUGINS", "Ошибка {name}: {e}",
+           "Найден несовместимый плагин: {other}. Включение {name} отменено."],
     "de": ["Plugins ({printer})", "Update: An", "Update: Aus", "Speichern (Moonraker-Neustart)", "OK",
            "{name}: über Fluidd/Mainsail-Updates installieren", "{name} wird geklont...", "{name}: Deaktiviert", "{name}: Installiert",
-           ". Klipper-Neustart, danach PLUGINS ausführen", "Fehler {name}: {e}"],
+           ". Klipper-Neustart, danach PLUGINS ausführen", "Fehler {name}: {e}",
+           "{name} kann nicht aktiviert werden. Inkompatibles Plugin gefunden: {other}"],
     "fr": ["Plugins ({printer})", "Mise à jour : On", "Mise à jour : Off", "Enregistrer (redémarrage de Moonraker)", "OK",
            "{name} : installez via les mises à jour Fluidd/Mainsail", "Clonage de {name}...", "{name} : désactivé", "{name} : installé",
-           ". Redémarrage de Klipper, puis lancez PLUGINS", "Erreur {name} : {e}"],
+           ". Redémarrage de Klipper, puis lancez PLUGINS", "Erreur {name} : {e}",
+           "Impossible d’activer {name}. Plugin incompatible détecté : {other}"],
     "es": ["Plugins ({printer})", "Actualización: Sí", "Actualización: No", "Guardar (reinicio de Moonraker)", "OK",
            "{name}: instale desde las actualizaciones de Fluidd/Mainsail", "Clonando {name}...", "{name}: desactivado", "{name}: instalado",
-           ". Reinicio de Klipper, luego ejecute PLUGINS", "Error {name}: {e}"],
+           ". Reinicio de Klipper, luego ejecute PLUGINS", "Error {name}: {e}",
+           "No se puede activar {name}. Se encontró un plugin incompatible: {other}"],
     "it": ["Plugin ({printer})", "Aggiornamento: On", "Aggiornamento: Off", "Salva (riavvio di Moonraker)", "OK",
            "{name}: installa dagli aggiornamenti di Fluidd/Mainsail", "Clonazione di {name}...", "{name}: disattivato", "{name}: installato",
-           ". Riavvio di Klipper, poi esegui PLUGINS", "Errore {name}: {e}"],
+           ". Riavvio di Klipper, poi esegui PLUGINS", "Errore {name}: {e}",
+           "Impossibile attivare {name}. Plugin incompatibile trovato: {other}"],
     "pt": ["Plugins ({printer})", "Atualização: Ligada", "Atualização: Desligada", "Guardar (reinício do Moonraker)", "OK",
            "{name}: instale pelas atualizações do Fluidd/Mainsail", "A clonar {name}...", "{name}: desativado", "{name}: instalado",
-           ". Reinício do Klipper, depois execute PLUGINS", "Erro {name}: {e}"],
+           ". Reinício do Klipper, depois execute PLUGINS", "Erro {name}: {e}",
+           "Não é possível ativar {name}. Plugin incompatível encontrado: {other}"],
     "cs": ["Pluginy ({printer})", "Aktualizace: Zap", "Aktualizace: Vyp", "Uložit (restart Moonraker)", "OK",
            "{name}: nainstalujte přes aktualizace Fluidd/Mainsail", "Klonování {name}...", "{name}: vypnuto", "{name}: nainstalováno",
-           ". Restart Klipperu, poté spusťte PLUGINS", "Chyba {name}: {e}"],
+           ". Restart Klipperu, poté spusťte PLUGINS", "Chyba {name}: {e}",
+           "Plugin {name} nelze zapnout. Nalezen nekompatibilní plugin: {other}"],
     "tr": ["Eklentiler ({printer})", "Güncelleme: Açık", "Güncelleme: Kapalı", "Kaydet (Moonraker yeniden başlatılır)", "Tamam",
            "{name}: Fluidd/Mainsail güncellemeleri üzerinden yükleyin", "{name} klonlanıyor...", "{name}: devre dışı", "{name}: yüklendi",
-           ". Klipper yeniden başlatılıyor, ardından PLUGINS çalıştırın", "Hata {name}: {e}"],
+           ". Klipper yeniden başlatılıyor, ardından PLUGINS çalıştırın", "Hata {name}: {e}",
+           "{name} etkinleştirilemedi. Uyumsuz eklenti bulundu: {other}"],
     "ja": ["プラグイン ({printer})", "更新: オン", "更新: オフ", "保存 (Moonraker再起動)", "OK",
            "{name}: Fluidd/Mainsailの更新からインストールしてください", "{name} をクローン中...", "{name}: 無効", "{name}: インストール済み",
-           "。Klipperを再起動します。その後PLUGINSを実行してください", "エラー {name}: {e}"],
+           "。Klipperを再起動します。その後PLUGINSを実行してください", "エラー {name}: {e}",
+           "{name} を有効にできません。互換性のないプラグイン: {other}"],
     "ko": ["플러그인 ({printer})", "업데이트: 켬", "업데이트: 끔", "저장 (Moonraker 재시작)", "확인",
            "{name}: Fluidd/Mainsail 업데이트에서 설치하세요", "{name} 복제 중...", "{name}: 비활성화됨", "{name}: 설치됨",
-           ". Klipper 재시작 후 PLUGINS를 실행하세요", "오류 {name}: {e}"],
+           ". Klipper 재시작 후 PLUGINS를 실행하세요", "오류 {name}: {e}",
+           "{name}을(를) 활성화할 수 없습니다. 호환되지 않는 플러그인: {other}"],
     "zh": ["插件 ({printer})", "更新：开启", "更新：关闭", "保存（重启 Moonraker）", "确定",
            "{name}：请通过 Fluidd/Mainsail 更新安装", "正在克隆 {name}...", "{name}：已禁用", "{name}：已安装",
-           "。Klipper 将重启，然后运行 PLUGINS", "错误 {name}：{e}"],
+           "。Klipper 将重启，然后运行 PLUGINS", "错误 {name}：{e}",
+           "无法启用 {name}。发现不兼容的插件：{other}"],
 }
 KEYS = ["plugins", "upd_on", "upd_off", "save", "ok", "install", "clone",
-        "disabled", "installed", "restart", "error"]
+        "disabled", "installed", "restart", "error", "incompatible"]
 
 def get_lang():
     try:
@@ -270,7 +282,8 @@ def menu(printer, override=None):
     gcode(*[f'RESPOND TYPE=command MSG="{l}"' for l in out])
 
 def toggle(printer, name):
-    p = my_plugins(printer).get(name)
+    plugins = my_plugins(printer)
+    p = plugins.get(name)
     if not p:
         return
     path = path_of(name, p)
@@ -288,6 +301,14 @@ def toggle(printer, name):
                 setvar, new_state = (p["var"], 0), False
             text = tr("disabled", name=name)
         else:
+            for other, other_plugin in plugins.items():
+                if other == name:
+                    continue
+                if (other in p.get("incompatible", []) or
+                        name in other_plugin.get("incompatible", [])):
+                    if is_active(other, other_plugin):
+                        say(tr("incompatible", name=name, other=other))
+                        return
             unmark_remove(path)          # плагин включается - каталог не удалять
             set_sec(name, p, "on")       # сначала включаем в Moonraker (если уже включён - пропуск)
             if web:
