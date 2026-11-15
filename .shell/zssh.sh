@@ -12,9 +12,20 @@ source /usr/data/zmod/zmod/.shell/0.sh
 
 if [ $# -ne 8 ]; then echo "Используйте (START|STOP|RESTART|RELOAD) SSH_SERVER SSH_PORT SSH_USER VIDEO_PORT MOON_PORT REMOTE_RUN RESTART|NOTRESTART"; exit 1; fi
 
-if ! [ -f /opt/config/mod_data/ssh.key ] || ! [ -f /opt/config/mod_data/ssh.pub.txt ]; then
-    dropbearkey -t ${KEY_TYPE} -f /opt/config/mod_data/ssh.key
-    dropbearkey -y -t ${KEY_TYPE} -f /opt/config/mod_data/ssh.key |grep root >/opt/config/mod_data/ssh.pub.txt
+KEY_FILE="/opt/config/mod_data/ssh.key"
+PUB_FILE="/opt/config/mod_data/ssh.pub.txt"
+
+ACTUAL_PUB=$(dropbearkey -y -t ${KEY_TYPE} -f "$KEY_FILE" 2>/dev/null | grep root)
+
+if [ -z "$ACTUAL_PUB" ]; then
+    [ -f "$KEY_FILE" ]
+    rm -f "$KEY_FILE" "$PUB_FILE"
+    dropbearkey -t ${KEY_TYPE} -f "$KEY_FILE"
+    dropbearkey -y -t ${KEY_TYPE} -f "$KEY_FILE" | grep root > "$PUB_FILE"
+    echo ZLINK >/tmp/printer
+elif [ "$ACTUAL_PUB" != "$(cat "$PUB_FILE" 2>/dev/null)" ]; then
+    echo "$ACTUAL_PUB" > "$PUB_FILE"
+    echo ZLINK >/tmp/printer
 fi
 
 SSH_PUB=$( cat /opt/config/mod_data/ssh.pub.txt )
