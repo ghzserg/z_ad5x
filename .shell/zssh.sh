@@ -22,10 +22,8 @@ if [ -z "$ACTUAL_PUB" ]; then
     rm -f "$KEY_FILE" "$PUB_FILE"
     dropbearkey -t ${KEY_TYPE} -f "$KEY_FILE"
     dropbearkey -y -t ${KEY_TYPE} -f "$KEY_FILE" | grep root > "$PUB_FILE"
-    echo ZLINK >/tmp/printer
 elif [ "$ACTUAL_PUB" != "$(cat "$PUB_FILE" 2>/dev/null)" ]; then
     echo "$ACTUAL_PUB" > "$PUB_FILE"
-    echo ZLINK >/tmp/printer
 fi
 
 SSH_PUB=$( cat /opt/config/mod_data/ssh.pub.txt )
