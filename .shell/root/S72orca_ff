@@ -9,7 +9,7 @@ set -x
 PID_FILE=/run/orca_ff.pid
 
 start() {
-    start-stop-daemon -S -b -m -p $PID_FILE --exec /usr/data/zmod/zmod/.shell/root/orca_ff.py
+    start-stop-daemon -S -b -m -p $PID_FILE --exec /usr/data/zmod/zmod/.shell/root/orca_ff
 }
 
 stop() {
