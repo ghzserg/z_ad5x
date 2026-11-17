@@ -40,6 +40,7 @@ class zmod:
 
         self.virtual_sdcard = None
         self.sdcard_dirname = ""
+        self._metascan_pending = False
 
         self.gcode.register_command('SAVE_SHAPER', self.cmd_SAVE_SHAPER)
         self.gcode.register_command('ZEXCLUDE', self.cmd_ZEXCLUDE)
@@ -84,15 +85,31 @@ class zmod:
         if not filename:
             gcmd.respond_raw("SDCARD_PRINT_FILE_MF: FILENAME is required (no file loaded)")
             return
+        if self._metascan_pending:
+            raise gcmd.error("3MF: Moonraker metadata scan is already pending")
         fname = self._extract_3mf_gcode(filename, gcmd)
-        self.gcode.run_script_from_command(f"SDCARD_PRINT_FILE FILENAME=\"{fname}\"")
+        script = f'SDCARD_PRINT_FILE FILENAME="{fname}"'
+        if filename.lower().endswith('.3mf'):
+            self.update_metadata_async(fname, script)
+        else:
+            self.gcode.run_script_from_command(script)
 
-    def update_metadata_async(self, filename):
-        """Запускает повторное сканирование метаданных в Moonraker, не блокируя реактор."""
+    def update_metadata_async(self, filename, script):
         encoded = quote(filename, safe="")
         url = "http://127.0.0.1:7125/server/files/metascan?filename=" + encoded
 
-        completion = self.reactor.completion()
+        def _finish(eventtime, error):
+            try:
+                if error is not None:
+                    self.gcode.respond_raw(f"!! 3MF: Moonraker metascan failed: {error}")
+                elif self.printer.get_state_message()[1] != 'ready':
+                    self.gcode.respond_raw("!! 3MF: Printer is not ready")
+                else:
+                    self.gcode.run_script(script)
+            except self.printer.command_error as exc:
+                self.gcode.respond_raw(f"!! 3MF: {exc}")
+            finally:
+                self._metascan_pending = False
 
         def _worker():
             error = None
@@ -102,12 +119,15 @@ class zmod:
                     pass
             except Exception as exc:
                 error = exc
-            self.reactor.async_complete(completion, error)
+            self.reactor.register_async_callback(
+                lambda eventtime: _finish(eventtime, error))
 
-        threading.Thread(target=_worker, daemon=True).start()
-        error = completion.wait()
-        if error is not None:
-            raise error
+        self._metascan_pending = True
+        try:
+            threading.Thread(target=_worker, daemon=True).start()
+        except Exception:
+            self._metascan_pending = False
+            raise
 
     def _rel_path(self, fname):
         if not fname:
@@ -302,8 +322,6 @@ class zmod:
                         os.remove(target_gcode_path)
                     raise ValueError("MD5_MISMATCH")
                 gcmd.respond_raw("// 3MF: Ok")
-
-                self.update_metadata_async(rel_gcode)
 
                 # Загружаем быстрые исключения
                 self.cmd_ZEXCLUDE_MF(gcmd)
