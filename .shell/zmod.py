@@ -20,7 +20,6 @@ PLATE_GCODE_RE = re.compile(r'Metadata/plate_(\d+)\.gcode')
 UNPACK_CHUNK = 16384          # размер блока чтения/записи при распаковке
 WORK_SLICE = 0.015            # сколько секунд подряд можно занимать реактор
 LINE_CHECK_EVERY = 32         # в циклах по строкам проверять время раз в N строк
-METADATA_PAUSE_TIME = 2.0     # пауза после запуска metascan, чтобы Moonraker начал работу
 
 FFCONFIG1='/usr/prog/config/Adventurer5M.json'
 FFCONFIG2='/opt/config/Adventurer5M.json'
@@ -54,10 +53,6 @@ class zmod:
         self.virtual_sdcard = self.printer.lookup_object('virtual_sdcard')
         self.sdcard_dirname = self.virtual_sdcard.sdcard_dirname
         self.reactor = self.printer.get_reactor()
-
-    def _yield_reactor(self, seconds):
-        """Отдать управление реактору Klipper на seconds секунд."""
-        self.reactor.pause(self.reactor.monotonic() + seconds)
 
     def _throttle_reset(self):
         """Начало долгой операции: отсчёт WORK_SLICE и счётчики начинаются заново."""
@@ -97,15 +92,22 @@ class zmod:
         encoded = quote(filename, safe="")
         url = "http://127.0.0.1:7125/server/files/metascan?filename=" + encoded
 
+        completion = self.reactor.completion()
+
         def _worker():
-            req = Request(url, method="POST")
+            error = None
             try:
+                req = Request(url, method="POST")
                 with urlopen(req, timeout=30):
                     pass
-            except Exception:
-                pass
+            except Exception as exc:
+                error = exc
+            self.reactor.async_complete(completion, error)
 
         threading.Thread(target=_worker, daemon=True).start()
+        error = completion.wait()
+        if error is not None:
+            raise error
 
     def _rel_path(self, fname):
         if not fname:
@@ -302,8 +304,6 @@ class zmod:
                 gcmd.respond_raw("// 3MF: Ok")
 
                 self.update_metadata_async(rel_gcode)
-                # Даём Moonraker начать сканирование, прежде чем Klipper продолжит подготовку печати
-                self._yield_reactor(METADATA_PAUSE_TIME)
 
                 # Загружаем быстрые исключения
                 self.cmd_ZEXCLUDE_MF(gcmd)
