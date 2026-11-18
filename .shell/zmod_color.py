@@ -1608,8 +1608,7 @@ class zmod_color:
                 else:
                     gcmd.respond_raw(f"IFS Off")
                     self.gcode.run_script_from_command("_IFS_OFF")
-                    fname = self.zmod._extract_3mf_gcode(fname, gcmd)
-                    self.gcode.run_script_from_command(f"SDCARD_PRINT_FILE FILENAME=\"{fname}\"")
+                    self.zmod.cmd_SDCARD_PRINT_FILE_MF(gcmd)
         else:
             gcmd.respond_raw(self._t('no_response', json.dumps(response_data)))
 
@@ -1700,10 +1699,15 @@ class zmod_color:
             else:
                 atomic_write(FILE_CONFIG, json.dumps(tools, indent=2))
 
+                is_3mf = fname.lower().endswith('.3mf')
                 fname = self.zmod._extract_3mf_gcode(fname, gcmd)
                 self.find_t_code(fname)
                 self.gcode.run_script_from_command("M400")
-                self.gcode.run_script_from_command(f"SDCARD_PRINT_FILE FILENAME=\"{fname}\"")
+                script = f'SDCARD_PRINT_FILE FILENAME="{fname}"'
+                if is_3mf:
+                    self.zmod.update_metadata_async(fname, script)
+                else:
+                    self.gcode.run_script_from_command(script)
         else:
             gcmd.respond_raw(self._t('no_response', json.dumps(response_data)))
 
