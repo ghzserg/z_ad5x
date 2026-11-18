@@ -85,8 +85,6 @@ class zmod:
         if not filename:
             gcmd.respond_raw("SDCARD_PRINT_FILE_MF: FILENAME is required (no file loaded)")
             return
-        if self._metascan_pending:
-            raise gcmd.error("3MF: Moonraker metadata scan is already pending")
         fname = self._extract_3mf_gcode(filename, gcmd)
         script = f'SDCARD_PRINT_FILE FILENAME="{fname}"'
         if filename.lower().endswith('.3mf'):
@@ -102,7 +100,11 @@ class zmod:
             try:
                 if error is not None:
                     self.gcode.respond_raw(f"!! 3MF: Moonraker metascan failed: {error}")
-                elif self.printer.get_state_message()[1] != 'ready':
+                    return
+                self.gcode.respond_info(
+                    f"3MF: Moonraker просканировал файл: {filename}" if self.lang == 'ru'
+                    else f"3MF: Moonraker finished scanning: {filename}")
+                if self.printer.get_state_message()[1] != 'ready':
                     self.gcode.respond_raw("!! 3MF: Printer is not ready")
                 else:
                     self.gcode.run_script(script)
@@ -124,6 +126,9 @@ class zmod:
 
         self._metascan_pending = True
         try:
+            self.gcode.respond_info(
+                f"3MF: Отправка данных в Moonraker: {filename}" if self.lang == 'ru'
+                else f"3MF: Sending metascan request to Moonraker: {filename}")
             threading.Thread(target=_worker, daemon=True).start()
         except Exception:
             self._metascan_pending = False
@@ -250,6 +255,8 @@ class zmod:
 
     # PLATE
     def _extract_3mf_gcode(self, fname, gcmd):
+        if self._metascan_pending:
+            raise gcmd.error("3MF: Moonraker metadata scan is already pending")
         if not fname.lower().endswith('.3mf'):
             return fname
 
