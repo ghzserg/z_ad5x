@@ -110,9 +110,8 @@ prepare_chroot()
     mv /tmp/pointercal /etc/pointercal
     mv /tmp/ts.conf /etc/ts.conf
 
-    [ -d /root/guppyscreen ] || mkdir -p /root/guppyscreen
-    rm -f /root/guppyscreen/guppyscreen
-    cp /usr/data/zmod/zmod/.shell/root/guppyscreen /root/guppyscreen/guppyscreen
+    [ -d /root/guppyscreen ] && rm -rf /root/guppyscreen
+    check_link /root/guppyscreen /srv/guppyscreen
 
     [ -d /var/run/ ] || mkdir -p /var/run/
 
@@ -309,6 +308,17 @@ if ! [ -f /srv/helixscreen/release_info.json ]; then
     fi
 fi
 
+# Возвращаем GuppyScreen
+[ -d /srv/guppyscreen/ ] || mkdir -p /srv/guppyscreen/
+if ! [ -f /srv/guppyscreen/release_info.json ]; then
+    if [ ${AD5M} -eq 1 ]; then
+        echo '{"project_name":"guppyscreen_ff5m","project_owner":"ghzserg","version":"v0.0.1","asset_name":"guppyscreen-ad5m.zip"}' >/srv/guppyscreen/release_info.json
+    fi
+    if [ ${C5PRO} -eq 1 ] || [ ${AD5X} -eq 1 ]; then
+        echo '{"project_name":"guppyscreen_ff5m","project_owner":"ghzserg","version":"v0.0.1","asset_name":"guppyscreen-ad5x.zip"}' >/srv/guppyscreen/release_info.json
+    fi
+fi
+
 # Возвращаем Rivet (https://github.com/lDOCI/rivet) - только AD5M
 if [ ${AD5M} -eq 1 ]; then
     [ -d /srv/rivet/ ] || mkdir -p /srv/rivet/
@@ -316,8 +326,6 @@ if [ ${AD5M} -eq 1 ]; then
         echo '{"project_name":"rivet","project_owner":"lDOCI","version":"v0.0.1","asset_name":"rivet-ad5m.zip"}' >/srv/rivet/release_info.json
     fi
 fi
-
-
 
 # Создаем каталоги под плагины
 update_plugins /opt/config/moonraker.conf

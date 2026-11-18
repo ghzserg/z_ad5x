@@ -4,7 +4,7 @@
 # Start guppyscreen
 #
 
-GUPPYSCREEN=/root/guppyscreen/guppyscreen
+GUPPYSCREEN=/srv/guppyscreen/guppyscreen
 PID_FILE=/run/guppyscreen.pid
 NICENESS=10
 
