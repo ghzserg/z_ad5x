@@ -284,6 +284,8 @@ class zmod_afc:
         s = self.slots.get(i, {})
         hexc = self._snap((hexc or s.get('HEX') or 'FFFFFF').lstrip('#').upper())
         mat = (mat or s.get('Material') or 'PLA').upper()
+        if mat == '?':
+            mat = 'PLA'
         c = self.color
         if mat not in c.valid_types[:-1]:
             raise self.printer.command_error(f"AFC: {mat}? {', '.join(c.valid_types[:-1])}")
