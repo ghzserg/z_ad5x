@@ -312,10 +312,10 @@ fi
 [ -d /srv/guppyscreen/ ] || mkdir -p /srv/guppyscreen/
 if ! [ -f /srv/guppyscreen/release_info.json ]; then
     if [ ${AD5M} -eq 1 ]; then
-        echo '{"project_name":"guppyscreen","project_owner":"ghzserg","version":"v0.0.1","asset_name":"guppyscreen-ad5m.zip"}' >/srv/guppyscreen/release_info.json
+        echo '{"project_name":"guppyscreen_ff5m","project_owner":"ghzserg","version":"v0.0.1","asset_name":"guppyscreen-ad5m.zip"}' >/srv/guppyscreen/release_info.json
     fi
     if [ ${C5PRO} -eq 1 ] || [ ${AD5X} -eq 1 ]; then
-        echo '{"project_name":"guppyscreen","project_owner":"ghzserg","version":"v0.0.1","asset_name":"guppyscreen-ad5x.zip"}' >/srv/guppyscreen/release_info.json
+        echo '{"project_name":"guppyscreen_ff5m","project_owner":"ghzserg","version":"v0.0.1","asset_name":"guppyscreen-ad5x.zip"}' >/srv/guppyscreen/release_info.json
     fi
 fi
 
