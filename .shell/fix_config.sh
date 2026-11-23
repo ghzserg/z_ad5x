@@ -625,6 +625,8 @@ unset LD_PRELOAD
     cnt=$(grep '^\[include ./mod/klippernew.cfg\]' ${PRINTER_CFG} |wc -l)
     [ "$cnt" -gt 1 ] && sed -i '/^\[include .\/mod\/klippernew.cfg\]/d' ${PRINTER_CFG} && NEED_REBOOT=1
 
+    grep -q klipper13.cfg ${PRINTER_CFG} && sed -i 's/klipper13/klippernew.cfg/g' ${PRINTER_CFG} && NEED_REBOOT=1
+
     # Удаление 2+ klipper11.cfg
     cnt=$(grep '^\[include ./mod/klipper11.cfg\]' ${PRINTER_CFG} |wc -l)
     [ "$cnt" -gt 1 ] && sed -i '/^\[include .\/mod\/klipper11.cfg\]/d' ${PRINTER_CFG} && NEED_REBOOT=1
