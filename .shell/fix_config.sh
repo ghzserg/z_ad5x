@@ -42,10 +42,6 @@ if ! [ -f /usr/data/zmod/zmod/.shell/0.sh ]; then
     fi
     fi
 
-    # Klipper13 -> Klippernew
-    grep -q klipper13 ${MOD_CONF}/printer.cfg && sed -i 's/klipper13/klippernew/g' ${MOD_CONF}/printer.cfg
-    grep -q klipper13 ${MOD_CONF}/mod_data/variables.cfg && sed -i 's/klipper13/klippernew/g' ${MOD_CONF}/mod_data/variables.cfg
-
     mkdir -p /usr/data/zmod/
     if [ ${AD5M} -eq 1 ]; then
         mv /opt/config/base/klipper/ /usr/data/zmod/
@@ -74,6 +70,10 @@ fi
 source /usr/data/zmod/zmod/.shell/0.sh
 source /usr/data/zmod/zmod/.shell/activate.sh
 mkdir -p /usr/data/zmod/klipper/ /usr/data/zmod/moonraker/ ${MOD_CONF}/mod
+
+# Klipper13 -> Klippernew
+grep -q klipper13 ${MOD_CONF}/printer.cfg && sed -i 's/klipper13/klippernew/g' ${MOD_CONF}/printer.cfg
+grep -q klipper13 ${MOD_CONF}/mod_data/variables.cfg && sed -i 's/klipper13/klippernew/g' ${MOD_CONF}/mod_data/variables.cfg
 
 if [ ${C5PRO} -eq 1 ]; then VER_FF=$(find /usr/prog/PROGRAM/software/ -type d | sed 's|/usr/prog/PROGRAM/software/||' | grep -v "/" | grep .); fi
 
