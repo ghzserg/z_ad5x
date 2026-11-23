@@ -30,26 +30,26 @@ app_startup_mcu()
         CONTROL_VERSION=`ls -d [0-9]*/ | sort -t '.' -k1,1n -k2,2n -k3,3n -r | head -n 1`
     fi
 
-    if grep -q "klipper13 = 1" ${MOD_CONF}/mod_data/variables.cfg; then
-        echo "Klipper 13"
-        KLIPPER13=1
+    if grep -q "klippernew = 1" ${MOD_CONF}/mod_data/variables.cfg; then
+        echo "Klipper New"
+        KLIPPERNEW=1
     else
         echo "Родной Klipper"
-        KLIPPER13=0
+        KLIPPERNEW=0
     fi
 
     CONTRIL_FLAG=${CONTROL_DIR}${CONTROL_VERSION}Update
     CONTRIL_M=${CONTROL_DIR}${CONTROL_VERSION}UpdateM
 
     if  [ -f "${CONTRIL_M}" ] || [ -f ${CONTRIL_FLAG} ]; then
-        [ ${KLIPPER13} -eq 1 ] && mount -o bind /usr/data/zmod/zmod/.shell/update_mcu.sh ${CONTROL_DIR}${CONTROL_VERSION}run.sh
+        [ ${KLIPPERNEW} -eq 1 ] && mount -o bind /usr/data/zmod/zmod/.shell/update_mcu.sh ${CONTROL_DIR}${CONTROL_VERSION}run.sh
         if [ ${AD5X} -eq 1 ]; then
             cd ${CONTROL_DIR}${CONTROL_VERSION}
             ./run.sh
             reboot -f
         fi
     else
-        [ ${KLIPPER13} -eq 1 ] && mount -o bind /usr/data/zmod/zmod/.shell/klipper13.sh ${KLIPPER_DIR}/start.sh
+        [ ${KLIPPERNEW} -eq 1 ] && mount -o bind /usr/data/zmod/zmod/.shell/klippernew.sh ${KLIPPER_DIR}/start.sh
     fi
 }
 

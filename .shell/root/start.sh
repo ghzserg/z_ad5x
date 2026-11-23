@@ -12,7 +12,7 @@ start_moonraker() {
 
 start_klipper() {
     if [ ${AD5M} -eq 1 ]; then
-        if grep -q "klipper13 = 1" /opt/config/mod_data/variables.cfg; then
+        if grep -q "klippernew = 1" /opt/config/mod_data/variables.cfg; then
             /usr/data/zmod/zmod/.shell/root/S60klipper start
         fi
     fi

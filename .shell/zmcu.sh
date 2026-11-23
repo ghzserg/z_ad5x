@@ -32,14 +32,14 @@ echo "">${CONTRIL_FLAG}
 if [ -d "${CONTROL_DIR}${CONTROL_VERSION}" ]; then
     cd "${CONTROL_DIR}${CONTROL_VERSION}"
     if [ "$1" -eq 1 ]; then
-        echo "SAVE_VARIABLE VARIABLE=klipper13 VALUE=1" >/tmp/printer
+        echo "SAVE_VARIABLE VARIABLE=klippernew VALUE=1" >/tmp/printer
         if ! [ -f /ZMOD ]; then
             start-stop-daemon -S -b -x /usr/data/zmod/zmod/.shell/update_mcu.sh -- mainboard
         else
             /usr/data/zmod/zmod/.shell/zremote.sh /usr/data/zmod/zmod/.shell/zmcu_13.sh "${CONTROL_DIR}${CONTROL_VERSION}"
         fi
     else
-        echo "SAVE_VARIABLE VARIABLE=klipper13 VALUE=0" >/tmp/printer
+        echo "SAVE_VARIABLE VARIABLE=klippernew VALUE=0" >/tmp/printer
         /usr/data/zmod/zmod/.shell/root/audio/audio_midi.sh For_Elise.mid
         sync
         sleep 5
