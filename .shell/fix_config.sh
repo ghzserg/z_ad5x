@@ -41,6 +41,11 @@ if ! [ -f /usr/data/zmod/zmod/.shell/0.sh ]; then
         source /usr/data/config/mod/.shell/0.sh
     fi
     fi
+
+    # Klipper13 -> Klippernew
+    grep -q klipper13 ${MOD_CONF}/printer.cfg && sed -i 's/klipper13/klippernew/g' ${MOD_CONF}/printer.cfg
+    grep -q klipper13 ${MOD_CONF}/mod_data/variables.cfg && sed -i 's/klipper13/klippernew/g' ${MOD_CONF}/mod_data/variables.cfg
+
     mkdir -p /usr/data/zmod/
     if [ ${AD5M} -eq 1 ]; then
         mv /opt/config/base/klipper/ /usr/data/zmod/
@@ -91,6 +96,7 @@ restore_base()
     grep -q '^\[include ./mod/mod.cfg' ${MOD_CONF}/printer.cfg && sed -i '/mod.cfg/d' ${MOD_CONF}/printer.cfg
     grep -q '^\[include ./mod/klipper11.cfg' ${MOD_CONF}/printer.cfg && sed -i '/klipper11.cfg/d' ${MOD_CONF}/printer.cfg
     grep -q '^\[include ./mod/klipper13.cfg' ${MOD_CONF}/printer.cfg && sed -i '/klipper13.cfg/d' ${MOD_CONF}/printer.cfg
+    grep -q '^\[include ./mod/klippernew.cfg' ${MOD_CONF}/printer.cfg && sed -i '/klippernew.cfg/d' ${MOD_CONF}/printer.cfg
     grep -q '^\[include ./mod_data/plugins.cfg' ${MOD_CONF}/printer.cfg && sed -i '/plugins.cfg/d' ${MOD_CONF}/printer.cfg
     grep -q '^\[include ./mod_data/user.cfg' ${MOD_CONF}/printer.cfg && sed -i '/user.cfg/d' ${MOD_CONF}/printer.cfg
     grep -q '^\[include ./mod/switch_sensor.cfg' ${MOD_CONF}/printer.cfg && sed -i '/switch_sensor.cfg/d' ${MOD_CONF}/printer.cfg
@@ -393,7 +399,7 @@ fix_config()
     check_link ${MOD_CONF}/mod/base_mod.cfg /usr/data/zmod/zmod/translate/${ZLANG}/base_mod.cfg
     check_link ${MOD_CONF}/mod/base_display_off.cfg /usr/data/zmod/zmod/translate/${ZLANG}/base_display_off.cfg
     check_link ${MOD_CONF}/mod/client.cfg /usr/data/zmod/zmod/translate/${ZLANG}/base_client.cfg
-    check_link ${MOD_CONF}/mod/base_klipper13.cfg /usr/data/zmod/zmod/translate/${ZLANG}/base_klipper13.cfg
+    check_link ${MOD_CONF}/mod/base_klippernew.cfg /usr/data/zmod/zmod/translate/${ZLANG}/base_klippernew.cfg
 
     [ -f ${MOD_CONF}/.theme/custom.css ] || cp -a /usr/data/zmod/zmod/.shell/.theme ${MOD_CONF}/mod_data/
     check_link ${MOD_CONF}/.theme mod_data/.theme
@@ -402,7 +408,7 @@ fix_config()
 
     if [ ${AD5M} -eq 1 ]; then
         check_link ${MOD_CONF}/mod/switch_sensor.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5m_switch_sensor.cfg
-        check_link ${MOD_CONF}/mod/klipper13.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5m_klipper13.cfg
+        check_link ${MOD_CONF}/mod/klippernew.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5m_klippernew.cfg
         check_link ${MOD_CONF}/mod/ff5m_klipper11.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5m_klipper11.cfg
         grep -q '^MACHINE=Adventurer5MPro$' /opt/auto_run.sh && check_link ${MOD_CONF}/mod/klipper11.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5m_klipper11_pro.cfg || check_link ${MOD_CONF}/mod/klipper11.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5m_klipper11.cfg
         check_link ${MOD_CONF}/mod/display_off.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ff5m_display_off.cfg
@@ -416,7 +422,7 @@ fix_config()
     if [ ${AD5X} -eq 1 ]; then
         check_link ${MOD_CONF}/mod/generic.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ad5x_generic.cfg
         check_link ${MOD_CONF}/mod/mod.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ad5x_mod.cfg
-        check_link ${MOD_CONF}/mod/klipper13.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ad5x_klipper13.cfg
+        check_link ${MOD_CONF}/mod/klippernew.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ad5x_klippernew.cfg
         check_link ${MOD_CONF}/mod/display_off.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ad5x_display_off.cfg
         check_link ${MOD_CONF}/mod/ad5x_config_native.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ad5x_config_native.cfg
         check_link ${MOD_CONF}/mod/ad5x_config_off.cfg /usr/data/zmod/zmod/translate/${ZLANG}/ad5x_config_off.cfg
@@ -432,7 +438,7 @@ fix_config()
     if [ ${C5PRO} -eq 1 ]; then
         check_link ${MOD_CONF}/mod/generic.cfg /usr/data/zmod/zmod/translate/${ZLANG}/c5pro_generic.cfg
         check_link ${MOD_CONF}/mod/mod.cfg /usr/data/zmod/zmod/translate/${ZLANG}/c5pro_mod.cfg
-        check_link ${MOD_CONF}/mod/klipper13.cfg /usr/data/zmod/zmod/translate/${ZLANG}/c5pro_klipper13.cfg
+        check_link ${MOD_CONF}/mod/klippernew.cfg /usr/data/zmod/zmod/translate/${ZLANG}/c5pro_klippernew.cfg
         check_link ${MOD_CONF}/mod/display_off.cfg /usr/data/zmod/zmod/translate/${ZLANG}/c5pro_display_off.cfg
         check_link ${MOD_CONF}/mod/c5pro_config_native.cfg /usr/data/zmod/zmod/translate/${ZLANG}/c5pro_config_native.cfg
         check_link ${MOD_CONF}/mod/c5pro_config_off.cfg /usr/data/zmod/zmod/translate/${ZLANG}/c5pro_config_off.cfg
@@ -615,9 +621,9 @@ unset LD_PRELOAD
     cnt=$(grep '^\[include ./mod/mod.cfg\]' ${PRINTER_CFG} |wc -l)
     [ "$cnt" -gt 1 ] && sed -i '/^\[include .\/mod\/mod.cfg\]/d' ${PRINTER_CFG} && NEED_REBOOT=1
 
-    # Удаление 2+ klipper13.cfg
-    cnt=$(grep '^\[include ./mod/klipper13.cfg\]' ${PRINTER_CFG} |wc -l)
-    [ "$cnt" -gt 1 ] && sed -i '/^\[include .\/mod\/klipper13.cfg\]/d' ${PRINTER_CFG} && NEED_REBOOT=1
+    # Удаление 2+ klippernew.cfg
+    cnt=$(grep '^\[include ./mod/klippernew.cfg\]' ${PRINTER_CFG} |wc -l)
+    [ "$cnt" -gt 1 ] && sed -i '/^\[include .\/mod\/klippernew.cfg\]/d' ${PRINTER_CFG} && NEED_REBOOT=1
 
     # Удаление 2+ klipper11.cfg
     cnt=$(grep '^\[include ./mod/klipper11.cfg\]' ${PRINTER_CFG} |wc -l)
@@ -901,8 +907,8 @@ stepper: stepper_x, stepper_y, stepper_z
 " >>${PRINTER_BASE}
     fi
 
-    # klipper13 FIX
-    if grep -q "klipper13 = 1" ${MOD_CONF}/mod_data/variables.cfg || [ ${C5PRO} -eq 1 ]|| [ ${AD5X} -eq 1 ]; then
+    # klippernew FIX
+    if grep -q "klippernew = 1" ${MOD_CONF}/mod_data/variables.cfg || [ ${C5PRO} -eq 1 ]|| [ ${AD5X} -eq 1 ]; then
         if grep -q '^max_accel_to_decel' ${PRINTER_BASE}; then
             NEED_REBOOT=1
             sed -i 's|^max_accel_to_decel.*|minimum_cruise_ratio: 0.5|' ${PRINTER_BASE}
@@ -914,26 +920,26 @@ stepper: stepper_x, stepper_y, stepper_z
         fi
     fi
 
-    if grep -q "klipper13 = 1" ${MOD_CONF}/mod_data/variables.cfg; then
-        if ! grep -q '^\[include ./mod/klipper13.cfg\]' ${PRINTER_CFG}; then
+    if grep -q "klippernew = 1" ${MOD_CONF}/mod_data/variables.cfg; then
+        if ! grep -q '^\[include ./mod/klippernew.cfg\]' ${PRINTER_CFG}; then
             NEED_REBOOT=1
-            [ ${C5PRO} -eq 0 ] && sed -i '/\[include printer\.base\.cfg\]/a [include ./mod/klipper13.cfg]' ${PRINTER_CFG}
-            [ ${C5PRO} -eq 1 ] && sed -i '/\[include printer\.motor\.cfg\]/a [include ./mod/klipper13.cfg]' ${PRINTER_CFG}
+            [ ${C5PRO} -eq 0 ] && sed -i '/\[include printer\.base\.cfg\]/a [include ./mod/klippernew.cfg]' ${PRINTER_CFG}
+            [ ${C5PRO} -eq 1 ] && sed -i '/\[include printer\.motor\.cfg\]/a [include ./mod/klippernew.cfg]' ${PRINTER_CFG}
         fi
     else
-        if grep -q '^\[include ./mod/klipper13.cfg\]' ${PRINTER_CFG}; then
+        if grep -q '^\[include ./mod/klippernew.cfg\]' ${PRINTER_CFG}; then
             NEED_REBOOT=1
-            sed -i '/^\[include \.\/mod\/klipper13\.cfg\]$/d' ${PRINTER_CFG}
+            sed -i '/^\[include \.\/mod\/klippernew\.cfg\]$/d' ${PRINTER_CFG}
         fi
     fi
 
     if [ ${AD5M} -eq 1 ]; then
         if ! { head -n 2 ${PRINTER_CFG} | tail -n 1 | grep -qE '^\[include \.\/mod\/klipper1[13]\.cfg\]$'; }; then
             sed -i '\|\[include \./mod/klipper11\.cfg\]|d' "${PRINTER_CFG}"
-            sed -i '\|\[include \./mod/klipper13\.cfg\]|d' "${PRINTER_CFG}"
+            sed -i '\|\[include \./mod/klippernew\.cfg\]|d' "${PRINTER_CFG}"
             NEED_REBOOT=1
         fi
-        if grep -q "klipper13 = 1" ${MOD_CONF}/mod_data/variables.cfg; then
+        if grep -q "klippernew = 1" ${MOD_CONF}/mod_data/variables.cfg; then
             grep -q '^\[include ./mod/klipper11.cfg\]' ${PRINTER_CFG} && sed -i '/^\[include \.\/mod\/klipper11\.cfg\]$/d' ${PRINTER_CFG} && NEED_REBOOT=1
         else
             if ! grep -q '^\[include ./mod/klipper11.cfg\]' ${PRINTER_CFG}; then

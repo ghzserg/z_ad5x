@@ -8,6 +8,10 @@ unset LD_PRELOAD
 
 source /usr/data/zmod/zmod/.shell/0.sh
 
+# Klipper13 -> Klippernew
+grep -q klipper13 ${MOD_CONF}/printer.cfg && sed -i 's/klipper13/klippernew/g' ${MOD_CONF}/printer.cfg
+grep -q klipper13 ${MOD_CONF}/mod_data/variables.cfg && sed -i 's/klipper13/klippernew/g' ${MOD_CONF}/mod_data/variables.cfg
+
 remove_base()
 {
     rm -rf ${DATA}/.mod
