@@ -124,9 +124,9 @@ def plot_freq_response(lognames, calibration_data, shapers,
     current_time = datetime.now()
     formatted_time = current_time.strftime("%d.%m.%y %H:%M")
     if current_language != 'ru':
-        title = "Shapers %s (zmod) %s" % (', '.join(lognames), formatted_time)
+        title = "Shapers %s (Z-Mod) %s" % (', '.join(lognames), formatted_time)
     else:
-        title = "Шейперы %s (zmod) %s" % (', '.join(lognames), formatted_time)
+        title = "Шейперы %s (Z-Mod) %s" % (', '.join(lognames), formatted_time)
     ax.set_title("\n".join(wrap(title, MAX_TITLE_LENGTH)))
     ax.xaxis.set_minor_locator(matplotlib.ticker.MultipleLocator(5))
     ax.yaxis.set_minor_locator(matplotlib.ticker.AutoMinorLocator())
