@@ -172,9 +172,6 @@ start_prepare()
     mkdir -p ${MOD}/root/printer_data/comms
     mkdir -p ${MOD}/root/printer_data/certs
 
-    # Восстанавливаем общий часовой пояс до копирования /etc/localtime в chroot.
-    /bin/sh /usr/data/zmod/zmod/.shell/set_timezone.sh --restore
-
     [ ${AD5M} -eq 1 ] && cat /etc/localtime >/tmp/localtime
     [ ${C5PRO} -eq 0 ] && cp ${TS_LIB}/pointercal /tmp/pointercal || echo "64503 781 -385772 -1194 64081 989824 65536 480 800" >/tmp/pointercal
     cp ${TS_LIB}/ts.conf /tmp/ts.conf
