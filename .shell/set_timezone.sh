@@ -20,10 +20,6 @@ fi
 [ "$#" -eq 1 ] || error "Usage: set_timezone.sh Europe/Moscow" "Использование: set_timezone.sh Europe/Moscow"
 zone=$1
 
-case "$zone" in
-    ''|/*|*/|*..*|*'//'*) error "Invalid timezone: $zone" "Неверный часовой пояс: $zone" ;;
-esac
-
 [ -f "${MOD}/usr/share/zoneinfo/$zone" ] || error "Timezone not found: $zone" "Часовой пояс не найден: $zone"
 
 ln -sf "${MOD}/usr/share/zoneinfo/$zone" /etc/localtime || error "Failed to set system timezone" "Не удалось изменить часовой пояс системы"
