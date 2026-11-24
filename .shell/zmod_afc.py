@@ -34,7 +34,6 @@ class zmod_afc:
         self.load = config.get('load', 'IN_ZCOLOR SLOT={slot} NAPR=0')
         self.unload = config.get('unload', 'IN_ZCOLOR SLOT={slot} NAPR=1')
         self.idle_load = config.get('idle_load', '')  # после загрузки вне печати (C5Pro: вернуть датчики голов)
-        self.idle_map = config.getboolean('idle_map', True)  # после печати карта сбрасывается: lane N = T(N-1)
         self.printing = False
         self.spool_colors = {}  # слот -> точный цвет катушки Spoolman (C5Pro хранит индекс палитры)
         self.enabled = False    # переменная мода afc, читается на klippy:ready
@@ -80,7 +79,9 @@ class zmod_afc:
         # число lane сразу, чтобы морда увидела их без перезагрузки страницы
         self._resize(max(self.color.color_limit, v.get('afc_lanes', 0)))
         self._resize(self.color.color_limit)
-        if self.idle_map:   # на старте печати нет: карта от прошлой печати или до обновления не нужна
+        # При перезапуске сохраняем карту для восстановления печати.
+        # Стандартную карту создаём только при отсутствии файла.
+        if not os.path.exists(FILE_CONFIG):
             atomic_write(FILE_CONFIG, json.dumps(list(range(1, self.n + 1)), indent=2))
 
     # Число lane = zmod_color.color_limit (IFS Jacker меняет его на лету). Объекты только
@@ -117,8 +118,11 @@ class zmod_afc:
         self.palette = st.get('palette', [])    # C5Pro: цвет хранится индексом палитры
         self.types = [t for t in st['valid_types'][:-1] if t not in st.get('hidden_types', [])]
         self.active = st.get('active_tool_id', -1) + 1
-        printing = self.printer.lookup_object('print_stats').get_status(eventtime)['state'] in ('printing', 'paused')
-        if self.idle_map and self.printing and not printing:
+        state = self.printer.lookup_object('print_stats').get_status(eventtime)['state']
+        printing = state in ('printing', 'paused')
+        # При ошибке сохраняем карту независимо от глобальной настройки.
+        if (self.printing and state in ('complete', 'cancelled')
+                and self.save_variables.allVariables.get('idle_map', 0) == 1):
             self.map = list(range(1, self.n + 1))
             atomic_write(FILE_CONFIG, json.dumps(self.map, indent=2))
         self.printing = printing
