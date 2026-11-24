@@ -150,7 +150,7 @@ prepare_chroot()
             check_link /usr/data/zmod/klipper/klippy/extras/zmod_ifs.py /usr/data/zmod/zmod/.shell/zmod_ifs.py
             check_link /usr/data/zmod/klipper/klippy/extras/zmod_tenz.py /usr/data/zmod/zmod/.shell/zmod_tenz.py
             if [ -f /usr/data/zmod/klipper/klippy/extras/aio_executor.py ]; then
-                check_link /usr/data/zmod/klipper/klippy/extras/virtual_sdcard.py /usr/data/zmod/zmod/.shell/virtual_sdcard_13.py
+                check_link /usr/data/zmod/klipper/klippy/extras/virtual_sdcard.py /usr/data/zmod/zmod/.shell/virtual_sdcard_new.py
             else
                 check_link /usr/data/zmod/klipper/klippy/extras/virtual_sdcard.py /usr/data/zmod/zmod/.shell/virtual_sdcard.py
             fi
