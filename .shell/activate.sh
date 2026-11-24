@@ -10,6 +10,7 @@ enable_zmod_ad5x_c5pro()
 
     grep -q '/usr/data/zmod/zmod/.shell/fix_config.sh start' /usr/prog/klipper/start.sh || sed -i '2 i\/usr/data/zmod/zmod/.shell/fix_config.sh start' /usr/prog/klipper/start.sh
     grep -q "mount --bind /bin/echo /usr/bin/cmd_pwm" /usr/prog/app_startup.sh || sed -i '\#mount /usr/prog/etc /etc#a\mount --bind /bin/echo /usr/bin/cmd_pwm' /usr/prog/app_startup.sh
+    grep -q 'rm /usr/data/logs/printer.log' /usr/prog/app_startup.sh && sed -i '\|rm /usr/data/logs/printer.log|d' /usr/prog/app_startup.sh
 
     # Активируем мод
     if ! grep -q prepare.sh /usr/prog/app_startup.sh; then
