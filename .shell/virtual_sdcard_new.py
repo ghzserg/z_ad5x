@@ -6,6 +6,7 @@
 import os, sys, logging, io
 
 VALID_GCODE_EXTS = ['gcode', 'g', 'gco', 'gx']
+GCODE_YIELD_TIME = 0.050
 
 DEFAULT_ERROR_GCODE = """
 {% if 'heaters' in printer %}
@@ -285,6 +286,7 @@ class VirtualSD:
         partial_input = ""
         lines = []
         error_message = None
+        next_yield_time = self.reactor.monotonic() + GCODE_YIELD_TIME
         while not self.must_pause_work:
             if not lines:
                 # Read more data
@@ -305,10 +307,12 @@ class VirtualSD:
                 partial_input = lines.pop()
                 lines.reverse()
                 self.reactor.pause(self.reactor.NOW)
+                next_yield_time = self.reactor.monotonic() + GCODE_YIELD_TIME
                 continue
             # Pause if any other request is pending in the gcode class
             if gcode_mutex.test():
                 self.reactor.pause(self.reactor.monotonic() + 0.050)
+                next_yield_time = self.reactor.monotonic() + GCODE_YIELD_TIME
                 continue
             # Dispatch command
             self.cmd_from_sd = True
@@ -329,7 +333,7 @@ class VirtualSD:
                     if self.print_channel != self.load_channel:
                         self.gcode.run_script("M400")
                         self.change_filament = True
-                        # zmod 1.13
+                        # zmod 1.14
                         try:
                             self.gcode.run_script(f"_A_CHANGE_FILAMENT CHANNEL={self.print_channel} RESTORE_POSITION=1 RESTORE_TEMP=1")
                         except Exception as e:
@@ -374,6 +378,11 @@ class VirtualSD:
                     return self.reactor.NEVER
                 lines = []
                 partial_input = ""
+            # Периодически передаём управление Reactor при обработке G-code.
+            if (not self.must_pause_work
+                and self.reactor.monotonic() >= next_yield_time):
+                self.reactor.pause(self.reactor.NOW)
+                next_yield_time = self.reactor.monotonic() + GCODE_YIELD_TIME
         logging.info("Exiting SD card print (position %d)", self.file_position)
         self.work_timer = None
         self.cmd_from_sd = False
