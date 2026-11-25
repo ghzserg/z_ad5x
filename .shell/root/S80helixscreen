@@ -1,5 +1,5 @@
 #!/bin/sh
 # HelixScreen ships its own init script; it finds its install from its own path.
 INIT=/srv/helixscreen/config/helixscreen.init
-[ -x "$INIT" ] || exit 0
-exec "$INIT" "$@"
+[ -f "$INIT" ] || exit 0
+exec sh "$INIT" "$@"
