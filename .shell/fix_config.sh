@@ -76,10 +76,9 @@ grep -q klipper13 ${MOD_CONF}/printer.cfg && sed -i 's/klipper13/klippernew/g' $
 grep -q klipper13 ${MOD_CONF}/mod_data/variables.cfg && sed -i 's/klipper13/klippernew/g' ${MOD_CONF}/mod_data/variables.cfg
 
 # Удаляем повторные записи klippernew
-VARS=${MOD_CONF}/mod_data/variables.cfg
-if [ -f "$VARS" ] && [ "$(grep -c '^klippernew[[:space:]]*=' "$VARS")" -gt 1 ]; then
-    awk '!/^klippernew[[:space:]]*=/ || !seen++' "$VARS" > "$VARS.tmp" && mv "$VARS.tmp" "$VARS"
-fi
+grep -n '^klippernew =' ${MOD_CONF}/mod_data/variables.cfg | tail -n +2 | cut -d: -f1 | sort -rn | while read -r line; do
+    sed -i "${line}d" ${MOD_CONF}/mod_data/variables.cfg
+done
 
 if [ ${C5PRO} -eq 1 ]; then VER_FF=$(find /usr/prog/PROGRAM/software/ -type d | sed 's|/usr/prog/PROGRAM/software/||' | grep -v "/" | grep .); fi
 
