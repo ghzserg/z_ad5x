@@ -75,6 +75,14 @@ mkdir -p /usr/data/zmod/klipper/ /usr/data/zmod/moonraker/ ${MOD_CONF}/mod
 grep -q klipper13 ${MOD_CONF}/printer.cfg && sed -i 's/klipper13/klippernew/g' ${MOD_CONF}/printer.cfg
 grep -q klipper13 ${MOD_CONF}/mod_data/variables.cfg && sed -i 's/klipper13/klippernew/g' ${MOD_CONF}/mod_data/variables.cfg
 
+# Удаляем дубликаты klippernew, оставляя последнее значение
+VARS=${MOD_CONF}/mod_data/variables.cfg
+if [ -f "$VARS" ] && [ "$(grep -c '^[[:space:]]*klippernew[[:space:]]*=' "$VARS")" -gt 1 ]; then
+    awk 'FNR == NR { if (/^[[:space:]]*klippernew[[:space:]]*=/) last = FNR; next }
+         !/^[[:space:]]*klippernew[[:space:]]*=/ || FNR == last' "$VARS" "$VARS" > "$VARS.tmp" &&
+        mv "$VARS.tmp" "$VARS"
+fi
+
 if [ ${C5PRO} -eq 1 ]; then VER_FF=$(find /usr/prog/PROGRAM/software/ -type d | sed 's|/usr/prog/PROGRAM/software/||' | grep -v "/" | grep .); fi
 
 # Разблокировка
