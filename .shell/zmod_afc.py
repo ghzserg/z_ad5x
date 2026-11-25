@@ -122,7 +122,7 @@ class zmod_afc:
         printing = state in ('printing', 'paused')
         # При ошибке сохраняем карту независимо от глобальной настройки.
         if (self.printing and state in ('complete', 'cancelled')
-                and self.save_variables.allVariables.get('idle_map', 0) == 1):
+                and self.save_variables.allVariables.get('afc_reset', 0) == 1):
             self.map = list(range(1, self.n + 1))
             atomic_write(FILE_CONFIG, json.dumps(self.map, indent=2))
         self.printing = printing
