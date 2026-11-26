@@ -55,7 +55,7 @@
   },
   "nopoop": {
     "url": "https://github.com/ghzserg/nopoop.git", "branch": "master",
-    "incompatible": ["quickswap", "lesswaste", "bambufy"],
+    "incompatible": ["lesswaste", "bambufy"],
     "printers": ["AD5X"]
   },
     "quickswap": {
