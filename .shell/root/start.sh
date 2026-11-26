@@ -101,7 +101,7 @@ check_link()
 prepare_chroot()
 {
     echo ZMOD >/ZMOD
-    [ ${AD5M} -eq 1 ] && mv /tmp/localtime /etc/localtime
+    mv /tmp/localtime /etc/localtime
 
     if [ ${C5PRO} -eq 1 ] || [ ${AD5X} -eq 1 ]; then
         [ -f /opt/config/mod_data/filament.json ] || echo "{}" >/opt/config/mod_data/filament.json
